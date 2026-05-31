@@ -1,47 +1,14 @@
 FROM python:3.9-slim
 
-# System dependencies required by Playwright's Chromium
-RUN apt-get update && apt-get install -y \
-    libglib2.0-0 \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libdbus-1-3 \
-    libxcb1 \
-    libxkbcommon0 \
-    libx11-6 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2 \
-    libatspi2.0-0 \
-    fonts-noto-cjk \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-# Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright's Chromium (headless shell)
-RUN playwright install chromium
-
-# Copy app source
 COPY . .
 
-# Create instance folder for SQLite
 RUN mkdir -p instance
 
 EXPOSE 8080
 
-CMD gunicorn wsgi:app --bind 0.0.0.0:${PORT:-8080} --workers 1 --timeout 120 --log-level info
+CMD gunicorn wsgi:app --bind 0.0.0.0:${PORT:-8080} --workers 1 --timeout 60 --log-level info
