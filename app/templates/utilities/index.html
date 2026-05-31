@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}ប្រើប្រាស់{% else %}Utilities{% endif %}{% endblock %}
+{% block content %}
+
+<h5 class="m-page-title mb-3">
+  <span class="km">ប្រើប្រាស់</span><span class="en">Utilities</span>
+</h5>
+
+<!-- Current prices -->
+<div class="m-row mb-3">
+  <div class="m-section" style="margin-bottom:0;">
+    <div class="m-section-body" style="text-align:center;padding:16px;">
+      <div class="small text-muted mb-1">⚡ <span class="km">អគ្គិសនីបច្ចុប្បន្ន</span><span class="en">Electricity</span></div>
+      {% if current_electricity %}
+      <div style="font-size:1.5rem;font-weight:800;color:#f59e0b;">{{ current_electricity.price_per_unit|khr }}</div>
+      <div class="small text-muted"><span class="km">ក្នុង​មួយ​យូ​នីត (kWh)</span><span class="en">per unit (kWh)</span></div>
+      <div class="small text-muted mt-1">{{ current_electricity.effective_date.strftime('%d/%m/%Y') }}</div>
+      {% else %}
+      <div class="text-muted small"><span class="km">មិនទាន់កំណត់</span><span class="en">Not set</span></div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="m-section" style="margin-bottom:0;">
+    <div class="m-section-body" style="text-align:center;padding:16px;">
+      <div class="small text-muted mb-1">💧 <span class="km">ទឹកបច្ចុប្បន្ន</span><span class="en">Water</span></div>
+      {% if current_water %}
+      <div style="font-size:1.5rem;font-weight:800;color:#0ea5e9;">{{ current_water.price_per_unit|khr }}</div>
+      <div class="small text-muted"><span class="km">ក្នុង​មួយ​យូ​នីត (m³)</span><span class="en">per unit (m³)</span></div>
+      <div class="small text-muted mt-1">{{ current_water.effective_date.strftime('%d/%m/%Y') }}</div>
+      {% else %}
+      <div class="text-muted small"><span class="km">មិនទាន់កំណត់</span><span class="en">Not set</span></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Update form -->
+<div class="m-section">
+  <div class="m-section-header" onclick="toggleMSection(this)">
+    <span><i class="bi bi-plus-circle text-primary me-2"></i>
+      <span class="km">ធ្វើបច្ចុប្បន្នភាពតម្លៃ</span><span class="en">Update Price</span></span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="m-section-body">
+    <form method="POST" action="{{ url_for('utilities.update') }}">
+      <label class="m-label"><span class="km">ប្រភេទ</span><span class="en">Type</span> *</label>
+      <select name="utility_type" class="m-input" required style="font-size:1rem;">
+        <option value="electricity">⚡ {% if lang=='km'%}អគ្គិសនី{% else %}Electricity{% endif %}</option>
+        <option value="water">💧 {% if lang=='km'%}ទឹក{% else %}Water{% endif %}</option>
+      </select>
+
+      <label class="m-label"><span class="km">តម្លៃ/យូនីត (៛)</span><span class="en">Price per Unit (៛)</span> *</label>
+      <div class="m-input-group">
+        <span class="m-prefix">៛</span>
+        <input type="number" name="price_per_unit" step="1" min="0" required placeholder="700">
+      </div>
+
+      <label class="m-label"><span class="km">ថ្ងៃចូលជាធរមាន</span><span class="en">Effective Date</span> *</label>
+      <input type="date" name="effective_date" class="m-input" required
+             value="{{ today.strftime('%Y-%m-%d') }}">
+
+      <button type="submit" class="btn btn-primary w-100 mt-3 py-3 fw-bold">
+        <i class="bi bi-check-lg me-1"></i>
+        <span class="km">ធ្វើបច្ចុប្បន្នភាព</span><span class="en">Update Price</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- History -->
+<div class="m-section">
+  <div class="m-section-header collapsed" onclick="toggleMSection(this)">
+    <span><i class="bi bi-clock-history me-2 text-secondary"></i>
+      <span class="km">ប្រវត្តិ</span><span class="en">Price History</span></span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="m-section-body collapsed">
+    <div class="small fw-bold text-warning mb-2">⚡ <span class="km">អគ្គិសនី</span><span class="en">Electricity</span></div>
+    {% for p in electricity_prices %}
+    <div class="m-detail-row">
+      <span class="m-dl">{{ p.effective_date.strftime('%d/%m/%Y') }}
+        {% if loop.first %}<span class="badge bg-warning text-dark ms-1"><span class="km">បច្ចុប្បន្ន</span><span class="en">Current</span></span>{% endif %}
+      </span>
+      <span class="m-dv">{{ p.price_per_unit|khr }}</span>
+    </div>
+    {% else %}
+    <div class="text-muted small"><span class="km">គ្មានប្រវត្តិ</span><span class="en">No history</span></div>
+    {% endfor %}
+
+    <div class="small fw-bold text-info mt-3 mb-2">💧 <span class="km">ទឹក</span><span class="en">Water</span></div>
+    {% for p in water_prices %}
+    <div class="m-detail-row">
+      <span class="m-dl">{{ p.effective_date.strftime('%d/%m/%Y') }}
+        {% if loop.first %}<span class="badge bg-info text-dark ms-1"><span class="km">បច្ចុប្បន្ន</span><span class="en">Current</span></span>{% endif %}
+      </span>
+      <span class="m-dv">{{ p.price_per_unit|khr }}</span>
+    </div>
+    {% else %}
+    <div class="text-muted small"><span class="km">គ្មានប្រវត្តិ</span><span class="en">No history</span></div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleMSection(header) {
+  header.classList.toggle('collapsed');
+  header.nextElementSibling.classList.toggle('collapsed');
+}
+</script>
+{% endblock %}

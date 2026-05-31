@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Login — Rental Management{% endblock %}
+{% block auth_content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background:linear-gradient(135deg,#1d4ed8,#1e3a5f);">
+  <div class="card shadow-lg border-0" style="width:100%;max-width:400px;border-radius:16px;">
+    <div class="card-body p-5">
+
+      <!-- Lang toggle on login page -->
+      <div class="text-end mb-3">
+        <a href="{{ url_for('set_lang', code='km') }}"
+           class="btn btn-sm {{ 'btn-primary' if lang == 'km' else 'btn-outline-secondary' }}">ខ្មែរ</a>
+        <a href="{{ url_for('set_lang', code='en') }}"
+           class="btn btn-sm {{ 'btn-primary' if lang == 'en' else 'btn-outline-secondary' }}">EN</a>
+      </div>
+
+      <div class="text-center mb-4">
+        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+             style="width:60px;height:60px;font-size:1.8rem;">
+          <i class="bi bi-building-fill"></i>
+        </div>
+        <h4 class="fw-bold mb-0">
+          <span class="km">ការគ្រប់គ្រងជួល</span>
+          <span class="en">Rental Management</span>
+        </h4>
+        <p class="text-muted small">
+          <span class="km">ប្រព័ន្ធគ្រប់គ្រង</span>
+          <span class="en">Management System</span>
+        </p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} py-2 small">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label fw-medium">
+            <span class="km">ឈ្មោះអ្នកប្រើ</span>
+            <span class="en">Username</span>
+          </label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" name="username" class="form-control" required autofocus
+                   placeholder="{{ 'បញ្ចូលឈ្មោះ' if lang == 'km' else 'Enter username' }}">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-medium">
+            <span class="km">លេខសម្ងាត់</span>
+            <span class="en">Password</span>
+          </label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" name="password" class="form-control" required
+                   placeholder="{{ 'បញ្ចូលលេខសម្ងាត់' if lang == 'km' else 'Enter password' }}">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+          <i class="bi bi-box-arrow-in-right me-2"></i>
+          <span class="km">ចូល</span>
+          <span class="en">Login</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

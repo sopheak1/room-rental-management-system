@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}{% if tenant %}{% if lang=='km'%}កែប្រែអ្នកជួល{% else %}Edit Tenant{% endif %}{% else %}{% if lang=='km'%}បន្ថែមអ្នកជួល{% else %}Add Tenant{% endif %}{% endif %}{% endblock %}
+{% block content %}
+
+<div class="m-page-header">
+  <a href="{{ url_for('rooms.detail', id=room.id) }}" class="m-back"><i class="bi bi-arrow-left"></i></a>
+  <h5 class="m-page-title">
+    {% if tenant %}<span class="km">កែប្រែអ្នកជួល</span><span class="en">Edit Tenant</span>
+    {% else %}<span class="km">បន្ថែមអ្នកជួល</span><span class="en">Add Tenant</span>{% endif %}
+    — <span class="km">បន្ទប់</span><span class="en">Room</span> {{ room.room_number }}
+  </h5>
+</div>
+
+<form method="POST">
+
+<!-- Personal info -->
+<div class="m-section">
+  <div class="m-section-header" onclick="toggleMSection(this)">
+    <span><i class="bi bi-person text-primary me-2"></i>
+      <span class="km">ព័ត៌មានផ្ទាល់ខ្លួន</span><span class="en">Personal Info</span></span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="m-section-body">
+    <label class="m-label"><span class="km">ឈ្មោះ</span><span class="en">Full Name</span> *</label>
+    <input type="text" name="name" class="m-input" required value="{{ tenant.name if tenant else '' }}">
+
+    <div class="m-row">
+      <div>
+        <label class="m-label"><span class="km">ភេទ</span><span class="en">Gender</span></label>
+        <select name="gender" class="m-input" style="font-size:1rem;">
+          <option value="">—</option>
+          <option value="male"   {{ 'selected' if tenant and tenant.gender=='male'   }}>{% if lang=='km'%}ប្រុស{% else %}Male{% endif %}</option>
+          <option value="female" {{ 'selected' if tenant and tenant.gender=='female' }}>{% if lang=='km'%}ស្រី{% else %}Female{% endif %}</option>
+          <option value="other"  {{ 'selected' if tenant and tenant.gender=='other'  }}>{% if lang=='km'%}ផ្សេង{% else %}Other{% endif %}</option>
+        </select>
+      </div>
+      <div>
+        <label class="m-label"><span class="km">ចំនួន</span><span class="en">Roommates</span></label>
+        <input type="number" name="num_roommates" class="m-input" min="1"
+               value="{{ tenant.num_roommates if tenant else 1 }}">
+      </div>
+    </div>
+
+    <label class="m-label"><span class="km">អត្តសញ្ញាណប័ណ្ណ</span><span class="en">NID</span></label>
+    <input type="text" name="nid" class="m-input" value="{{ tenant.nid if tenant else '' }}">
+
+    <label class="m-label"><span class="km">ទូរស័ព្ទ</span><span class="en">Phone</span></label>
+    <input type="text" name="tel" class="m-input" value="{{ tenant.tel if tenant else '' }}">
+  </div>
+</div>
+
+<!-- Emergency contact collapsed -->
+<div class="m-section">
+  <div class="m-section-header collapsed" onclick="toggleMSection(this)">
+    <span><i class="bi bi-telephone-fill text-danger me-2"></i>
+      <span class="km">ទំនាក់ទំនងបន្ទាន់</span><span class="en">Emergency Contact</span></span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="m-section-body collapsed">
+    <label class="m-label"><span class="km">ឈ្មោះ</span><span class="en">Name</span></label>
+    <input type="text" name="emergency_contact_name" class="m-input"
+           value="{{ tenant.emergency_contact_name if tenant else '' }}">
+    <label class="m-label"><span class="km">ទូរស័ព្ទ</span><span class="en">Phone</span></label>
+    <input type="text" name="emergency_contact_tel" class="m-input"
+           value="{{ tenant.emergency_contact_tel if tenant else '' }}">
+  </div>
+</div>
+
+<!-- Contract -->
+<div class="m-section">
+  <div class="m-section-header" onclick="toggleMSection(this)">
+    <span><i class="bi bi-file-text text-success me-2"></i>
+      <span class="km">កិច្ចសន្យា & ប្រាក់បញ្ចាំ</span><span class="en">Contract & Deposit</span></span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="m-section-body">
+    <label class="m-label"><span class="km">ថ្ងៃចូល</span><span class="en">Move-in Date</span></label>
+    <input type="date" name="move_in_date" id="move_in_date" class="m-input"
+           value="{{ tenant.move_in_date.strftime('%Y-%m-%d') if tenant and tenant.move_in_date else (today.strftime('%Y-%m-%d') if today is defined else '') }}"
+           data-original="{{ tenant.move_in_date.strftime('%Y-%m-%d') if tenant and tenant.move_in_date else '' }}">
+    {% if tenant %}
+    <div id="movein_warning" class="small text-warning mt-1" style="display:none;">
+      ⚠️ <span class="km">ការផ្លាស់ប្ដូរថ្ងៃចូលនឹងផ្លាស់ប្ដូរថ្ងៃទូទាត់ពី <strong id="warn_old_day"></strong> ទៅ <strong id="warn_new_day"></strong>។</span>
+          <span class="en">Changing move-in updates due day from <strong id="warn_old_day_en"></strong> to <strong id="warn_new_day_en"></strong>.</span>
+    </div>
+    {% endif %}
+
+    <label class="m-label"><span class="km">រយៈពេល</span><span class="en">Duration</span></label>
+    <select name="contract_duration" class="m-input" style="font-size:1rem;">
+      <option value="monthly" {{ 'selected' if tenant and tenant.contract_duration=='monthly' }}>{% if lang=='km'%}ប្រចាំខែ{% else %}Monthly{% endif %}</option>
+      <option value="6months" {{ 'selected' if tenant and tenant.contract_duration=='6months' }}>6 {% if lang=='km'%}ខែ{% else %}Months{% endif %}</option>
+      <option value="1year"   {{ 'selected' if tenant and tenant.contract_duration=='1year'   }}>1 {% if lang=='km'%}ឆ្នាំ{% else %}Year{% endif %}</option>
+    </select>
+
+    <label class="m-label"><span class="km">ប្រាក់បញ្ចាំ (៛)</span><span class="en">Deposit Paid (៛)</span></label>
+    <div class="m-input-group">
+      <span class="m-prefix">៛</span>
+      <input type="number" name="deposit_paid" step="1" min="0"
+             value="{{ tenant.deposit_paid|int if tenant else 0 }}">
+    </div>
+  </div>
+</div>
+
+<div class="m-action-bar">
+  <a href="{{ url_for('rooms.detail', id=room.id) }}" class="btn btn-outline-secondary">
+    <span class="km">បោះបង់</span><span class="en">Cancel</span>
+  </a>
+  <button type="submit" class="btn btn-primary">
+    <i class="bi bi-check-lg me-1"></i>
+    <span class="km">{{ 'រក្សាទុក' if tenant else 'បន្ថែម' }}</span>
+    <span class="en">{{ 'Update' if tenant else 'Add Tenant' }}</span>
+  </button>
+</div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleMSection(header) {
+  header.classList.toggle('collapsed');
+  header.nextElementSibling.classList.toggle('collapsed');
+}
+const md = document.getElementById('move_in_date');
+if (md) {
+  if (!md.value) md.value = new Date().toISOString().split('T')[0];
+  const original = md.dataset.original;
+  const warning = document.getElementById('movein_warning');
+  if (original && warning) {
+    function ordinal(d) { return d + (d===1?'st':d===2?'nd':d===3?'rd':'th'); }
+    md.addEventListener('change', function () {
+      if (this.value && this.value !== original) {
+        const oldDay = new Date(original+'T00:00:00').getDate();
+        const newDay = new Date(this.value+'T00:00:00').getDate();
+        ['warn_old_day','warn_old_day_en'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ordinal(oldDay);});
+        ['warn_new_day','warn_new_day_en'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ordinal(newDay);});
+        warning.style.display='block';
+      } else { warning.style.display='none'; }
+    });
+  }
+}
+</script>
+{% endblock %}

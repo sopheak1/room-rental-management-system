@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}បន្ទប់{% else %}Rooms{% endif %}{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="m-page-title mb-0">
+    <span class="km">បន្ទប់</span><span class="en">Rooms</span>
+  </h5>
+  <a href="{{ url_for('rooms.new') }}" class="btn btn-primary btn-sm fw-bold">
+    <i class="bi bi-plus-lg me-1"></i>
+    <span class="km">បន្ថែម</span><span class="en">Add</span>
+  </a>
+</div>
+
+<form method="GET">
+<div class="m-filter-bar mb-3">
+  <a href="{{ url_for('rooms.list') }}" class="m-filter-chip {{ 'active' if not selected_status and not selected_building }}">
+    <span class="km">ទាំងអស់</span><span class="en">All</span>
+  </a>
+  <a href="{{ url_for('rooms.list', status='occupied') }}" class="m-filter-chip {{ 'active' if selected_status=='occupied' }}">
+    <span class="km">មានអ្នករស់</span><span class="en">Occupied</span>
+  </a>
+  <a href="{{ url_for('rooms.list', status='available') }}" class="m-filter-chip {{ 'active' if selected_status=='available' }}">
+    <span class="km">ទំនេរ</span><span class="en">Available</span>
+  </a>
+  <a href="{{ url_for('rooms.list', status='maintenance') }}" class="m-filter-chip {{ 'active' if selected_status=='maintenance' }}">
+    <span class="km">ជួសជុល</span><span class="en">Maintenance</span>
+  </a>
+  {% for b in buildings %}
+  <a href="{{ url_for('rooms.list', building_id=b.id) }}" class="m-filter-chip {{ 'active' if selected_building==b.id }}">
+    {{ b.name }}
+  </a>
+  {% endfor %}
+</div>
+</form>
+
+{% for r in rooms %}
+<a href="{{ url_for('rooms.detail', id=r.id) }}" class="m-card border-{{ r.status }}">
+  <div class="m-card-body">
+    <div class="m-card-title">
+      <span class="km">បន្ទប់</span><span class="en">Room</span> {{ r.room_number }}
+    </div>
+    <div class="m-card-sub">{{ r.building.name }} · F{{ r.floor }} · {{ r.room_type|title }}</div>
+    <div class="m-card-meta">
+      {% if r.active_tenant %}
+        <i class="bi bi-person-fill text-primary me-1"></i>{{ r.active_tenant.name }}
+      {% else %}
+        <span class="text-muted"><span class="km">គ្មានអ្នកជួល</span><span class="en">No tenant</span></span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="m-card-right">
+    <div class="m-card-amount">{{ r.price|khr }}</div>
+    <div class="mt-1"><span class="badge status-{{ r.status }}">{{ r.status|title }}</span></div>
+  </div>
+  <i class="bi bi-chevron-right m-card-arrow"></i>
+</a>
+{% else %}
+<div class="m-empty">
+  <div class="m-empty-icon">🚪</div>
+  <p><span class="km">គ្មានបន្ទប់</span><span class="en">No rooms found</span></p>
+  <a href="{{ url_for('rooms.new') }}" class="btn btn-primary">
+    <span class="km">បន្ថែមមួយ</span><span class="en">Add one</span>
+  </a>
+</div>
+{% endfor %}
+
+{% endblock %}

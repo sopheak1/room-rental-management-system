@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}អគារ{% else %}Buildings{% endif %}{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="m-page-title mb-0"><span class="km">អគារ</span><span class="en">Buildings</span></h5>
+  <a href="{{ url_for('buildings.new') }}" class="btn btn-primary btn-sm fw-bold">
+    <i class="bi bi-plus-lg me-1"></i><span class="km">បន្ថែម</span><span class="en">Add</span>
+  </a>
+</div>
+
+{% set confirm_delete = 'លុបអគារនេះ?' if lang=='km' else 'Delete this building?' %}
+{% for b in buildings %}
+<div class="m-card border-occupied" style="flex-direction:column;align-items:stretch;gap:0;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="m-card-body">
+      <div class="m-card-title"><i class="bi bi-buildings me-1 text-primary"></i>{{ b.name }}</div>
+      <div class="m-card-sub">{{ b.address or '—' }}</div>
+      <div class="m-card-meta">
+        {{ b.rooms|length }} <span class="km">បន្ទប់</span><span class="en">room(s)</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('buildings.edit', id=b.id) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-pencil"></i>
+      </a>
+      <form method="POST" action="{{ url_for('buildings.delete', id=b.id) }}" class="d-inline"
+            onsubmit="return confirm('{{ confirm_delete }}')">
+        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+      </form>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="m-empty">
+  <div class="m-empty-icon">🏢</div>
+  <p><span class="km">គ្មានអគារ</span><span class="en">No buildings yet</span></p>
+  <a href="{{ url_for('buildings.new') }}" class="btn btn-primary">
+    <span class="km">បន្ថែមមួយ</span><span class="en">Add one</span>
+  </a>
+</div>
+{% endfor %}
+
+{% endblock %}

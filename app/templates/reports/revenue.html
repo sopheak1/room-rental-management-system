@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Revenue Report{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <a href="{{ url_for('reports.index') }}" class="text-decoration-none text-muted small">
+      <i class="bi bi-arrow-left me-1"></i><span class="km">របាយការណ៍</span><span class="en">Reports</span>
+    </a>
+    <h4 class="fw-bold mt-1 mb-0"><span class="km">ចំណូលប្រចាំឆ្នាំ</span><span class="en">Annual Revenue</span> — {{ year }}</h4>
+  </div>
+  <form class="d-flex gap-2">
+    <input type="number" name="year" class="form-control form-control-sm" value="{{ year }}" style="width:80px;">
+    <button class="btn btn-primary btn-sm">View</button>
+  </form>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th><span class="km">ខែ</span><span class="en">Month</span></th>
+          <th class="text-end"><span class="km">រំពឹងទុក (៛)</span><span class="en">Expected (៛)</span></th>
+          <th class="text-end"><span class="km">ប្រមូលបាន (៛)</span><span class="en">Collected (៛)</span></th>
+          <th class="text-end"><span class="km">នៅជំពាក់ (៛)</span><span class="en">Due Balance (៛)</span></th>
+          <th class="text-center"><span class="km">វិក័យប័ត្រ</span><span class="en">Receipts</span></th>
+          <th><span class="km">អត្រាប្រមូល</span><span class="en">Collection Rate</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set ns = namespace(total_exp=0, total_col=0) %}
+        {% for d in monthly_data %}
+        {% set ns.total_exp = ns.total_exp + d.expected %}
+        {% set ns.total_col = ns.total_col + d.collected %}
+        <tr>
+          <td class="fw-medium">{{ d.month_name }}</td>
+          <td class="text-end">{{ d.expected|khr }}</td>
+          <td class="text-end text-success">{{ d.collected|khr }}</td>
+          <td class="text-end {{ 'text-danger' if d.outstanding > 0 else '' }}">{{ d.outstanding|khr }}</td>
+          <td class="text-center">
+            {% if d.count > 0 %}<span class="badge bg-secondary">{{ d.count }}</span>{% else %}—{% endif %}
+          </td>
+          <td>
+            {% if d.expected > 0 %}
+            {% set rate = (d.collected / d.expected * 100)|int %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height:6px;">
+                <div class="progress-bar {{ 'bg-success' if rate >= 80 else 'bg-warning' if rate >= 50 else 'bg-danger' }}"
+                     style="width:{{ [rate,100]|min }}%"></div>
+              </div>
+              <small>{{ rate }}%</small>
+            </div>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="table-light fw-bold">
+        <tr>
+          <td><span class="km">សរុប</span><span class="en">Total</span></td>
+          <td class="text-end">{{ ns.total_exp|khr }}</td>
+          <td class="text-end text-success">{{ ns.total_col|khr }}</td>
+          <td class="text-end text-danger">{{ (ns.total_exp - ns.total_col)|khr }}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

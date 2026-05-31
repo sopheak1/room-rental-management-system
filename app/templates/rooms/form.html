@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}{% if room %}{% if lang=='km'%}កែប្រែបន្ទប់{% else %}Edit Room{% endif %}{% else %}{% if lang=='km'%}បន្ទប់ថ្មី{% else %}New Room{% endif %}{% endif %}{% endblock %}
+{% block content %}
+
+<div class="m-page-header">
+  <a href="{{ url_for('rooms.list') }}" class="m-back"><i class="bi bi-arrow-left"></i></a>
+  <h5 class="m-page-title">
+    {% if room %}<span class="km">កែប្រែបន្ទប់</span><span class="en">Edit Room</span>
+    {% else %}<span class="km">បន្ទប់ថ្មី</span><span class="en">New Room</span>{% endif %}
+  </h5>
+</div>
+
+<form method="POST">
+<div class="m-section">
+  <div class="m-section-body">
+
+    <label class="m-label"><span class="km">អគារ</span><span class="en">Building</span> *</label>
+    <select name="building_id" class="m-input" required style="font-size:1rem;">
+      {% for b in buildings %}
+      <option value="{{ b.id }}" {{ 'selected' if room and room.building_id == b.id }}>{{ b.name }}</option>
+      {% endfor %}
+    </select>
+
+    <label class="m-label"><span class="km">លេខបន្ទប់</span><span class="en">Room Number</span> *</label>
+    <input type="text" name="room_number" class="m-input" required placeholder="e.g. 101"
+           value="{{ room.room_number if room else '' }}">
+
+    <div class="m-row">
+      <div>
+        <label class="m-label"><span class="km">ជាន់</span><span class="en">Floor</span></label>
+        <input type="number" name="floor" class="m-input" min="1" value="{{ room.floor if room else 1 }}">
+      </div>
+      <div>
+        <label class="m-label"><span class="km">ប្រភេទ</span><span class="en">Type</span></label>
+        <select name="room_type" class="m-input" style="font-size:1rem;">
+          <option value="single" {{ 'selected' if room and room.room_type=='single' }}>Single</option>
+          <option value="double" {{ 'selected' if room and room.room_type=='double' }}>Double</option>
+          <option value="studio" {{ 'selected' if room and room.room_type=='studio' }}>Studio</option>
+        </select>
+      </div>
+    </div>
+
+    {% if room %}
+    <label class="m-label"><span class="km">ស្ថានភាព</span><span class="en">Status</span></label>
+    <select name="status" class="m-input" style="font-size:1rem;">
+      <option value="available" {{ 'selected' if room.status=='available' }}>{% if lang=='km'%}ទំនេរ{% else %}Available{% endif %}</option>
+      <option value="occupied"  {{ 'selected' if room.status=='occupied'  }}>{% if lang=='km'%}មានអ្នករស់{% else %}Occupied{% endif %}</option>
+      <option value="maintenance" {{ 'selected' if room.status=='maintenance' }}>{% if lang=='km'%}ជួសជុល{% else %}Maintenance{% endif %}</option>
+    </select>
+    {% endif %}
+
+    <label class="m-label"><span class="km">ថ្លៃ/ខែ (៛)</span><span class="en">Price/month (៛)</span> *</label>
+    <div class="m-input-group">
+      <span class="m-prefix">៛</span>
+      <input type="number" name="price" step="1" min="0" required
+             value="{{ room.price|int if room else '' }}" placeholder="200000">
+    </div>
+
+    <label class="m-label"><span class="km">ប្រាក់បញ្ចាំ (៛)</span><span class="en">Deposit (៛)</span></label>
+    <div class="m-input-group">
+      <span class="m-prefix">៛</span>
+      <input type="number" name="deposit_amount" step="1" min="0"
+             value="{{ room.deposit_amount|int if room else 0 }}">
+    </div>
+  </div>
+</div>
+
+<div class="m-action-bar">
+  <a href="{{ url_for('rooms.list') }}" class="btn btn-outline-secondary">
+    <span class="km">បោះបង់</span><span class="en">Cancel</span>
+  </a>
+  <button type="submit" class="btn btn-primary">
+    <i class="bi bi-check-lg me-1"></i>
+    <span class="km">{{ 'រក្សាទុក' if room else 'បង្កើតបន្ទប់' }}</span>
+    <span class="en">{{ 'Update' if room else 'Create Room' }}</span>
+  </button>
+</div>
+</form>
+{% endblock %}

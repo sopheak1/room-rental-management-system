@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% block title %}Room {{ room.room_number }}{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div class="m-page-header">
+  <a href="{{ url_for('rooms.list') }}" class="m-back"><i class="bi bi-arrow-left"></i></a>
+  <div class="flex-1">
+    <div class="m-page-title">
+      <span class="km">បន្ទប់</span><span class="en">Room</span> {{ room.room_number }}
+      <span class="badge status-{{ room.status }} ms-1">{{ room.status|title }}</span>
+    </div>
+    <div class="small text-muted">{{ room.building.name }} · F{{ room.floor }} · {{ room.room_type|title }}</div>
+  </div>
+  <a href="{{ url_for('rooms.edit', id=room.id) }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-pencil"></i>
+  </a>
+</div>
+
+<!-- Price + actions -->
+<div class="m-section">
+  <div class="m-section-body" style="text-align:center;padding:18px 16px;">
+    <div class="small text-muted mb-1"><span class="km">ថ្លៃ/ខែ</span><span class="en">Price/month</span></div>
+    <div class="m-amount-big">{{ room.price|khr }}</div>
+    <div class="small text-muted mt-1">
+      <span class="km">ប្រាក់បញ្ចាំ:</span><span class="en">Deposit:</span>
+      {{ room.deposit_amount|khr }}
+    </div>
+  </div>
+</div>
+
+<!-- Action buttons -->
+<div class="d-flex gap-2 mb-3">
+  {% if not room.active_tenant %}
+  <a href="{{ url_for('tenants.add', room_id=room.id) }}" class="btn btn-success flex-fill py-3 fw-bold">
+    <i class="bi bi-person-plus me-1"></i>
+    <span class="km">បន្ថែមអ្នកជួល</span><span class="en">Add Tenant</span>
+  </a>
+  {% endif %}
+  <a href="{{ url_for('receipts.generate') }}?room_id={{ room.id }}" class="btn btn-primary flex-fill py-3 fw-bold">
+    <i class="bi bi-receipt me-1"></i>
+    <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
+  </a>
+</div>
+
+<!-- Tabs -->
+<div class="home-tabs mb-3">
+  <button class="home-tab active" onclick="switchTab('tenant',this)">
+    <span class="km">អ្នកជួល</span><span class="en">Tenant</span>
+  </button>
+  <button class="home-tab" onclick="switchTab('receipts',this)">
+    <span class="km">វិក័យប័ត្រ</span><span class="en">Receipts</span>
+    <span class="home-tab-count">{{ receipts|length }}</span>
+  </button>
+  <button class="home-tab" onclick="switchTab('history',this)">
+    <span class="km">ប្រវត្តិ</span><span class="en">History</span>
+    <span class="home-tab-count">{{ history|length }}</span>
+  </button>
+</div>
+
+<!-- Tenant tab -->
+<div id="tab-tenant" class="tab-panel active">
+{% if room.active_tenant %}
+{% set t = room.active_tenant %}
+<div class="m-section">
+  <div class="m-section-header">
+    <span class="fw-bold">{{ t.name }}</span>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('tenants.edit', id=t.id) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-pencil"></i>
+      </a>
+      <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#checkoutModal">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+  <div class="m-section-body">
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">ភេទ</span><span class="en">Gender</span></span>
+      <span class="m-dv">{{ t.gender|title if t.gender else '—' }}</span>
+    </div>
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">ទូរស័ព្ទ</span><span class="en">Tel</span></span>
+      <span class="m-dv">{{ t.tel or '—' }}</span>
+    </div>
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">អត្តសញ្ញាណប័ណ្ណ</span><span class="en">NID</span></span>
+      <span class="m-dv">{{ t.nid or '—' }}</span>
+    </div>
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">ចំនួនអ្នករស់នៅ</span><span class="en">Roommates</span></span>
+      <span class="m-dv">{{ t.num_roommates }}</span>
+    </div>
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">ថ្ងៃចូល</span><span class="en">Move-in</span></span>
+      <span class="m-dv">{{ t.move_in_date.strftime('%d/%m/%Y') if t.move_in_date else '—' }}</span>
+    </div>
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">កិច្ចសន្យា</span><span class="en">Contract</span></span>
+      <span class="m-dv">{{ t.contract_duration|replace('_',' ')|title }}</span>
+    </div>
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">ប្រាក់បញ្ចាំ</span><span class="en">Deposit Paid</span></span>
+      <span class="m-dv fw-bold">{{ t.deposit_paid|khr }}</span>
+    </div>
+    {% if t.emergency_contact_name %}
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">ទំនាក់ទំនងបន្ទាន់</span><span class="en">Emergency</span></span>
+      <span class="m-dv">{{ t.emergency_contact_name }}<br>
+        <small class="text-muted">{{ t.emergency_contact_tel or '' }}</small></span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="m-empty">
+  <div class="m-empty-icon">👤</div>
+  <p><span class="km">គ្មានអ្នកជួល</span><span class="en">No active tenant</span></p>
+  <a href="{{ url_for('tenants.add', room_id=room.id) }}" class="btn btn-success">
+    <i class="bi bi-person-plus me-1"></i>
+    <span class="km">បន្ថែមអ្នកជួល</span><span class="en">Add Tenant</span>
+  </a>
+</div>
+{% endif %}
+</div>
+
+<!-- Receipts tab -->
+<div id="tab-receipts" class="tab-panel">
+  {% for r in receipts %}
+  <a href="{{ url_for('receipts.detail', id=r.id) }}" class="m-card border-{{ r.payment_status }}">
+    <div class="m-card-body">
+      <div class="m-card-title">{{ r.receipt_number }}</div>
+      <div class="m-card-sub">{{ r.billing_label }}</div>
+    </div>
+    <div class="m-card-right">
+      <div class="m-card-amount {{ 'text-danger' if r.remaining_balance > 0 else 'text-success' }}">
+        {{ r.remaining_balance|khr if r.remaining_balance > 0 else r.total_amount|khr }}
+      </div>
+      <div class="mt-1"><span class="badge status-{{ r.payment_status }}">{{ r.payment_status|title }}</span></div>
+    </div>
+    <i class="bi bi-chevron-right m-card-arrow"></i>
+  </a>
+  {% else %}
+  <div class="m-empty"><div class="m-empty-icon">🧾</div>
+    <p><span class="km">គ្មានវិក័យប័ត្រ</span><span class="en">No receipts yet</span></p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- History tab -->
+<div id="tab-history" class="tab-panel">
+  {% for h in history %}
+  <div class="m-section mb-2">
+    <div class="m-section-body">
+      <div class="fw-bold mb-1">{{ h.name }}</div>
+      <div class="m-detail-row">
+        <span class="m-dl"><span class="km">ថ្ងៃចូល</span><span class="en">Move-in</span></span>
+        <span class="m-dv">{{ h.move_in_date.strftime('%d/%m/%Y') if h.move_in_date else '—' }}</span>
+      </div>
+      <div class="m-detail-row">
+        <span class="m-dl"><span class="km">ថ្ងៃចេញ</span><span class="en">Move-out</span></span>
+        <span class="m-dv">{{ h.move_out_date.strftime('%d/%m/%Y') if h.move_out_date else '—' }}</span>
+      </div>
+      <div class="m-detail-row">
+        <span class="m-dl"><span class="km">ប្រាក់បញ្ចាំសង</span><span class="en">Deposit Refunded</span></span>
+        <span class="m-dv">{{ h.deposit_refunded|khr if h.deposit_refunded else '0 ៛' }}</span>
+      </div>
+      {% if h.move_out_reason %}
+      <div class="small text-muted mt-1">{{ h.move_out_reason }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="m-empty"><div class="m-empty-icon">📋</div>
+    <p><span class="km">គ្មានប្រវត្តិ</span><span class="en">No history yet</span></p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Checkout Modal -->
+{% if room.active_tenant %}
+{% set t = room.active_tenant %}
+<div class="modal fade" id="checkoutModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4">
+      <form method="POST" action="{{ url_for('tenants.checkout', id=t.id) }}">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold">
+            <span class="km">ចេញពីបន្ទប់</span><span class="en">Check Out</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="m-label"><span class="km">ថ្ងៃចេញ</span><span class="en">Move-out Date</span> *</label>
+          <input type="date" name="move_out_date" class="m-input mb-3" required value="{{ today.strftime('%Y-%m-%d') }}">
+          <label class="m-label"><span class="km">ប្រាក់បញ្ចាំសងត្រឡប់ (៛)</span><span class="en">Deposit Refunded (៛)</span></label>
+          <input type="number" name="deposit_refunded" class="m-input mb-3" step="1" min="0" value="{{ t.deposit_paid|int }}">
+          <label class="m-label"><span class="km">មូលហេតុចេញ</span><span class="en">Move-out Reason</span></label>
+          <textarea name="move_out_reason" class="m-input" rows="2" style="font-weight:400;resize:none;"></textarea>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <span class="km">បោះបង់</span><span class="en">Cancel</span>
+          </button>
+          <button type="submit" class="btn btn-danger fw-bold">
+            <i class="bi bi-box-arrow-right me-1"></i>
+            <span class="km">បញ្ជាក់ចេញ</span><span class="en">Confirm Check Out</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<style>
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.home-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

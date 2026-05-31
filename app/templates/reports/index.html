@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+  <h4 class="fw-bold mb-0"><span class="km">របាយការណ៍</span><span class="en">Reports</span></h4>
+  <small class="text-muted"><span class="km">របាយការណ៍ & ការវិភាគ</span><span class="en">Reports & Analytics</span></small>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-4">
+    <a href="{{ url_for('reports.revenue') }}" class="card border-0 shadow-sm text-decoration-none h-100">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-cash-stack display-4 text-success mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark"><span class="km">ចំណូលប្រចាំខែ</span><span class="en">Monthly Revenue</span></h5>
+        <p class="text-muted mb-0"><span class="km">រំពឹងទុក vs ប្រមូលបាន</span><span class="en">Expected vs Collected</span></p>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="{{ url_for('reports.overdue') }}" class="card border-0 shadow-sm text-decoration-none h-100">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-exclamation-triangle display-4 text-danger mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark"><span class="km">ការជំពាក់</span><span class="en">Overdue Report</span></h5>
+        <p class="text-muted mb-0"><span class="km">វិក័យប័ត្រមិនទាន់បង់</span><span class="en">Unpaid & Partial Balances</span></p>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="{{ url_for('reports.occupancy') }}" class="card border-0 shadow-sm text-decoration-none h-100">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-building display-4 text-primary mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark"><span class="km">ការប្រើប្រាស់បន្ទប់</span><span class="en">Occupancy Report</span></h5>
+        <p class="text-muted mb-0"><span class="km">បន្ទប់ vs ទំនេរ</span><span class="en">Occupied vs Vacant</span></p>
+      </div>
+    </a>
+  </div>
+</div>
+{% endblock %}

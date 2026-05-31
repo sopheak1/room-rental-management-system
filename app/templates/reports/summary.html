@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}សង្ខេបប្រចាំខែ{% else %}Monthly Summary{% endif %}{% endblock %}
+
+{% block head %}
+<style>
+.summary-header {
+  background: linear-gradient(135deg,#1e3a5f,#1d4ed8);
+  color:#fff;
+  padding:16px;
+  margin:-12px -12px 0;
+}
+.summary-month-label { font-size:0.85rem; opacity:.75; margin-bottom:4px; }
+.summary-title { font-size:1.3rem; font-weight:800; margin-bottom:14px; }
+
+/* Month scroller */
+.month-scroller {
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding-bottom:4px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.month-scroller::-webkit-scrollbar { display:none; }
+.month-chip {
+  flex-shrink:0;
+  padding:5px 13px;
+  border-radius:20px;
+  font-size:0.8rem;
+  font-weight:600;
+  background:rgba(255,255,255,.15);
+  color:#fff;
+  text-decoration:none;
+  white-space:nowrap;
+  border:2px solid transparent;
+}
+.month-chip.active {
+  background:#fff;
+  color:#1d4ed8;
+}
+
+/* Stat bar */
+.stat-bar {
+  display:flex;
+  gap:8px;
+  margin-top:14px;
+  padding:12px;
+  background:rgba(255,255,255,.1);
+  border-radius:12px;
+}
+.stat-bar-item { flex:1; text-align:center; }
+.stat-bar-item .n { font-size:1.2rem; font-weight:800; }
+.stat-bar-item .l { font-size:0.68rem; opacity:.8; }
+
+/* Progress bar */
+.collect-bar {
+  height:8px;
+  background:rgba(255,255,255,.2);
+  border-radius:4px;
+  margin-top:12px;
+  overflow:hidden;
+}
+.collect-fill {
+  height:100%;
+  background:#4ade80;
+  border-radius:4px;
+  transition:width .4s;
+}
+.collect-label {
+  display:flex;
+  justify-content:space-between;
+  font-size:0.75rem;
+  opacity:.8;
+  margin-top:4px;
+}
+
+/* Status group header */
+.status-group-header {
+  font-size:0.75rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  color:#94a3b8;
+  padding:8px 4px 4px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Header with month selector ── -->
+<div class="summary-header">
+  <div class="summary-month-label">
+    <span class="km">របាយការណ៍សង្ខេប</span><span class="en">Monthly Summary</span>
+  </div>
+  <div class="summary-title">
+    <span class="km">{{ KM_MONTHS[month-1] }} {{ year }}</span>
+    <span class="en">{{ MONTH_NAMES[month-1] }} {{ year }}</span>
+  </div>
+
+  <!-- Month chips -->
+  <div class="month-scroller">
+    {% for i in range(1,13) %}
+    <a href="{{ url_for('reports.summary', month=i, year=year) }}"
+       class="month-chip {{ 'active' if month==i }}">
+      {{ MONTH_NAMES[i-1] }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Year prev/next -->
+  <div class="d-flex justify-content-between align-items-center mt-2">
+    <a href="{{ url_for('reports.summary', month=month, year=year-1) }}"
+       style="color:rgba(255,255,255,.7);text-decoration:none;font-size:0.85rem;">
+      ← {{ year-1 }}
+    </a>
+    <span style="font-size:0.85rem;font-weight:700;">{{ year }}</span>
+    <a href="{{ url_for('reports.summary', month=month, year=year+1) }}"
+       style="color:rgba(255,255,255,.7);text-decoration:none;font-size:0.85rem;">
+      {{ year+1 }} →
+    </a>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stat-bar">
+    <div class="stat-bar-item">
+      <div class="n">{{ receipts|length }}</div>
+      <div class="l"><span class="km">វិក័យប័ត្រ</span><span class="en">Receipts</span></div>
+    </div>
+    <div class="stat-bar-item">
+      <div class="n text-success">{{ by_status.paid|length }}</div>
+      <div class="l"><span class="km">បានបង់</span><span class="en">Paid</span></div>
+    </div>
+    <div class="stat-bar-item">
+      <div class="n" style="color:#fbbf24;">{{ (by_status.partial|length + by_status.unpaid|length) }}</div>
+      <div class="l"><span class="km">នៅជំពាក់</span><span class="en">Pending</span></div>
+    </div>
+    <div class="stat-bar-item">
+      <div class="n" style="color:#94a3b8;">{{ by_status.deferred|length }}</div>
+      <div class="l"><span class="km">ពន្យារ</span><span class="en">Deferred</span></div>
+    </div>
+  </div>
+
+  <!-- Collection progress -->
+  <div class="collect-bar">
+    <div class="collect-fill" style="width:{{ collection_rate }}%;"></div>
+  </div>
+  <div class="collect-label">
+    <span>{{ total_collected|khr }} <span class="km">ប្រមូលបាន</span><span class="en">collected</span></span>
+    <span style="color:#4ade80;font-weight:700;">{{ collection_rate }}%</span>
+  </div>
+</div>
+
+<!-- ── Financial summary cards ── -->
+<div class="m-row mt-3 mb-2">
+  <div class="m-section" style="margin-bottom:0;">
+    <div class="m-section-body" style="text-align:center;padding:14px 10px;">
+      <div class="small text-muted mb-1"><span class="km">រំពឹងទុក</span><span class="en">Expected</span></div>
+      <div style="font-size:1.1rem;font-weight:800;">{{ total_expected|khr }}</div>
+    </div>
+  </div>
+  <div class="m-section" style="margin-bottom:0;">
+    <div class="m-section-body" style="text-align:center;padding:14px 10px;">
+      <div class="small text-muted mb-1"><span class="km">នៅជំពាក់</span><span class="en">Outstanding</span></div>
+      <div style="font-size:1.1rem;font-weight:800;color:{{ '#dc2626' if total_outstanding > 0 else '#16a34a' }};">{{ total_outstanding|khr }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Receipt list grouped by status ── -->
+{% if receipts %}
+
+{% if by_status.unpaid or by_status.partial %}
+<div class="status-group-header">
+  ⚠️ <span class="km">មិនទាន់បង់</span><span class="en">Not Yet Paid</span>
+  ({{ (by_status.unpaid|length) + (by_status.partial|length) }})
+</div>
+{% for r in by_status.partial + by_status.unpaid %}
+<a href="{{ url_for('receipts.detail', id=r.id) }}" class="m-card border-{{ r.payment_status }}">
+  <div class="m-card-body">
+    <div class="m-card-title">
+      <span class="km">បន្ទប់</span><span class="en">Room</span> {{ r.room.room_number }}
+    </div>
+    <div class="m-card-sub">{{ r.room.building.name }}</div>
+    <div class="m-card-meta">{{ r.tenant.name if r.tenant else '—' }}</div>
+  </div>
+  <div class="m-card-right">
+    <div class="m-card-amount text-danger">{{ r.remaining_balance|khr }}</div>
+    <div class="mt-1"><span class="badge status-{{ r.payment_status }}">{{ r.payment_status|title }}</span></div>
+  </div>
+  <i class="bi bi-chevron-right m-card-arrow"></i>
+</a>
+{% endfor %}
+{% endif %}
+
+{% if by_status.paid %}
+<div class="status-group-header">
+  ✅ <span class="km">បានបង់</span><span class="en">Paid</span> ({{ by_status.paid|length }})
+</div>
+{% for r in by_status.paid %}
+<a href="{{ url_for('receipts.detail', id=r.id) }}" class="m-card border-paid">
+  <div class="m-card-body">
+    <div class="m-card-title">
+      <span class="km">បន្ទប់</span><span class="en">Room</span> {{ r.room.room_number }}
+    </div>
+    <div class="m-card-sub">{{ r.room.building.name }}</div>
+    <div class="m-card-meta">{{ r.tenant.name if r.tenant else '—' }}</div>
+  </div>
+  <div class="m-card-right">
+    <div class="m-card-amount text-success">{{ r.paid_amount|khr }}</div>
+    <div class="mt-1">
+      {% if r.payment_date %}
+      <span class="small text-muted">{{ r.payment_date.strftime('%d/%m') }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <i class="bi bi-chevron-right m-card-arrow"></i>
+</a>
+{% endfor %}
+{% endif %}
+
+{% if by_status.deferred %}
+<div class="status-group-header">
+  ↩️ <span class="km">ពន្យារ</span><span class="en">Deferred</span> ({{ by_status.deferred|length }})
+</div>
+{% for r in by_status.deferred %}
+<a href="{{ url_for('receipts.detail', id=r.id) }}" class="m-card border-deferred">
+  <div class="m-card-body">
+    <div class="m-card-title">
+      <span class="km">បន្ទប់</span><span class="en">Room</span> {{ r.room.room_number }}
+    </div>
+    <div class="m-card-sub">{{ r.room.building.name }}</div>
+    <div class="m-card-meta">{{ r.tenant.name if r.tenant else '—' }}</div>
+  </div>
+  <div class="m-card-right">
+    <div class="m-card-amount text-muted">{{ r.remaining_balance|khr }}</div>
+    <div class="mt-1"><span class="badge status-deferred">↩ Deferred</span></div>
+  </div>
+  <i class="bi bi-chevron-right m-card-arrow"></i>
+</a>
+{% endfor %}
+{% endif %}
+
+{% else %}
+<div class="m-empty" style="margin-top:20px;">
+  <div class="m-empty-icon">📊</div>
+  <p>
+    <span class="km">គ្មានវិក័យប័ត្រសម្រាប់ {{ KM_MONTHS[month-1] }} {{ year }}</span>
+    <span class="en">No receipts for {{ MONTH_NAMES[month-1] }} {{ year }}</span>
+  </p>
+  <a href="{{ url_for('receipts.generate') }}" class="btn btn-primary">
+    <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

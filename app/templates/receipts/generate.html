@@ -1,0 +1,700 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}បង្កើតវិក័យប័ត្រ{% else %}Generate Receipt{% endif %}{% endblock %}
+
+{% block head %}
+<style>
+/* ── Mobile generate form ──────────── */
+.gen-section {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.gen-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.gen-section-header .chevron {
+  transition: transform 0.2s;
+  color: #94a3b8;
+}
+.gen-section-header.collapsed .chevron { transform: rotate(-90deg); }
+.gen-section-body { padding: 0 16px 16px; }
+.gen-section-body.collapsed { display: none; }
+
+.gen-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 5px;
+  margin-top: 12px;
+  display: block;
+}
+.gen-input {
+  width: 100%;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  transition: border-color 0.15s;
+}
+.gen-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #fff;
+}
+.gen-input.khr::before { content: ''; }
+.gen-input-group {
+  display: flex;
+  align-items: center;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.gen-input-group:focus-within { border-color: #3b82f6; background: #fff; }
+.gen-input-group .prefix {
+  padding: 0 12px;
+  font-weight: 700;
+  color: #64748b;
+  font-size: 1rem;
+  background: transparent;
+  white-space: nowrap;
+}
+.gen-input-group input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 12px 14px 12px 0;
+}
+.gen-input-group input:focus { outline: none; }
+
+.gen-row { display: flex; gap: 10px; }
+.gen-row > div { flex: 1; }
+
+.gen-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* ── Totals sticky bar ──────────────── */
+.totals-bar {
+  position: sticky;
+  bottom: 0;
+  background: #1e293b;
+  color: #fff;
+  padding: 12px 16px;
+  margin: 0 -12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+}
+.totals-bar .total-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+.totals-bar .total-amount {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+}
+.totals-bar .btn-generate {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* Info box */
+.info-box {
+  background: #f0f9ff;
+  border-left: 3px solid #0ea5e9;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: #0369a1;
+  margin-bottom: 4px;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.warn-msg {
+  font-size: 0.75rem;
+  color: #d97706;
+  margin-top: 4px;
+  display: none;
+}
+.warn-msg.show { display: block; }
+
+/* Subtotal row */
+.subtotal-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+}
+.subtotal-row strong { color: #1e293b; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="mb-3">
+  <a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted small">
+    <i class="bi bi-arrow-left me-1"></i>
+    <span class="km">ត្រឡប់</span><span class="en">Back</span>
+  </a>
+  <h5 class="fw-bold mt-1 mb-0">
+    <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
+  </h5>
+</div>
+
+<form method="POST" id="receiptForm">
+
+<!-- ── 1. Room & Month ─────────────────── -->
+<div class="gen-section">
+  <div class="gen-section-header" onclick="toggleSection(this)">
+    <span><i class="bi bi-door-closed text-primary me-2"></i>
+      <span class="km">បន្ទប់ & ខែ</span><span class="en">Room & Month</span>
+    </span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="gen-section-body">
+    <span class="gen-label"><span class="km">បន្ទប់</span><span class="en">Room</span> *</span>
+    <select name="room_id" id="room_id" class="gen-input" required
+            onchange="loadRoom(this.value)" style="font-size:1rem;">
+      <option value="">— {% if lang=='km'%}ជ្រើសបន្ទប់{% else %}Select Room{% endif %} —</option>
+      {% for r in rooms %}
+      <option value="{{ r.id }}" {{ 'selected' if selected_room and selected_room.id == r.id }}>
+        {{ r.room_number }} — {{ r.building.name }}
+        {% if r.active_tenant %}· {{ r.active_tenant.name }}{% endif %}
+      </option>
+      {% endfor %}
+    </select>
+
+    <div class="gen-row">
+      <div>
+        <span class="gen-label"><span class="km">ខែ</span><span class="en">Month</span> *</span>
+        <select name="billing_month" class="gen-input" required style="font-size:1rem;">
+          {% for i in range(1,13) %}
+          <option value="{{ i }}" {{ 'selected' if billing_month == i }}>
+            {{ ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i-1] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <span class="gen-label"><span class="km">ឆ្នាំ</span><span class="en">Year</span> *</span>
+        <input type="number" name="billing_year" class="gen-input"
+               value="{{ billing_year }}" required>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Room Price hidden -->
+<input type="hidden" id="room_price" value="{{ selected_room.price if selected_room else 0 }}">
+
+<!-- ── 2. Room Info (collapsed by default) ── -->
+{% if selected_room %}
+<div class="gen-section">
+  <div class="gen-section-header collapsed" onclick="toggleSection(this)">
+    <span><i class="bi bi-info-circle text-info me-2"></i>
+      <span class="km">ព័ត៌មានបន្ទប់</span><span class="en">Room Info</span>
+    </span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="gen-section-body collapsed">
+    <div class="info-box">
+      <div class="info-row">
+        <span><span class="km">អ្នកជួល</span><span class="en">Tenant</span></span>
+        <strong>{{ selected_room.active_tenant.name if selected_room.active_tenant else '—' }}</strong>
+      </div>
+      <div class="info-row">
+        <span><span class="km">ថ្លៃបន្ទប់</span><span class="en">Room Price</span></span>
+        <strong>{{ selected_room.price|khr }}/{% if lang=='km'%}ខែ{% else %}month{% endif %}</strong>
+      </div>
+      {% if prev_receipt %}
+      <div class="info-row">
+        <span>⚡ <span class="km">អគ្គិសនីមុន</span><span class="en">Prev. Elec</span></span>
+        <strong>{{ prev_receipt.electricity_to|int if prev_receipt.electricity_to is not none else '—' }} kWh</strong>
+      </div>
+      <div class="info-row">
+        <span>💧 <span class="km">ទឹកមុន</span><span class="en">Prev. Water</span></span>
+        <strong>{{ prev_receipt.water_to|int if prev_receipt.water_to is not none else '—' }} m³</strong>
+      </div>
+      <div class="info-row">
+        <span>💰 <span class="km">សមតុល្យចាស់</span><span class="en">Due Balance</span></span>
+        <strong class="{{ 'text-danger' if prev_receipt.remaining_balance > 0 else '' }}">
+          {{ prev_receipt.remaining_balance|khr }}
+        </strong>
+      </div>
+      {% endif %}
+    </div>
+    {% if prev_receipt %}
+    <div class="text-end mt-2">
+      <a href="{{ url_for('receipts.detail', id=prev_receipt.id) }}"
+         target="_blank" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-receipt me-1"></i>
+        <span class="km">មើលវិក័យប័ត្រមុន</span><span class="en">View Previous Receipt</span>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── 3. Electricity ──────────────────── -->
+<div class="gen-section">
+  <div class="gen-section-header" onclick="toggleSection(this)">
+    <span><i class="bi bi-lightning-charge-fill text-warning me-2"></i>
+      <span class="km">អគ្គិសនី</span><span class="en">Electricity</span>
+    </span>
+    <div class="d-flex align-items-center gap-3">
+      <div class="gen-toggle" onclick="event.stopPropagation()">
+        <span style="font-size:0.75rem;font-weight:400;">
+          <span class="km">បញ្ចូលផ្ទាល់</span><span class="en">Direct</span>
+        </span>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="electricity_override"
+                 name="electricity_override" checked
+                 onchange="toggleOverride('electricity')">
+        </div>
+      </div>
+      <i class="bi bi-chevron-down chevron"></i>
+    </div>
+  </div>
+  <div class="gen-section-body">
+    <!-- Direct input mode (default) -->
+    <div id="electricity_override_field">
+      <span class="gen-label">
+        <span class="km">ចំនួនអគ្គិសនី (៛)</span><span class="en">Electricity Amount (៛)</span>
+      </span>
+      <div class="gen-input-group">
+        <span class="prefix">៛</span>
+        <input type="text" id="electricity_override_display" inputmode="numeric"
+               placeholder="0" oninput="onMoneyInput(this,'electricity_total_override');calcTotal()">
+        <input type="hidden" name="electricity_total_override" id="electricity_total_override" value="0">
+      </div>
+    </div>
+    <!-- Meter mode -->
+    <div id="electricity_meter_fields" style="display:none;">
+      <div class="gen-row">
+        <div>
+          <span class="gen-label">
+            <span class="km">ចាប់ពី (មុន)</span><span class="en">From</span>
+          </span>
+          <input type="number" name="electricity_from" id="electricity_from"
+                 class="gen-input" step="0.01" min="0"
+                 value="{{ prev_receipt.electricity_to if prev_receipt and prev_receipt.electricity_to is not none else '' }}"
+                 data-original="{{ prev_receipt.electricity_to if prev_receipt and prev_receipt.electricity_to is not none else '' }}"
+                 oninput="calcElectricity(); warnIfChanged(this,'w_elec_from')">
+          <div id="w_elec_from" class="warn-msg">⚠ <span class="km">មកពីវិក័យប័ត្រមុន</span><span class="en">From previous receipt</span></div>
+        </div>
+        <div>
+          <span class="gen-label">
+            <span class="km">ដល់ (ថ្មី)</span><span class="en">To</span>
+          </span>
+          <input type="number" name="electricity_to" id="electricity_to"
+                 class="gen-input" step="0.01" min="0" oninput="calcElectricity()">
+        </div>
+      </div>
+      <div class="gen-row">
+        <div>
+          <span class="gen-label"><span class="km">យូនីត</span><span class="en">Units</span></span>
+          <input type="number" id="electricity_units_display" class="gen-input" readonly
+                 style="background:#f1f5f9;color:#64748b;">
+        </div>
+        <div>
+          <span class="gen-label">
+            <span class="km">តម្លៃ/យូនីត (៛)</span><span class="en">Price/Unit (៛)</span>
+          </span>
+          <input type="number" name="electricity_price_per_unit" id="electricity_price_per_unit"
+                 class="gen-input" step="1" min="0"
+                 value="{{ electricity_price.price_per_unit if electricity_price else '' }}"
+                 data-original="{{ electricity_price.price_per_unit if electricity_price else '' }}"
+                 oninput="calcElectricity(); warnIfChanged(this,'w_elec_ppu')">
+          <div id="w_elec_ppu" class="warn-msg">⚠ <span class="km">មកពីតម្លៃប្រើប្រាស់</span><span class="en">From utility price</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="subtotal-row">
+      <span><span class="km">សរុបរង</span><span class="en">Subtotal</span></span>
+      <strong id="electricity_total_display">0 ៛</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ── 4. Water ────────────────────────── -->
+<div class="gen-section">
+  <div class="gen-section-header" onclick="toggleSection(this)">
+    <span><i class="bi bi-droplet-fill text-info me-2"></i>
+      <span class="km">ទឹក</span><span class="en">Water</span>
+    </span>
+    <div class="d-flex align-items-center gap-3">
+      <div class="gen-toggle" onclick="event.stopPropagation()">
+        <span style="font-size:0.75rem;font-weight:400;">
+          <span class="km">បញ្ចូលផ្ទាល់</span><span class="en">Direct</span>
+        </span>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="water_override"
+                 name="water_override"
+                 onchange="toggleOverride('water')">
+        </div>
+      </div>
+      <i class="bi bi-chevron-down chevron"></i>
+    </div>
+  </div>
+  <div class="gen-section-body">
+    <!-- Direct input (hidden by default for water) -->
+    <div id="water_override_field" style="display:none;">
+      <span class="gen-label">
+        <span class="km">ចំនួនទឹក (៛)</span><span class="en">Water Amount (៛)</span>
+      </span>
+      <div class="gen-input-group">
+        <span class="prefix">៛</span>
+        <input type="text" id="water_override_display" inputmode="numeric"
+               placeholder="0" oninput="onMoneyInput(this,'water_total_override');calcTotal()">
+        <input type="hidden" name="water_total_override" id="water_total_override" value="0">
+      </div>
+    </div>
+    <!-- Meter mode (default for water) -->
+    <div id="water_meter_fields">
+      <div class="gen-row">
+        <div>
+          <span class="gen-label">
+            <span class="km">ចាប់ពី (មុន)</span><span class="en">From</span>
+          </span>
+          <input type="number" name="water_from" id="water_from"
+                 class="gen-input" step="0.01" min="0"
+                 value="{{ prev_receipt.water_to if prev_receipt and prev_receipt.water_to is not none else '' }}"
+                 data-original="{{ prev_receipt.water_to if prev_receipt and prev_receipt.water_to is not none else '' }}"
+                 oninput="calcWater(); warnIfChanged(this,'w_water_from')">
+          <div id="w_water_from" class="warn-msg">⚠ <span class="km">មកពីវិក័យប័ត្រមុន</span><span class="en">From previous receipt</span></div>
+        </div>
+        <div>
+          <span class="gen-label">
+            <span class="km">ដល់ (ថ្មី)</span><span class="en">To</span>
+          </span>
+          <input type="number" name="water_to" id="water_to"
+                 class="gen-input" step="0.01" min="0" oninput="calcWater()">
+        </div>
+      </div>
+      <div class="gen-row">
+        <div>
+          <span class="gen-label"><span class="km">យូនីត</span><span class="en">Units (m³)</span></span>
+          <input type="number" id="water_units_display" class="gen-input" readonly
+                 style="background:#f1f5f9;color:#64748b;">
+        </div>
+        <div>
+          <span class="gen-label">
+            <span class="km">តម្លៃ/យូនីត (៛)</span><span class="en">Price/Unit (៛)</span>
+          </span>
+          <input type="number" name="water_price_per_unit" id="water_price_per_unit"
+                 class="gen-input" step="1" min="0"
+                 value="{{ water_price.price_per_unit if water_price else '' }}"
+                 data-original="{{ water_price.price_per_unit if water_price else '' }}"
+                 oninput="calcWater(); warnIfChanged(this,'w_water_ppu')">
+          <div id="w_water_ppu" class="warn-msg">⚠ <span class="km">មកពីតម្លៃប្រើប្រាស់</span><span class="en">From utility price</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="subtotal-row">
+      <span><span class="km">សរុបរង</span><span class="en">Subtotal</span></span>
+      <strong id="water_total_display">0 ៛</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ── 5. Due Balance ──────────────────── -->
+<div class="gen-section">
+  <div class="gen-section-header" onclick="toggleSection(this)">
+    <span><i class="bi bi-clock-history text-danger me-2"></i>
+      <span class="km">សមតុល្យចាស់</span><span class="en">Due Balance</span>
+    </span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="gen-section-body">
+    <span class="gen-label">
+      <span class="km">ចំនួន (៛)</span><span class="en">Amount (៛)</span>
+    </span>
+    <div class="gen-input-group">
+      <span class="prefix">៛</span>
+      <input type="text" id="previous_balance_display" inputmode="numeric"
+             value="{{ '{:,}'.format(prev_receipt.remaining_balance|int) if prev_receipt else '0' }}"
+             oninput="onMoneyInput(this,'previous_balance');calcTotal()">
+      <input type="hidden" name="previous_balance" id="previous_balance"
+             value="{{ prev_receipt.remaining_balance|int if prev_receipt else 0 }}">
+    </div>
+  </div>
+</div>
+
+<!-- ── 6. Late Fee & Discount (hidden) ─── -->
+<div class="gen-section">
+  <div class="gen-section-header collapsed" onclick="toggleSection(this)">
+    <span><i class="bi bi-sliders text-secondary me-2"></i>
+      <span class="km">ពិន័យ & បញ្ចុះ</span><span class="en">Late Fee & Discount</span>
+      <small class="text-muted fw-normal ms-1">({% if lang=='km'%}ជាធម្មតាមិនចាំបាច់{% else %}optional{% endif %})</small>
+    </span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="gen-section-body collapsed">
+    <span class="gen-label">
+      <span class="km">ពិន័យ (៛)</span><span class="en">Late Fee (៛)</span>
+    </span>
+    <div class="gen-input-group">
+      <span class="prefix">៛</span>
+      <input type="text" id="late_fee_display" inputmode="numeric" value="0"
+             oninput="onMoneyInput(this,'late_fee');calcTotal()">
+      <input type="hidden" name="late_fee" id="late_fee" value="0">
+    </div>
+    <span class="gen-label">
+      <span class="km">បញ្ចុះ (៛)</span><span class="en">Discount (៛)</span>
+    </span>
+    <div class="gen-input-group">
+      <span class="prefix">៛</span>
+      <input type="text" id="discount_display" inputmode="numeric" value="0"
+             oninput="onMoneyInput(this,'discount');calcTotal()">
+      <input type="hidden" name="discount" id="discount" value="0">
+    </div>
+    <span class="gen-label">
+      <span class="km">កំណត់ចំណាំ</span><span class="en">Notes</span>
+    </span>
+    <textarea name="notes" class="gen-input" rows="2"
+              style="font-size:0.95rem;font-weight:400;resize:none;"></textarea>
+  </div>
+</div>
+
+<!-- ── 7. Payment ─────────────────────── -->
+<div class="gen-section">
+  <div class="gen-section-header" onclick="toggleSection(this)">
+    <span><i class="bi bi-cash-stack text-success me-2"></i>
+      <span class="km">ការទូទាត់</span><span class="en">Payment</span>
+    </span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="gen-section-body">
+    <span class="gen-label"><span class="km">ស្ថានភាព</span><span class="en">Status</span></span>
+    <select name="payment_status" id="payment_status" class="gen-input"
+            onchange="handleStatusChange(this.value)" style="font-size:1rem;">
+      <option value="unpaid">{% if lang=='km'%}មិនទាន់បង់{% else %}Unpaid{% endif %}</option>
+      <option value="partial">{% if lang=='km'%}បង់មួយផ្នែក{% else %}Partial{% endif %}</option>
+      <option value="paid">{% if lang=='km'%}បានបង់ទាំងស្រុង{% else %}Paid in Full{% endif %}</option>
+    </select>
+
+    <div id="paid_amount_group" style="display:none;">
+      <span class="gen-label">
+        <span class="km">ចំនួនបង់ (៛)</span><span class="en">Paid Amount (៛)</span>
+      </span>
+      <div class="gen-input-group">
+        <span class="prefix">៛</span>
+        <input type="text" id="paid_amount_display" inputmode="numeric"
+               placeholder="0" oninput="onMoneyInput(this,'paid_amount');calcRemaining()">
+        <input type="hidden" name="paid_amount" id="paid_amount" value="0">
+      </div>
+    </div>
+
+    <div id="payment_extra" style="display:none;">
+      <span class="gen-label"><span class="km">វិធីទូទាត់</span><span class="en">Method</span></span>
+      <select name="payment_method" class="gen-input" style="font-size:1rem;">
+        <option value="">— {% if lang=='km'%}ជ្រើស{% else %}Select{% endif %} —</option>
+        <option value="cash">{% if lang=='km'%}សាច់ប្រាក់{% else %}Cash{% endif %}</option>
+        <option value="bank_transfer">{% if lang=='km'%}ផ្ទេរធនាគារ{% else %}Bank Transfer{% endif %}</option>
+        <option value="qr">QR Code</option>
+      </select>
+      <span class="gen-label"><span class="km">ថ្ងៃទូទាត់</span><span class="en">Date</span></span>
+      <input type="date" name="payment_date" class="gen-input"
+             value="{{ today.strftime('%Y-%m-%d') }}">
+    </div>
+  </div>
+</div>
+
+<!-- Hidden paid_amount_hidden for unpaid/paid full -->
+<input type="hidden" id="paid_amount_hidden" name="paid_amount">
+
+<!-- ── Sticky total + generate ────────── -->
+<div class="totals-bar">
+  <div>
+    <div class="total-label"><span class="km">សរុប</span><span class="en">TOTAL</span></div>
+    <div class="total-amount" id="s_total">0 ៛</div>
+    <div id="s_remaining_row" style="display:none;font-size:0.75rem;color:#fbbf24;">
+      <span class="km">នៅជំពាក់:</span><span class="en">Remaining:</span>
+      <span id="s_remaining">0 ៛</span>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary btn-generate">
+    <i class="bi bi-receipt me-1"></i>
+    <span class="km">បង្កើត</span><span class="en">Generate</span>
+  </button>
+</div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const roomPrices = {
+  {% for r in rooms %}"{{ r.id }}": {{ r.price }},{% endfor %}
+};
+
+// ── Section toggle ──────────────────────
+function toggleSection(header) {
+  header.classList.toggle('collapsed');
+  const body = header.nextElementSibling;
+  body.classList.toggle('collapsed');
+}
+
+// ── Number formatting ───────────────────
+function formatKhr(n) {
+  return Math.round(n).toLocaleString('en-US') + ' ៛';
+}
+function parseKhr(s) {
+  return parseFloat(String(s).replace(/[^0-9.]/g, '')) || 0;
+}
+function onMoneyInput(displayEl, hiddenId) {
+  const raw = displayEl.value.replace(/[^0-9]/g, '');
+  const num = parseInt(raw || '0', 10);
+  displayEl.value = num === 0 ? '' : num.toLocaleString('en-US');
+  document.getElementById(hiddenId).value = num;
+}
+
+// ── Room load ───────────────────────────
+function loadRoom(id) {
+  const price = roomPrices[id] || 0;
+  document.getElementById('room_price').value = price;
+  calcTotal();
+  if (id) {
+    const month = document.querySelector('select[name="billing_month"]').value;
+    const year  = document.querySelector('input[name="billing_year"]').value;
+    window.location.href = '/receipts/generate?room_id=' + id +
+                           '&billing_month=' + month + '&billing_year=' + year;
+  }
+}
+
+// ── Override toggle ─────────────────────
+function toggleOverride(type) {
+  const ov = document.getElementById(type + '_override').checked;
+  document.getElementById(type + '_meter_fields').style.display = ov ? 'none' : 'block';
+  document.getElementById(type + '_override_field').style.display = ov ? 'block' : 'none';
+  calcTotal();
+}
+
+// ── Warn if changed ─────────────────────
+function warnIfChanged(input, warningId) {
+  const warn = document.getElementById(warningId);
+  if (!warn) return;
+  const original = input.dataset.original;
+  if (original !== '' && input.value !== original) {
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
+}
+
+// ── Calculations ────────────────────────
+function getElecTotal() {
+  if (document.getElementById('electricity_override').checked) {
+    return parseFloat(document.getElementById('electricity_total_override').value) || 0;
+  }
+  const from = parseFloat(document.getElementById('electricity_from').value) || 0;
+  const to   = parseFloat(document.getElementById('electricity_to').value) || 0;
+  const ppu  = parseFloat(document.getElementById('electricity_price_per_unit').value) || 0;
+  return Math.max(to - from, 0) * ppu;
+}
+
+function getWaterTotal() {
+  if (document.getElementById('water_override').checked) {
+    return parseFloat(document.getElementById('water_total_override').value) || 0;
+  }
+  const from = parseFloat(document.getElementById('water_from').value) || 0;
+  const to   = parseFloat(document.getElementById('water_to').value) || 0;
+  const ppu  = parseFloat(document.getElementById('water_price_per_unit').value) || 0;
+  return Math.max(to - from, 0) * ppu;
+}
+
+function calcElectricity() {
+  const from = parseFloat(document.getElementById('electricity_from').value) || 0;
+  const to   = parseFloat(document.getElementById('electricity_to').value) || 0;
+  const ppu  = parseFloat(document.getElementById('electricity_price_per_unit').value) || 0;
+  const units = Math.max(to - from, 0);
+  document.getElementById('electricity_units_display').value = units.toFixed(2);
+  document.getElementById('electricity_total_display').textContent = formatKhr(units * ppu);
+  calcTotal();
+}
+
+function calcWater() {
+  const from = parseFloat(document.getElementById('water_from').value) || 0;
+  const to   = parseFloat(document.getElementById('water_to').value) || 0;
+  const ppu  = parseFloat(document.getElementById('water_price_per_unit').value) || 0;
+  const units = Math.max(to - from, 0);
+  document.getElementById('water_units_display').value = units.toFixed(2);
+  document.getElementById('water_total_display').textContent = formatKhr(units * ppu);
+  calcTotal();
+}
+
+function calcTotal() {
+  const room    = parseFloat(document.getElementById('room_price').value) || 0;
+  const elec    = getElecTotal();
+  const water   = getWaterTotal();
+  const balance = parseFloat(document.getElementById('previous_balance').value) || 0;
+  const late    = parseFloat(document.getElementById('late_fee').value) || 0;
+  const disc    = parseFloat(document.getElementById('discount').value) || 0;
+  const total   = room + elec + water + balance + late - disc;
+  document.getElementById('s_total').textContent = formatKhr(total);
+  document.getElementById('electricity_total_display').textContent = formatKhr(elec);
+  document.getElementById('water_total_display').textContent = formatKhr(water);
+  document.getElementById('paid_amount_hidden').value = Math.round(total);
+  calcRemaining();
+}
+
+function calcRemaining() {
+  const total  = parseKhr(document.getElementById('s_total').textContent);
+  const status = document.getElementById('payment_status').value;
+  let paid = 0;
+  if (status === 'paid') paid = total;
+  else if (status === 'partial') paid = parseFloat(document.getElementById('paid_amount').value) || 0;
+  const rem = Math.max(total - paid, 0);
+  const remRow = document.getElementById('s_remaining_row');
+  document.getElementById('s_remaining').textContent = formatKhr(rem);
+  remRow.style.display = status === 'partial' ? 'block' : 'none';
+  document.getElementById('paid_amount_hidden').value = Math.round(paid);
+}
+
+function handleStatusChange(val) {
+  document.getElementById('paid_amount_group').style.display = val === 'partial' ? 'block' : 'none';
+  document.getElementById('payment_extra').style.display = (val !== 'unpaid') ? 'block' : 'none';
+  calcRemaining();
+}
+
+// ── Init ────────────────────────────────
+calcTotal();
+// Init electricity override display
+toggleOverride('electricity');
+toggleOverride('water');
+// Restore water override toggle state
+document.getElementById('water_override').checked = false;
+toggleOverride('water');
+</script>
+{% endblock %}

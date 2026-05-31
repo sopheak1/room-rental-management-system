@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}វិក័យប័ត្រ{% else %}Receipts{% endif %}{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="m-page-title mb-0">
+    <span class="km">វិក័យប័ត្រ</span><span class="en">Receipts</span>
+  </h5>
+  <a href="{{ url_for('receipts.generate') }}" class="btn btn-primary btn-sm fw-bold">
+    <i class="bi bi-plus-lg me-1"></i>
+    <span class="km">បង្កើត</span><span class="en">Generate</span>
+  </a>
+</div>
+
+<!-- Scrollable filter chips -->
+<form method="GET" id="filterForm">
+<div class="m-filter-bar">
+  <select name="month" class="m-filter-chip" onchange="this.form.submit()" style="padding:7px 10px;">
+    {% for i in range(1, 13) %}
+    <option value="{{ i }}" {{ 'selected' if month == i }}>{{ month_names[i-1] }}</option>
+    {% endfor %}
+  </select>
+  <input type="number" name="year" class="m-filter-chip" value="{{ year }}"
+         style="width:70px;text-align:center;" onchange="this.form.submit()">
+  <a href="{{ url_for('receipts.list', status='unpaid',  month=month, year=year) }}"
+     class="m-filter-chip {{ 'active' if selected_status=='unpaid' }}">
+    <span class="km">មិនទាន់</span><span class="en">Unpaid</span>
+  </a>
+  <a href="{{ url_for('receipts.list', status='partial', month=month, year=year) }}"
+     class="m-filter-chip {{ 'active' if selected_status=='partial' }}">
+    <span class="km">មួយផ្នែក</span><span class="en">Partial</span>
+  </a>
+  <a href="{{ url_for('receipts.list', status='paid',    month=month, year=year) }}"
+     class="m-filter-chip {{ 'active' if selected_status=='paid' }}">
+    <span class="km">បានបង់</span><span class="en">Paid</span>
+  </a>
+  {% if selected_status %}
+  <a href="{{ url_for('receipts.list', month=month, year=year) }}" class="m-filter-chip">✕</a>
+  {% endif %}
+</div>
+</form>
+
+{% if overdue %}
+<div class="mb-3 px-3 py-2 rounded-3 small fw-semibold"
+     style="background:#f8d7da;color:#58151c;">
+  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+  {{ overdue|length }}
+  <span class="km">វិក័យប័ត្រហួសកំណត់!</span><span class="en">overdue receipts!</span>
+  <a href="{{ url_for('reports.overdue') }}" class="ms-2 fw-bold" style="color:#58151c;">
+    <span class="km">មើល →</span><span class="en">View →</span>
+  </a>
+</div>
+{% endif %}
+
+<div class="small text-muted mb-2 ps-1">
+  {{ month_names[month-1] }} {{ year }} — {{ receipts|length }}
+  <span class="km">វិក័យប័ត្រ</span><span class="en">receipt(s)</span>
+</div>
+
+{% for r in receipts %}
+<a href="{{ url_for('receipts.detail', id=r.id) }}" class="m-card border-{{ r.payment_status }}">
+  <div class="m-card-body">
+    <div class="m-card-title">{{ r.receipt_number }}</div>
+    <div class="m-card-sub">
+      <span class="km">បន្ទប់</span><span class="en">Room</span>
+      {{ r.room.room_number }} · {{ r.room.building.name }}
+    </div>
+    <div class="m-card-meta">{{ r.tenant.name if r.tenant else '—' }}</div>
+  </div>
+  <div class="m-card-right">
+    <div class="m-card-amount {{ 'text-danger' if r.remaining_balance > 0 else 'text-success' }}">
+      {{ r.remaining_balance|khr if r.remaining_balance > 0 else r.total_amount|khr }}
+    </div>
+    <div class="mt-1">
+      <span class="badge status-{{ r.payment_status }}">{{ r.payment_status|title }}</span>
+    </div>
+  </div>
+  <i class="bi bi-chevron-right m-card-arrow"></i>
+</a>
+{% else %}
+<div class="m-empty">
+  <div class="m-empty-icon">🧾</div>
+  <p><span class="km">គ្មានវិក័យប័ត្រ</span><span class="en">No receipts for</span>
+    {{ month_names[month-1] }} {{ year }}</p>
+</div>
+{% endfor %}
+
+{% endblock %}

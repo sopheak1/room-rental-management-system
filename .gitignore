@@ -1,0 +1,15 @@
+venv/
+instance/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.db
+*.sqlite
+.DS_Store
+print-bridge-android/app/build/
+print-bridge-android/.gradle/
+print-bridge-android/local.properties
+*.apk
+*.aab
