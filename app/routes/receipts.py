@@ -248,7 +248,8 @@ def undefer_receipt(id):
 @login_required
 def print_receipt(id):
     receipt = Receipt.query.get_or_404(id)
-    return render_template('receipts/print.html', receipt=receipt)
+    bridge = request.args.get('bridge') == '1'
+    return render_template('receipts/print.html', receipt=receipt, bridge=bridge)
 
 
 @receipts_bp.route('/receipts/<int:id>/escpos')

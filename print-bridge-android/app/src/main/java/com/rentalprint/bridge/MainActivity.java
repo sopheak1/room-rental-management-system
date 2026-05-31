@@ -2,13 +2,15 @@ package com.rentalprint.bridge;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,14 +31,13 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -64,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        // --- WebView setup ---
         WebSettings ws = webView.getSettings();
         ws.setJavaScriptEnabled(true);
         ws.setDomStorageEnabled(true);
@@ -82,22 +82,17 @@ public class MainActivity extends AppCompatActivity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 String url = req.getUrl().toString();
                 String serverUrl = prefs.getString(PREF_URL, DEFAULT_URL);
-                // Keep same-server links inside the WebView
                 if (url.startsWith(serverUrl)) return false;
-                // Open external links in the system browser
                 startActivity(new Intent(Intent.ACTION_VIEW, req.getUrl()));
                 return true;
             }
-
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError err) {
-                handler.proceed(); // Accept self-signed certs for local dev
+                handler.proceed();
             }
         });
 
         loadWebApp();
-
-        // --- Start print bridge automatically ---
         startBridge();
 
         findViewById(R.id.btnSettings).setOnClickListener(v -> showSettingsDialog());
@@ -105,20 +100,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadWebApp() {
-        String url = prefs.getString(PREF_URL, DEFAULT_URL);
-        webView.loadUrl(url);
+        webView.loadUrl(prefs.getString(PREF_URL, DEFAULT_URL));
     }
 
-    // ── Bridge auto-start ──────────────────────────────────────
     void startBridge() {
         if (printServer != null && printServer.isRunning()) return;
         String deviceAddr = prefs.getString(PREF_DEVICE, null);
-        if (deviceAddr == null) return; // No printer yet — wait for user to configure
-
+        if (deviceAddr == null) return;
         String serverUrl = prefs.getString(PREF_URL, DEFAULT_URL);
         printServer = new PrintServer(9100, deviceAddr, serverUrl, bluetoothAdapter, count ->
                 runOnUiThread(() -> tvBridgeStatus.setText("🟢 Bridge · " + count + " printed")));
-
         try {
             printServer.start();
             tvBridgeStatus.setText("🟢 Bridge ready");
@@ -131,119 +122,52 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopBridge() {
         if (printServer != null) { printServer.stopServer(); printServer = null; }
-        tvBridgeStatus.setText("🔴 Bridge stopped");
+        tvBridgeStatus.setText("🔴 Stopped");
         tvBridgeStatus.setTextColor(0xFFDC2626);
     }
 
-    // ── Settings dialog ───────────────────────────────────────
-    @SuppressLint("InflateParams")
-    private void showSettingsDialog() {
-        View v = getLayoutInflater().inflate(R.layout.dialog_settings, null);
-
-        EditText etUrl       = v.findViewById(R.id.etUrl);
-        TextView tvCurrent   = v.findViewById(R.id.tvCurrentUrl);
-        TextView tvDevice    = v.findViewById(R.id.tvDeviceAddr);
-        TextView tvStatus    = v.findViewById(R.id.tvBridgeStatusDialog);
-        Button   btnPrinter  = v.findViewById(R.id.btnPickPrinter);
-        Button   btnBridge   = v.findViewById(R.id.btnToggleBridge);
-
-        String savedUrl = prefs.getString(PREF_URL, DEFAULT_URL);
-        etUrl.setText(savedUrl);
-        tvCurrent.setText("Current: " + savedUrl);
-
-        String addr = prefs.getString(PREF_DEVICE, null);
-        tvDevice.setText(addr != null ? addr : "None selected");
-        tvStatus.setText(printServer != null && printServer.isRunning() ? "🟢 Running" : "🔴 Stopped");
-        btnBridge.setText(printServer != null && printServer.isRunning() ? "Stop Bridge" : "Start Bridge");
-
-        btnPrinter.setOnClickListener(px -> selectPrinter());
-        btnBridge.setOnClickListener(px -> {
-            if (printServer != null && printServer.isRunning()) {
-                stopBridge();
-                btnBridge.setText("Start Bridge");
-                tvStatus.setText("🔴 Stopped");
-            } else {
-                startBridge();
-                boolean running = printServer != null && printServer.isRunning();
-                btnBridge.setText(running ? "Stop Bridge" : "Start Bridge");
-                tvStatus.setText(running ? "🟢 Running" : "🔴 Error");
-            }
-        });
-
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle("⚙️ Print Bridge Settings")
-                .setView(v)
-                .setPositiveButton("Save URL & Reload", (d, w) -> {
-                    String newUrl = etUrl.getText().toString().trim();
-                    if (newUrl.endsWith("/")) newUrl = newUrl.substring(0, newUrl.length() - 1);
-                    if (!TextUtils.isEmpty(newUrl)) {
-                        prefs.edit().putString(PREF_URL, newUrl).apply();
-                        stopBridge();
-                        loadWebApp();
-                        startBridge();
-                        Toast.makeText(this, "URL saved & reloaded", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Close", null)
-                .create();
-        dlg.show();
-    }
-
-    private void selectPrinter() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-                        != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.BLUETOOTH_CONNECT,
-                                 Manifest.permission.BLUETOOTH_SCAN}, REQUEST_BLUETOOTH);
-            return;
-        }
-        if (!bluetoothAdapter.isEnabled()) {
-            startActivity(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));
-            return;
-        }
-        Set<BluetoothDevice> paired = bluetoothAdapter.getBondedDevices();
-        if (paired.isEmpty()) {
-            Toast.makeText(this, "No paired devices. Pair PT-210 first.", Toast.LENGTH_LONG).show();
-            return;
-        }
-        List<String> names = new ArrayList<>(), addresses = new ArrayList<>();
-        for (BluetoothDevice d : paired) {
-            String name = d.getAddress();
-            try { name = d.getName(); } catch (SecurityException ignored) {}
-            names.add(name + "\n" + d.getAddress());
-            addresses.add(d.getAddress());
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("Select Printer")
-                .setItems(names.toArray(new String[0]), (dlg, which) -> {
-                    prefs.edit().putString(PREF_DEVICE, addresses.get(which)).apply();
-                    stopBridge();
-                    startBridge();
-                    Toast.makeText(this, "Printer set: " + addresses.get(which), Toast.LENGTH_SHORT).show();
-                })
-                .show();
-    }
-
-    // ── JavaScript → Native bridge ────────────────────────────
+    // ── JavaScript → Native bridge ─────────────────────────────
     private class AndroidBridge {
 
         @JavascriptInterface
         public void print(int receiptId) {
-            // Show spinner in WebView
             runOnUiThread(() ->
                 webView.evaluateJavascript("showBridgePrinting()", null));
 
             new Thread(() -> {
                 try {
-                    byte[] data = fetchEscPos(receiptId);
-                    sendViaBluetooth(data);
-                    runOnUiThread(() ->
-                        webView.evaluateJavascript("showBridgeSuccess()", null));
+                    // Step 1: render to bitmap
+                    Bitmap bmp = renderToBitmap(receiptId);
+
+                    // Step 2: show preview dialog — user confirms before printing
+                    CountDownLatch confirm = new CountDownLatch(1);
+                    boolean[] doPrint = {false};
+
+                    runOnUiThread(() -> showPreviewDialog(bmp,
+                        () -> { doPrint[0] = true;  confirm.countDown(); },   // Print
+                        () -> { doPrint[0] = false; confirm.countDown(); }    // Cancel
+                    ));
+
+                    confirm.await(60, TimeUnit.SECONDS); // wait for user choice
+
+                    if (doPrint[0]) {
+                        // Step 3: convert + send
+                        byte[] escpos = EscPosConverter.bitmapToEscPos(bmp);
+                        bmp.recycle();
+                        sendViaBluetooth(escpos);
+                        runOnUiThread(() ->
+                            webView.evaluateJavascript("showBridgeSuccess()", null));
+                    } else {
+                        bmp.recycle();
+                        runOnUiThread(() ->
+                            webView.evaluateJavascript("showBridgeError('Cancelled')", null));
+                    }
+
                 } catch (Exception e) {
+                    String msg = e.getMessage() != null
+                        ? e.getMessage().replace("'", "") : "Unknown error";
                     runOnUiThread(() ->
-                        webView.evaluateJavascript(
-                            "showBridgeError('" + e.getMessage().replace("'","") + "')", null));
+                        webView.evaluateJavascript("showBridgeError('" + msg + "')", null));
                 }
             }).start();
         }
@@ -252,30 +176,132 @@ public class MainActivity extends AppCompatActivity {
         public boolean isAvailable() { return true; }
     }
 
-    private byte[] fetchEscPos(int receiptId) throws IOException {
-        String serverUrl = prefs.getString(PREF_URL, DEFAULT_URL);
-        String endpoint  = serverUrl + "/receipts/" + receiptId + "/escpos";
-        String cookie    = CookieManager.getInstance().getCookie(serverUrl);
+    // ── Preview dialog ─────────────────────────────────────────
+    private void showPreviewDialog(Bitmap bitmap, Runnable onPrint, Runnable onCancel) {
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        android.widget.ImageView img = new android.widget.ImageView(this);
+        img.setImageBitmap(bitmap);
+        // Scale image to dialog width, scroll vertically for height
+        img.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        img.setAdjustViewBounds(true);
+        img.setPadding(8, 8, 8, 8);
+        // Constrain to dialog width so right side is not clipped
+        scroll.setFillViewport(true);
+        scroll.addView(img, new android.widget.LinearLayout.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        HttpURLConnection conn = (HttpURLConnection) new URL(endpoint).openConnection();
-        conn.setConnectTimeout(15000);
-        conn.setReadTimeout(30000);
-        if (cookie != null) conn.setRequestProperty("Cookie", cookie);
-
-        if (conn.getResponseCode() != 200) {
-            throw new IOException("Server returned " + conn.getResponseCode());
-        }
-
-        InputStream is = conn.getInputStream();
-        byte[] buf = is.readAllBytes();
-        conn.disconnect();
-        return buf;
+        new AlertDialog.Builder(this)
+            .setTitle("👁 Receipt Preview — OK to print?")
+            .setView(scroll)
+            .setPositiveButton("🖨️ Print", (d, w) -> onPrint.run())
+            .setNegativeButton("✕ Cancel",  (d, w) -> onCancel.run())
+            .setOnCancelListener(d -> onCancel.run())
+            .show();
     }
 
+    // ── Render print page via hidden WebView → Bitmap ──────────
+    private Bitmap renderToBitmap(int receiptId) throws Exception {
+        String serverUrl = prefs.getString(PREF_URL, DEFAULT_URL);
+        String printUrl  = serverUrl + "/receipts/" + receiptId + "/print?bridge=1";
+
+        CountDownLatch latch  = new CountDownLatch(1);
+        Bitmap[]    result    = {null};
+        Exception[] renderErr = {null};
+
+        runOnUiThread(() -> {
+            try {
+                @SuppressLint("SetJavaScriptEnabled")
+                WebView pv = new WebView(MainActivity.this);
+                WebSettings s = pv.getSettings();
+                s.setJavaScriptEnabled(true);
+                s.setDomStorageEnabled(true);
+                // Force 58mm (220px) viewport — prevent phone-width rendering
+                s.setUseWideViewPort(false);
+                s.setLoadWithOverviewMode(false);
+                s.setTextZoom(100);
+                s.setDefaultFontSize(13);
+                s.setDefaultFixedFontSize(13);
+
+                // CRITICAL: software rendering so view.draw(canvas) captures content
+                pv.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+
+                // Viewport is width=220 (58mm) → physical px = 220 × device density
+                float density = getResources().getDisplayMetrics().density;
+                int pxWidth = Math.round(220 * density);
+
+                // CRITICAL: attach to window so WebView actually renders
+                android.view.ViewGroup root = (android.view.ViewGroup)
+                    getWindow().getDecorView().getRootView();
+                android.view.ViewGroup.LayoutParams lp = new android.view.ViewGroup.LayoutParams(
+                    pxWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+                pv.setVisibility(View.INVISIBLE);
+                root.addView(pv, lp);
+
+                // Share session cookie
+                String cookie = CookieManager.getInstance().getCookie(serverUrl);
+                if (cookie != null) CookieManager.getInstance().setCookie(serverUrl, cookie);
+                CookieManager.getInstance().setAcceptThirdPartyCookies(pv, true);
+
+                pv.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public void onPageFinished(WebView view, String url) {
+                        if (!url.contains("/print")) return;
+                        // Wait 3s for Noto Sans Khmer to load
+                        view.postDelayed(() -> {
+                            try {
+                                // getContentHeight returns CSS px → convert to physical px
+                                int cssH = view.getContentHeight();
+                                if (cssH <= 0) cssH = 2000;
+                                int pxHeight = Math.round(cssH * density);
+
+                                view.measure(
+                                    View.MeasureSpec.makeMeasureSpec(pxWidth, View.MeasureSpec.EXACTLY),
+                                    View.MeasureSpec.makeMeasureSpec(pxHeight, View.MeasureSpec.EXACTLY)
+                                );
+                                view.layout(0, 0, pxWidth, pxHeight);
+
+                                // Bitmap at full physical resolution — captures all content
+                                Bitmap bmp = Bitmap.createBitmap(pxWidth, pxHeight, Bitmap.Config.ARGB_8888);
+                                Canvas cv  = new Canvas(bmp);
+                                cv.drawColor(Color.WHITE);
+                                view.draw(cv);
+
+                                // EscPosConverter will scale pxWidth → 384 printer dots
+                                result[0] = bmp;
+                            } catch (Exception e) {
+                                renderErr[0] = e;
+                            } finally {
+                                root.removeView(pv);
+                                latch.countDown();
+                            }
+                        }, 3000);
+                    }
+                    @Override
+                    public void onReceivedSslError(WebView v, SslErrorHandler h, SslError e) {
+                        h.proceed();
+                    }
+                });
+
+                pv.loadUrl(printUrl);
+
+            } catch (Exception e) {
+                renderErr[0] = e;
+                latch.countDown();
+            }
+        });
+
+        if (!latch.await(35, TimeUnit.SECONDS))
+            throw new IOException("Timed out rendering receipt");
+        if (renderErr[0] != null) throw renderErr[0];
+        if (result[0] == null)    throw new IOException("Render produced no output");
+        return result[0]; // Bitmap
+    }
+
+    // ── Bluetooth SPP send ─────────────────────────────────────
     private void sendViaBluetooth(byte[] data) throws IOException {
         String addr = prefs.getString(PREF_DEVICE, null);
         if (addr == null) throw new IOException("No printer selected");
-
         UUID SPP = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(addr);
         BluetoothSocket socket = device.createRfcommSocketToServiceRecord(SPP);
@@ -285,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
             OutputStream out = socket.getOutputStream();
             out.write(data);
             out.flush();
-            Thread.sleep(500);
+            Thread.sleep(800);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
@@ -293,11 +319,89 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ── Navigation ────────────────────────────────────────────
+    // ── Settings dialog ────────────────────────────────────────
+    @SuppressLint("InflateParams")
+    private void showSettingsDialog() {
+        View v = getLayoutInflater().inflate(R.layout.dialog_settings, null);
+        EditText etUrl     = v.findViewById(R.id.etUrl);
+        TextView tvCurrent = v.findViewById(R.id.tvCurrentUrl);
+        TextView tvDevice  = v.findViewById(R.id.tvDeviceAddr);
+        TextView tvStatus  = v.findViewById(R.id.tvBridgeStatusDialog);
+        Button btnPrinter  = v.findViewById(R.id.btnPickPrinter);
+        Button btnBridge   = v.findViewById(R.id.btnToggleBridge);
+
+        String savedUrl = prefs.getString(PREF_URL, DEFAULT_URL);
+        etUrl.setText(savedUrl);
+        tvCurrent.setText("Current: " + savedUrl);
+        String addr = prefs.getString(PREF_DEVICE, null);
+        tvDevice.setText(addr != null ? addr : "None selected");
+        boolean running = printServer != null && printServer.isRunning();
+        tvStatus.setText(running ? "🟢 Running" : "🔴 Stopped");
+        btnBridge.setText(running ? "Stop Bridge" : "Start Bridge");
+
+        btnPrinter.setOnClickListener(px -> selectPrinter());
+        btnBridge.setOnClickListener(px -> {
+            if (printServer != null && printServer.isRunning()) {
+                stopBridge(); btnBridge.setText("Start Bridge"); tvStatus.setText("🔴 Stopped");
+            } else {
+                startBridge();
+                boolean r = printServer != null && printServer.isRunning();
+                btnBridge.setText(r ? "Stop Bridge" : "Start Bridge");
+                tvStatus.setText(r ? "🟢 Running" : "🔴 Error");
+            }
+        });
+
+        new AlertDialog.Builder(this)
+            .setTitle("⚙️ Print Bridge Settings")
+            .setView(v)
+            .setPositiveButton("Save URL & Reload", (d, w) -> {
+                String newUrl = etUrl.getText().toString().trim();
+                if (newUrl.endsWith("/")) newUrl = newUrl.substring(0, newUrl.length() - 1);
+                if (!TextUtils.isEmpty(newUrl)) {
+                    prefs.edit().putString(PREF_URL, newUrl).apply();
+                    stopBridge(); loadWebApp(); startBridge();
+                    Toast.makeText(this, "URL saved & reloaded", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Close", null)
+            .create().show();
+    }
+
+    private void selectPrinter() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                        != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.BLUETOOTH_CONNECT,
+                             Manifest.permission.BLUETOOTH_SCAN}, REQUEST_BLUETOOTH);
+            return;
+        }
+        if (!bluetoothAdapter.isEnabled()) {
+            startActivity(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)); return;
+        }
+        Set<BluetoothDevice> paired = bluetoothAdapter.getBondedDevices();
+        if (paired.isEmpty()) {
+            Toast.makeText(this, "Pair PT-210 first.", Toast.LENGTH_LONG).show(); return;
+        }
+        List<String> names = new ArrayList<>(), addresses = new ArrayList<>();
+        for (BluetoothDevice d : paired) {
+            String name = d.getAddress();
+            try { name = d.getName(); } catch (SecurityException ignored) {}
+            names.add(name + "\n" + d.getAddress());
+            addresses.add(d.getAddress());
+        }
+        new AlertDialog.Builder(this)
+            .setTitle("Select Printer")
+            .setItems(names.toArray(new String[0]), (dlg, which) -> {
+                prefs.edit().putString(PREF_DEVICE, addresses.get(which)).apply();
+                stopBridge(); startBridge();
+                Toast.makeText(this, "Printer set: " + addresses.get(which), Toast.LENGTH_SHORT).show();
+            }).show();
+    }
+
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+        if (webView.canGoBack()) webView.goBack(); else super.onBackPressed();
     }
 
     @Override
