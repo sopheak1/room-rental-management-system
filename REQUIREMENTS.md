@@ -1,9 +1,9 @@
-# Rental Management System — Requirements
+# Room Rental Management System — Requirements
 
-**Project:** rental-management  
-**Path:** ClaudeHome/Personal/rental-management/  
+**Project:** room-rental-management-system  
+**GitHub:** https://github.com/sopheak1/room-rental-management-system  
 **Created:** 2026-05-28  
-**Last Updated:** 2026-05-28  
+**Last Updated:** 2026-05-31  
 **Owner:** Sopheak  
 **Stack:** Python 3.9 · Flask · SQLite · Bootstrap 5 · SQLAlchemy · Flask-Login
 
@@ -11,9 +11,7 @@
 
 ## Overview
 
-A web-based room rental management system with mobile-responsive UI.  
-Supports Khmer and English. Designed for small-to-medium rental buildings.  
-Accessible on mobile via local network (same WiFi).
+A mobile-first web-based room rental management system designed to be used primarily on a phone. Supports Khmer and English with a language toggle. Built for a single admin managing multiple rental buildings.
 
 ---
 
@@ -22,218 +20,175 @@ Accessible on mobile via local network (same WiFi).
 | Layer | Technology | Notes |
 |---|---|---|
 | Backend | Python 3.9 + Flask | Blueprints per module |
-| Database | SQLite via SQLAlchemy ORM | Good for single-admin, small scale. Migrate to PostgreSQL if scale grows. |
-| Frontend | HTML + Bootstrap 5 | Mobile responsive |
-| UI Language | Khmer + English | Bilingual labels throughout the app |
-| Receipt Print | Browser-based HTML (`@page { size: 80mm auto }`) | PDF libraries (ReportLab, WeasyPrint) do not support Khmer complex script shaping. Browser (HarfBuzz engine) renders Khmer correctly. |
-| Receipt Language | Khmer only | Thermal receipt is Khmer-only labels |
+| Database | SQLite via SQLAlchemy ORM | Single-admin, no concurrent writes. Migrate to PostgreSQL if scale grows. |
+| Frontend | HTML + Bootstrap 5 | Mobile-first card layout |
+| UI Language | Khmer + English | Toggle in navbar, stored in session |
+| Thermal Print | Playwright → PNG → ESC/POS bitmap | ReportLab/WeasyPrint cannot shape Khmer. Browser renders correctly. |
+| Android App | Java (Android WebView + Bluetooth SPP) | Print Bridge companion app |
 | Auth | Flask-Login | Session-based, single admin |
-| Password Hash | `pbkdf2:sha256` | `scrypt` unavailable on Python 3.9 / macOS |
+| Password Hash | `pbkdf2:sha256` | scrypt unavailable on Python 3.9 / macOS |
 | Port | 8080 | Port 5000 conflicts with AirPlay on macOS |
 
 ---
 
 ## Currency
 
-- **System currency: ៛ (Khmer Riel)**
-- All amounts stored and input in ៛ (integers)
-- Exchange rate: **1 USD = 4,000 ៛** (configured in `config.py` as `EXCHANGE_RATE`)
-- **Receipt print**: shows ៛ as primary for all line items; USD shown as secondary `(≈ $xx.xx)` for grand total only
-- Template filters: `|khr` → formats as `200,000 ៛`; `|usd` → converts and formats as `$50.00`
+- **System currency: ៛ (Khmer Riel)** — all amounts stored as integers
+- Exchange rate: **1 USD = 4,000 ៛** (`config.py → EXCHANGE_RATE`)
+- Receipt print: ៛ primary for all line items; USD secondary `(≈ $xx.xx)` for grand total
+- Template filters: `|khr` → `200,000 ៛` · `|usd` → `$50.00`
+
+---
+
+## UI Design Principles
+
+- **Mobile-first** — designed for phone use, not desktop
+- **Card-based layout** — no tables on mobile, everything is tap-friendly cards
+- **Collapsible sections** — less-used fields (room info, late fee, discount) hidden by default
+- **Sticky action bars** — save/generate buttons always visible at bottom
+- **Scrollable filter chips** — quick status/building filters
+- **Large inputs** — 48px+ touch targets, `1rem+` font size
 
 ---
 
 ## Modules & Features
 
----
-
 ### 1. Authentication
-
-- Login with username + password
-- Session-based auth (Flask-Login)
+- Login with username + password (Flask-Login, session-based)
 - All pages protected — redirect to login if not authenticated
-- Logout
-- Admin created via Flask CLI: `flask create-admin`
+- CLI command to create admin: `flask create-admin`
 
----
-
-### 2. Dashboard
-
-- Total rooms count
-- Occupied rooms count
-- Vacant rooms count
-- Monthly revenue: collected vs expected (in ៛)
-- Number of overdue rooms (unpaid from previous billing period)
-- Recent payments list
-
----
+### 2. Dashboard (Mobile Home)
+- **3 tabs**: ⚠️ Overdue · 🕐 Upcoming · ✅ Paid
+- Only shows rooms **with receipts** for current month (no receipt = excluded)
+- Gradient header with month name + collection stats
+- Each card: Room # · Building · Tenant · Amount — tap → receipt detail
+- Big "Generate Receipt" button always at top
 
 ### 3. Building Management
-
-- Add / Edit / Delete building
-- Fields:
-  - Building name
-  - Address
-
----
+- Add / Edit / Delete building (name + address)
+- Mobile card list with inline edit/delete buttons
 
 ### 4. Room Management
-
-- Add / Edit room
-- Room status: **Available** / **Occupied** / **Maintenance**
-- Fields:
-  - Building (assigned to a specific building)
-  - Room number
-  - Floor number
-  - Room type: Single / Double / Studio
-  - Room price (monthly rent, in ៛)
-  - Deposit amount (in ៛, collected at move-in)
-- View all rooms (filterable by building, status)
-- View single room detail (current tenant + history + receipts tabs)
-
----
+- Add / Edit room with fields: Building, Room #, Floor, Type, Price (៛), Deposit (៛), Status
+- Status: Available / Occupied / Maintenance
+- Room detail: 3 tabs — Tenant · Receipts · History
+- Scrollable status/building filter chips on list screen
 
 ### 5. Tenant Management
 
-#### 5.1 Tenant Info (per room)
+#### 5.1 Tenant Info
+- Name, Gender, NID, Phone, Roommates
+- Emergency contact (collapsed by default in form)
+- Move-in date, Contract duration, Deposit paid (all in ៛)
 
-- Number of roommates
-- Name
-- Gender
-- National ID (NID)
-- Phone number (Tel)
-- Emergency contact name + phone
-- Contract duration (monthly / 6 months / 1 year)
-- Move-in date
-- Move-out date (set when tenant checks out)
-- Move-out reason
-- Deposit paid amount (in ៛)
-- Deposit refunded amount (in ៛, set at checkout)
+#### 5.2 Due Date Logic
+- **Payment due day = day of tenant's move-in date**
+- Example: moved in on 10th → pays on 10th every month
+- Auto-updates when move-in date is edited (with warning)
 
-#### 5.2 Tenant History Log
-
-- Every time a tenant checks out, a history record is saved
-- History includes: name, NID, tel, move-in date, move-out date, move-out reason, deposit paid, deposit refunded
-- Viewable per room under the History tab
-
----
+#### 5.3 Tenant History
+- Checkout records: name, move-in, move-out, deposit refunded, reason
 
 ### 6. Utility Price Management
-
-- Set price per unit for:
-  - **Electricity** (price per kWh, in ៛)
-  - **Water** (price per m³, in ៛)
-- Price history is kept — old prices are never deleted when updated
-- Each price record has an effective date
-- **Tiebreaker**: if two prices share the same effective date, the most recently inserted one (highest `id`) wins
-- System auto-fills current price when generating receipts
-
----
+- Set price per unit for Water (m³) and Electricity (kWh) — in ៛
+- Price history kept (never deleted when updated)
+- Same-day tiebreaker: most recently inserted row wins (`id DESC`)
+- Current price auto-fills receipt generation
 
 ### 7. Receipt Management
 
 #### 7.1 Receipt List
+- Scrollable filter chips: month/year, status (Unpaid / Partial / Paid)
+- Cards with left-border colour by status
+- Overdue alert banner at top
 
-- List all receipts by month/year
-- Filter by: building, status (paid / unpaid / partial)
-- Show overdue receipts (unpaid from a past billing period)
-- Overdue section displayed separately at the bottom with a red alert banner
+#### 7.2 Generate Receipt (Mobile-optimised)
+- **Room Info section**: collapsed by default (tenant, price, previous readings)
+- **Electricity**: defaults to Direct Input (override) mode
+- **Water**: defaults to meter reading mode
+- **From (previous)**: auto-filled from previous receipt's `electricity_to`/`water_to`
+- Warning message appears if auto-filled fields are changed
+- **Due Balance**: always visible (auto-filled from previous receipt)
+- **Late Fee & Discount**: collapsed by default ("optional" label)
+- Money inputs: auto-format with commas as you type
+- **Sticky bottom bar**: running total + Generate button always visible
+- Previous receipt info: yellow reference card + "View Full Receipt" modal
 
-#### 7.2 Generate Receipt
+#### 7.3 Receipt Detail (Mobile)
+- Big amount display at top
+- Collapsible sections: Tenant Info · Line Items · Payment Panel · Payment Log
+- Bluetooth print button in header → calls Android bridge or localhost:9100
 
-**Page behavior:**
-- Select room → page reloads with `room_id` in URL, preserving selected billing month/year
-- Previous receipt is the most recent receipt for that room **before** the selected billing month (not limited to just the immediately preceding calendar month — handles skipped months)
-- A **yellow reference card** displays previous month's data: Prev. Electricity reading, Prev. Water reading, Due Balance
-- A **"View Full Receipt"** button opens a popup modal with the complete previous receipt (all line items, totals, payment status) — does not interrupt the generate form
+#### 7.4 Payment Features
+- Status: Unpaid / Partial / Paid / **Deferred**
+- **Partial payment**: cumulative — each payment adds to `paid_amount`
+- **Payment Log**: per-receipt history of all payments made
+- **Defer to next month**: hides from overdue report, balance still carries over
+- Remaining balance auto-carries as "Due Balance" on next month's receipt
 
-**Inputs:**
+#### 7.5 Receipt Number Format
+- `RCP-YYYYMM-XXXX` (e.g. `RCP-202605-0001`)
 
-| Field | Behavior |
-|---|---|
-| Select room | Dropdown — only occupied rooms shown |
-| Billing month/year | Month + Year picker — preserved when changing room |
-| Tenant | Auto-displayed from room (info card) |
-| Room price | Auto-filled from room |
-| Electricity — Mode | **Default: Direct input (override)** — toggle to meter reading mode |
-| Electricity — From | Auto-filled from previous receipt's `electricity_to` (meter mode only) |
-| Electricity — To | Manual input (meter mode only) |
-| Electricity — Units | Auto-computed: To − From (meter mode only) |
-| Electricity — Price/Unit | Auto-filled from current utility price (in ៛, meter mode only) |
-| Electricity — Total | Auto-computed: Units × Price (meter mode) or direct input |
-| Water — Mode | Default: meter reading mode — toggle to direct input |
-| Water — From | Auto-filled from previous receipt's `water_to` (is not none check — handles 0 readings) |
-| Water — To | Manual input |
-| Water — Units | Auto-computed: To − From |
-| Water — Price/Unit | Auto-filled from current utility price (in ៛) |
-| Water — Total | Auto-computed: Units × Price |
-| Due Balance | Auto-filled from previous receipt `remaining_balance` (in ៛) |
-| Late Fee | Optional manual input (in ៛) |
-| Discount | Optional manual input (in ៛) |
-| Notes / Remarks | Optional text |
-| Total | Auto-computed = room + electricity + water + due balance + late fee − discount |
-
-**Payment fields:**
-
-| Field | Options |
-|---|---|
-| Payment status | Unpaid / Paid / Partial |
-| Paid amount | Manual input (in ៛, shown for partial) |
-| Remaining balance | Auto-computed = total − paid |
-| Payment method | Cash / Bank Transfer / QR |
-| Payment date | Date picker |
-
-**Live summary panel (right column):**
-- Updates in real-time as inputs change
-- Shows all line items and running total in ៛
-- Sticky positioning — stays visible while scrolling
-
-#### 7.3 Partial Payment — Balance Carry-Over
-
-- If tenant pays partially, `remaining_balance` is saved on the receipt
-- Next month's receipt auto-loads previous `remaining_balance` as **Due Balance**
-- Chain continues until fully settled
-
-#### 7.4 Receipt Number
-
-- Auto-generated format: `RCP-YYYYMM-XXXX` (e.g., `RCP-202605-0001`)
-
-#### 7.5 Receipt Detail Page
-
-- View all line items and amounts
-- Payment panel: record partial or full payment directly from detail page
-- Link to print receipt
-
-#### 7.6 Thermal Receipt Print (80mm)
-
-- Opens in a new browser tab — browser handles printing
-- CSS: `@page { size: 80mm auto; margin: 3mm 4mm; }`
-- **Font**: Noto Sans Khmer (Google Fonts, weights 700 + 900)
-- **All text bold** — `font-weight: 900` on body, inherits everywhere
-- **Font size**: 17px body (50% larger than original 11px for readability on thermal paper)
-- **Language**: Khmer-only labels
-- Content:
-  - Business header: ការគ្រប់គ្រងជួល
-  - Receipt number, date, billing month (Khmer month name)
-  - Room number + building, tenant name + phone
-  - Line items table (in ៛): room rent, electricity (with meter sub-note), water (m³ sub-note), adjustments
-  - Totals: grand total in ៛ + USD conversion `(≈ $xx.xx)`, paid amount, balance due
-  - Payment status (in Khmer), payment method, payment date
-  - Notes (if any)
-  - Footer: អរគុណ!
-- Print / Close buttons visible on screen, hidden when printing
-
----
+#### 7.6 Thermal Receipt Print (58mm, Khmer)
+- **Playwright** renders `print.html` (Noto Sans Khmer) → PNG at 2× scale
+- **PIL** scales image to 384 dots wide (48mm at 203 DPI)
+- **python-escpos** formats as ESC/POS bitmap
+- `/receipts/<id>/escpos` endpoint returns raw bytes
+- **Khmer-only labels** on receipt
+- ៛ primary · `≈ $xx.xx` secondary for grand total
+- Font: Noto Sans Khmer 400 weight, 16px base
 
 ### 8. Reports
 
-- **Monthly Revenue Report**: expected vs collected vs outstanding per month (in ៛), collection rate progress bar
-- **Overdue Report**: all rooms with unpaid/partial balance, total outstanding amount
-- **Occupancy Report**: occupied vs vacant rooms by building
+#### 8.1 Monthly Summary Report (Mobile)
+- Filter by any month/year via scrollable chips + year prev/next
+- Collection rate progress bar
+- Stat chips: Total · Paid · Pending · Deferred
+- Receipts grouped: Unpaid/Partial first → Paid → Deferred
+- Each card links to receipt detail
+
+#### 8.2 Revenue Report
+- Annual view, filter by year
+- Monthly table: Expected · Collected · Outstanding · Count · Rate
+
+#### 8.3 Overdue Report
+- 3 sections: Current Month Overdue · Current Month Upcoming · Past Months Overdue
+- Uses tenant start date as due day
+- Deferred receipts excluded
+- Generate/Pay buttons per row
+
+#### 8.4 Occupancy Report
+- Per-building: Total · Occupied · Vacant · Maintenance · Rate
+
+### 9. Android Print Bridge App
+
+#### Architecture
+```
+Android App (WebView + Bluetooth)
+  ├── WebView → loads Flask web app (configurable server URL)
+  ├── JavascriptInterface → Android.print(receiptId)
+  ├── Fetches /receipts/<id>/escpos using WebView session cookie
+  └── Sends ESC/POS bytes to PT-210 via Bluetooth SPP
+```
+
+#### Features
+- Full-screen WebView showing the web app
+- Bottom bar: bridge status + reload + settings
+- Settings dialog: Server URL (configurable, no rebuild needed) + printer selection + bridge toggle
+- NanoHTTPD server on port 9100 (fallback for Chrome browser)
+- Auto-starts bridge on launch if printer was previously configured
+- Back button navigates WebView history
+
+#### Printer
+- **Model**: Goojprt PT-210
+- **Paper**: 58mm, 48mm print area, 203 DPI (384 dots wide)
+- **Protocol**: Bluetooth Classic SPP (UUID: 00001101-...)
+- **Language**: Khmer via image mode (not text mode)
 
 ---
 
-## Data Model
+## Data Models
 
 ```
 users
@@ -243,48 +198,55 @@ buildings
   id, name, address, created_at
 
 rooms
-  id, building_id, room_number, floor, room_type (single/double/studio),
-  price (Float, ៛), deposit_amount (Float, ៛), status (available/occupied/maintenance), created_at
+  id, building_id, room_number, floor, room_type, price, deposit_amount, status, created_at
 
-tenants (current active tenant per room)
-  id, room_id, name, gender, nid, tel,
-  emergency_contact_name, emergency_contact_tel,
-  num_roommates, contract_duration (monthly/6months/1year),
-  move_in_date, deposit_paid (Float, ៛), is_active, created_at
+tenants
+  id, room_id, name, gender, nid, tel, emergency_contact_name, emergency_contact_tel,
+  num_roommates, contract_duration, move_in_date, deposit_paid, is_active, created_at
 
-tenant_history (log of all past tenants per room)
-  id, room_id, name, gender, nid, tel, num_roommates,
-  move_in_date, move_out_date, move_out_reason,
-  deposit_paid (Float, ៛), deposit_refunded (Float, ៛), created_at
+tenant_history
+  id, room_id, name, gender, nid, tel, num_roommates, move_in_date, move_out_date,
+  move_out_reason, deposit_paid, deposit_refunded, created_at
 
 utility_prices
-  id, utility_type (water/electricity), price_per_unit (Float, ៛),
-  effective_date, created_at
+  id, utility_type (water/electricity), price_per_unit (Float ៛), effective_date, created_at
 
 receipts
-  id, receipt_number, room_id, tenant_id,
-  billing_month, billing_year,
-  room_price (Float, ៛),
-  electricity_from, electricity_to, electricity_units,
-  electricity_price_per_unit (Float, ៛), electricity_total (Float, ៛),
-  water_from, water_to, water_units,
-  water_price_per_unit (Float, ៛), water_total (Float, ៛),
-  previous_balance (Float, ៛), late_fee (Float, ៛), discount (Float, ៛),
-  total_amount (Float, ៛), paid_amount (Float, ៛), remaining_balance (Float, ៛),
-  payment_status (unpaid/paid/partial), payment_method (cash/bank_transfer/qr),
-  payment_date, notes, created_at
+  id, receipt_number, room_id, tenant_id, billing_month, billing_year,
+  room_price, electricity_from, electricity_to, electricity_units,
+  electricity_price_per_unit, electricity_total, water_from, water_to,
+  water_units, water_price_per_unit, water_total, previous_balance, late_fee,
+  discount, total_amount, paid_amount, remaining_balance,
+  payment_status (unpaid/paid/partial/deferred), payment_method, payment_date,
+  notes, created_at
+
+payment_logs
+  id, receipt_id, amount, payment_method, payment_date, created_at
 ```
 
 ---
 
-## UI Requirements
+## Decisions Log
 
-- Mobile responsive (Bootstrap 5)
-- Bilingual labels: Khmer + English throughout (except thermal receipt print = Khmer only)
-- Sidebar navigation (collapsible on mobile)
-- Overdue receipts highlighted in red
-- Status badges: paid (green), partial (yellow), unpaid (red)
-- Currency displayed in ៛ throughout the app
+| # | Decision | Reason |
+|---|---|---|
+| 1 | Currency in ៛ | Local market; USD shown as secondary reference only |
+| 2 | Browser print → Playwright ESC/POS | ReportLab/WeasyPrint cannot shape Khmer complex script |
+| 3 | Android companion app | No browser API for direct Bluetooth SPP; avoids third-party print apps |
+| 4 | 58mm paper | Goojprt PT-210 uses 58mm, not 80mm |
+| 5 | Khmer via image mode | Thermal printers have no Khmer ROM; image mode works on any ESC/POS printer |
+| 6 | Due day = move-in day | Natural for tenants; no extra field needed |
+| 7 | Most recent prev receipt (not just prev month) | Handles skipped months correctly |
+| 8 | `is not none` check for meter readings | `0.0` is falsy; explicit none check prevents missing zero readings |
+| 9 | Electricity defaults to Direct Input | Most landlords enter total directly, not meter readings |
+| 10 | Defer status | Tenant confirms next-month payment; hides from overdue without losing balance |
+| 11 | Payment log table | Track cumulative partial payments per receipt |
+| 12 | SQLite | Single admin, no concurrent writes. Migrate to PostgreSQL for scale. |
+| 13 | Port 8080 | Port 5000 conflicts with macOS AirPlay Receiver |
+| 14 | pbkdf2:sha256 | scrypt unavailable on Python 3.9 / macOS |
+| 15 | Configurable server URL in APK | No rebuild needed when moving from Mac to VPS |
+| 16 | Mobile-first redesign | Primary user (mother) uses phone, not desktop |
+| 17 | Language toggle (km/en) | CSS class on body + span pairs; no i18n library needed at this scale |
 
 ---
 
@@ -293,25 +255,5 @@ receipts
 - Multi-user roles (single admin only)
 - SMS / email notifications
 - Online payment integration
-- Multi-language toggle (both shown simultaneously is sufficient)
-
----
-
-## Decisions Log
-
-| # | Item | Decision |
-|---|---|---|
-| 1 | Currency | ៛ (Khmer Riel) as system currency. USD shown as secondary on thermal receipt only (1 USD = 4,000 ៛). |
-| 2 | Receipt printing | Browser-based HTML print — ReportLab/WeasyPrint cannot shape Khmer complex script. |
-| 3 | Deposit tracking | Recorded at move-in; refund amount noted at move-out. Not a running balance. |
-| 4 | Partial payment | Remaining balance carries over automatically to next month as Due Balance. |
-| 5 | Electricity default mode | Direct input (override) is the default — most landlords enter the total directly. |
-| 6 | Previous receipt lookup | Finds most recent receipt before billing month — not limited to exactly the previous calendar month, handles skipped months. |
-| 7 | Water meter — zero value | Template uses `is not none` check (not falsy check) so a reading of 0 is correctly pre-filled. |
-| 8 | Utility price tiebreaker | Same-day prices: most recently inserted row wins (`order_by effective_date DESC, id DESC`). |
-| 9 | Password hashing | `pbkdf2:sha256` — `scrypt` is unavailable on Python 3.9 / macOS. |
-| 10 | Database | SQLite — single admin, no concurrent writes. Migrate to PostgreSQL if scale grows. |
-| 11 | Port | 8080 — port 5000 conflicts with macOS AirPlay Receiver. |
-| 12 | Auth | Single admin login for v1. |
-| 13 | Billing month/year on room change | Preserved in URL query params when room dropdown changes. |
-| 14 | Previous receipt modal | Full previous receipt shown in popup modal on generate screen — doesn't interrupt the form. |
+- VPS deployment (planned for v2)
+- Play Store distribution of Android app (sideload only)
