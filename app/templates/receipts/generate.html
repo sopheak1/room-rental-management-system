@@ -298,6 +298,11 @@
                placeholder="0" oninput="onMoneyInput(this,'electricity_total_override');calcTotal()">
         <input type="hidden" name="electricity_total_override" id="electricity_total_override" value="0">
       </div>
+      <!-- Service fee sub-line (direct input only) -->
+      <div class="subtotal-row mt-1" style="font-size:0.8rem;color:#d97706;">
+        <span>💵 <span class="km">ថ្លៃសេវា</span><span class="en">Service Fee</span></span>
+        <span>+ {{ default_fee.price_per_unit|khr if default_fee else '0 ៛' }}</span>
+      </div>
     </div>
     <!-- Meter mode -->
     <div id="electricity_meter_fields" style="display:none;">
@@ -379,6 +384,11 @@
                placeholder="0" oninput="onMoneyInput(this,'water_total_override');calcTotal()">
         <input type="hidden" name="water_total_override" id="water_total_override" value="0">
       </div>
+      <!-- Service fee sub-line (direct input only) -->
+      <div class="subtotal-row mt-1" style="font-size:0.8rem;color:#d97706;">
+        <span>💵 <span class="km">ថ្លៃសេវា</span><span class="en">Service Fee</span></span>
+        <span>+ {{ default_fee.price_per_unit|khr if default_fee else '0 ៛' }}</span>
+      </div>
     </div>
     <!-- Meter mode (default for water) -->
     <div id="water_meter_fields">
@@ -427,6 +437,9 @@
     </div>
   </div>
 </div>
+
+<!-- Fee auto-calculated hidden field (no UI — set by JS based on direct input state) -->
+<input type="hidden" name="fee" id="fee" value="0">
 
 <!-- ── 5. Due Balance ──────────────────── -->
 <div class="gen-section">
@@ -594,11 +607,23 @@ function loadRoom(id) {
 }
 
 // ── Override toggle ─────────────────────
+const DEFAULT_FEE = {{ default_fee.price_per_unit|int if default_fee else 0 }};
+
 function toggleOverride(type) {
   const ov = document.getElementById(type + '_override').checked;
   document.getElementById(type + '_meter_fields').style.display = ov ? 'none' : 'block';
   document.getElementById(type + '_override_field').style.display = ov ? 'block' : 'none';
   calcTotal();
+}
+
+function calcAutoFee() {
+  const elecOv  = document.getElementById('electricity_override').checked;
+  const waterOv = document.getElementById('water_override').checked;
+  let totalFee = 0;
+  if (elecOv) totalFee += DEFAULT_FEE;
+  if (waterOv) totalFee += DEFAULT_FEE;
+  document.getElementById('fee').value = totalFee;
+  return totalFee;
 }
 
 // ── Warn if changed ─────────────────────
@@ -659,9 +684,10 @@ function calcTotal() {
   const elec    = getElecTotal();
   const water   = getWaterTotal();
   const balance = parseFloat(document.getElementById('previous_balance').value) || 0;
+  const fee     = calcAutoFee();
   const late    = parseFloat(document.getElementById('late_fee').value) || 0;
   const disc    = parseFloat(document.getElementById('discount').value) || 0;
-  const total   = room + elec + water + balance + late - disc;
+  const total   = room + elec + water + balance + fee + late - disc;
   document.getElementById('s_total').textContent = formatKhr(total);
   document.getElementById('electricity_total_display').textContent = formatKhr(elec);
   document.getElementById('water_total_display').textContent = formatKhr(water);

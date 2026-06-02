@@ -14,13 +14,18 @@ def index():
         UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).all()
     electricity_prices = UtilityPrice.query.filter_by(utility_type='electricity').order_by(
         UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).all()
+    fee_prices = UtilityPrice.query.filter_by(utility_type='fee').order_by(
+        UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).all()
     current_water = water_prices[0] if water_prices else None
     current_electricity = electricity_prices[0] if electricity_prices else None
+    current_fee = fee_prices[0] if fee_prices else None
     return render_template('utilities/index.html',
         water_prices=water_prices,
         electricity_prices=electricity_prices,
+        fee_prices=fee_prices,
         current_water=current_water,
         current_electricity=current_electricity,
+        current_fee=current_fee,
         today=date.today()
     )
 

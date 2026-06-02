@@ -34,6 +34,20 @@
   </div>
 </div>
 
+<!-- Fee current value -->
+<div class="m-section mb-3">
+  <div class="m-section-body" style="text-align:center;padding:14px;">
+    <div class="small text-muted mb-1">💵 <span class="km">ថ្លៃសេវាបច្ចុប្បន្ន</span><span class="en">Current Service Fee</span></div>
+    {% if current_fee %}
+    <div style="font-size:1.5rem;font-weight:800;color:#7c3aed;">{{ current_fee.price_per_unit|khr }}</div>
+    <div class="small text-muted"><span class="km">ប្រើពេល Direct Input</span><span class="en">applied on Direct Input</span></div>
+    <div class="small text-muted mt-1">{{ current_fee.effective_date.strftime('%d/%m/%Y') }}</div>
+    {% else %}
+    <div class="text-muted small"><span class="km">មិនទាន់កំណត់</span><span class="en">Not set</span></div>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Update form -->
 <div class="m-section">
   <div class="m-section-header" onclick="toggleMSection(this)">
@@ -46,7 +60,8 @@
       <label class="m-label"><span class="km">ប្រភេទ</span><span class="en">Type</span> *</label>
       <select name="utility_type" class="m-input" required style="font-size:1rem;">
         <option value="electricity">⚡ {% if lang=='km'%}អគ្គិសនី{% else %}Electricity{% endif %}</option>
-        <option value="water">💧 {% if lang=='km'%}ទឹក{% else %}Water{% endif %}</option>
+        <option value="water">💧 {%- if lang=='km' -%}ទឹក{%- else -%}Water{%- endif -%}</option>
+          <option value="fee">💵 {%- if lang=='km' -%}ថ្លៃសេវា{%- else -%}Service Fee{%- endif -%}</option>
       </select>
 
       <label class="m-label"><span class="km">តម្លៃ/យូនីត (៛)</span><span class="en">Price per Unit (៛)</span> *</label>

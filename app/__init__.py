@@ -1,5 +1,5 @@
 import click
-from flask import Flask, session, redirect, request
+from flask import Flask, session, redirect, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
@@ -16,6 +16,12 @@ def _migrate(db):
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE rooms ADD COLUMN due_day INTEGER DEFAULT 1'))
                 conn.commit()
+    if 'receipts' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('receipts')]
+        if 'fee' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE receipts ADD COLUMN fee REAL DEFAULT 0'))
+                conn.commit()
 
 
 def create_app():  # noqa: C901
@@ -28,6 +34,12 @@ def create_app():  # noqa: C901
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'warning'
+
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        # Clear any broken session data and redirect to login
+        session.clear()
+        return redirect(url_for('auth.login'))
 
     from app.routes.auth import auth_bp
     from app.routes.dashboard import dashboard_bp
@@ -50,6 +62,22 @@ def create_app():  # noqa: C901
     with app.app_context():
         db.create_all()
         _migrate(db)
+
+    @app.errorhandler(401)
+    def unauthorized_error(e):
+        session.clear()
+        return redirect(url_for('auth.login'))
+
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        # If session is corrupted (e.g. SECRET_KEY changed), clear and redirect to login
+        from flask_login import current_user
+        try:
+            _ = current_user.is_authenticated
+        except Exception:
+            session.clear()
+            return redirect(url_for('auth.login'))
+        raise e
 
     @app.context_processor
     def inject_lang():

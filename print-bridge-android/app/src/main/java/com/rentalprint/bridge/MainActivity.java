@@ -71,6 +71,9 @@ public class MainActivity extends AppCompatActivity {
         ws.setLoadWithOverviewMode(true);
         ws.setUseWideViewPort(true);
         ws.setBuiltInZoomControls(false);
+        // Keep ALL links (including target="_blank") inside the app
+        ws.setSupportMultipleWindows(false);
+        ws.setJavaScriptCanOpenWindowsAutomatically(false);
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
@@ -80,15 +83,29 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
-                String url = req.getUrl().toString();
-                String serverUrl = prefs.getString(PREF_URL, DEFAULT_URL);
-                if (url.startsWith(serverUrl)) return false;
-                startActivity(new Intent(Intent.ACTION_VIEW, req.getUrl()));
+                String scheme = req.getUrl().getScheme();
+                // Keep ALL http/https links inside the WebView
+                if ("http".equals(scheme) || "https".equals(scheme)) return false;
+                // Only send non-web schemes (tel:, mailto:) to external apps
+                try { startActivity(new Intent(Intent.ACTION_VIEW, req.getUrl())); } catch (Exception ignored) {}
                 return true;
             }
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError err) {
                 handler.proceed();
+            }
+        });
+
+        // Handle target="_blank" links — open in same WebView instead of browser
+        webView.setWebChromeClient(new android.webkit.WebChromeClient() {
+            @Override
+            public boolean onCreateWindow(WebView view, boolean isDialog,
+                                          boolean isUserGesture, android.os.Message resultMsg) {
+                // Get the URL from the hit test result and load it in the current WebView
+                WebView.HitTestResult result = view.getHitTestResult();
+                String url = result.getExtra();
+                if (url != null) view.loadUrl(url);
+                return false;
             }
         });
 
@@ -131,13 +148,24 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void print(int receiptId) {
+            String serverUrl = prefs.getString(PREF_URL, DEFAULT_URL);
+            doPrint(receiptId, serverUrl + "/receipts/" + receiptId + "/print?bridge=1");
+        }
+
+        @JavascriptInterface
+        public void printTable(int receiptId) {
+            String serverUrl = prefs.getString(PREF_URL, DEFAULT_URL);
+            doPrint(receiptId, serverUrl + "/receipts/" + receiptId + "/print_table?bridge=1");
+        }
+
+        private void doPrint(int receiptId, String printUrl) {
             runOnUiThread(() ->
                 webView.evaluateJavascript("showBridgePrinting()", null));
 
             new Thread(() -> {
                 try {
                     // Step 1: render to bitmap
-                    Bitmap bmp = renderToBitmap(receiptId);
+                    Bitmap bmp = renderUrlToBitmap(printUrl);
 
                     // Step 2: show preview dialog — user confirms before printing
                     CountDownLatch confirm = new CountDownLatch(1);
@@ -200,10 +228,9 @@ public class MainActivity extends AppCompatActivity {
             .show();
     }
 
-    // ── Render print page via hidden WebView → Bitmap ──────────
-    private Bitmap renderToBitmap(int receiptId) throws Exception {
+    // ── Render any print URL via hidden WebView → Bitmap ───────
+    private Bitmap renderUrlToBitmap(String printUrl) throws Exception {
         String serverUrl = prefs.getString(PREF_URL, DEFAULT_URL);
-        String printUrl  = serverUrl + "/receipts/" + receiptId + "/print?bridge=1";
 
         CountDownLatch latch  = new CountDownLatch(1);
         Bitmap[]    result    = {null};
@@ -225,6 +252,10 @@ public class MainActivity extends AppCompatActivity {
 
                 // CRITICAL: software rendering so view.draw(canvas) captures content
                 pv.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+                // Hide native scrollbars so they don't appear in the screenshot
+                pv.setVerticalScrollBarEnabled(false);
+                pv.setHorizontalScrollBarEnabled(false);
+                pv.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
 
                 // Viewport is width=220 (58mm) → physical px = 220 × device density
                 float density = getResources().getDisplayMetrics().density;
@@ -359,8 +390,11 @@ public class MainActivity extends AppCompatActivity {
                 if (newUrl.endsWith("/")) newUrl = newUrl.substring(0, newUrl.length() - 1);
                 if (!TextUtils.isEmpty(newUrl)) {
                     prefs.edit().putString(PREF_URL, newUrl).apply();
+                    // Clear old session cookies so login page shows correctly on new server
+                    CookieManager.getInstance().removeAllCookies(null);
+                    CookieManager.getInstance().flush();
                     stopBridge(); loadWebApp(); startBridge();
-                    Toast.makeText(this, "URL saved & reloaded", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "URL saved — please log in", Toast.LENGTH_SHORT).show();
                 }
             })
             .setNegativeButton("Close", null)

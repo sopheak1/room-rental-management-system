@@ -15,6 +15,38 @@ def index():
     return render_template('reports/index.html')
 
 
+@reports_bp.route('/reports/breakdown')
+@login_required
+def breakdown():
+    now = datetime.now()
+    month = request.args.get('month', type=int, default=now.month)
+    year  = request.args.get('year',  type=int, default=now.year)
+
+    receipts = Receipt.query.filter_by(billing_month=month, billing_year=year).all()
+
+    data = {
+        'room_fee':          sum(r.room_price              for r in receipts),
+        'electricity_units': sum((r.electricity_units or 0) for r in receipts),
+        'electricity_fee':   sum(r.electricity_total        for r in receipts),
+        'water_units':       sum((r.water_units or 0)       for r in receipts),
+        'water_fee':         sum(r.water_total              for r in receipts),
+        'service_fee':       sum((r.fee or 0)               for r in receipts),
+        'credit':            sum(r.paid_amount              for r in receipts),
+        'credit_balance':    sum(r.remaining_balance        for r in receipts if r.payment_status != 'deferred'),
+        'deferred':          sum(r.remaining_balance        for r in receipts if r.payment_status == 'deferred'),
+        'total_expected':    sum(r.total_amount             for r in receipts),
+        'count':             len(receipts),
+    }
+
+    KM_MONTHS = ['មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា',
+                 'កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ']
+
+    return render_template('reports/breakdown.html',
+        data=data, month=month, year=year,
+        KM_MONTHS=KM_MONTHS, MONTH_NAMES=MONTH_NAMES, now=now
+    )
+
+
 @reports_bp.route('/reports/summary')
 @login_required
 def summary():

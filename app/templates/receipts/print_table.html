@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  {% if bridge %}
+  <meta name="viewport" content="width=220, initial-scale=1.0">
+  {% else %}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% endif %}
+  <title>{{ receipt.receipt_number }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: 58mm auto; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    ::-webkit-scrollbar { display: none; }
+    html, body { overflow: hidden; }
+
+    body {
+      font-family: 'Noto Sans Khmer', sans-serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: #000;
+      background: #fff;
+      width: 58mm;
+      padding: 1mm 1mm;
+    }
+    @media print {
+      html, body { width: 58mm; }
+      .no-print { display: none !important; }
+    }
+    {% if bridge %}* { font-weight: 700 !important; }{% endif %}
+
+    .title { text-align:center; font-size:15px; font-weight:700; margin-bottom:2px; }
+    .phone { text-align:center; font-size:10px; margin-bottom:2px; }
+
+    hr.thick { border:none; border-top:2px solid #000; margin:1px 0; }
+    hr.thin  { border:none; border-top:1px dashed #555; margin:1px 0; }
+
+    .info { display:flex; justify-content:space-between; font-size:11px; margin:0; }
+    .info .lbl { color:#333; }
+    .info .val { font-weight:700; text-align:right; }
+
+    .item-block { margin:0; }
+    .item-name {
+      font-size:17px; font-weight:700;
+      text-align:center;
+      border-bottom:1px solid #000;
+      padding-bottom:0; margin-bottom:1px;
+    }
+    .item-row { display:flex; justify-content:space-between; font-size:15px; margin:0; }
+    .item-total {
+      display:flex; justify-content:space-between;
+      font-size:17px; font-weight:700;
+      margin-top:1px; padding-top:0;
+      border-top:1px dotted #000;
+    }
+
+    .total-block { margin:0; }
+    .total-row { display:flex; justify-content:space-between; font-size:16px; margin:0; }
+    .total-row.grand {
+      font-size:20px; font-weight:700;
+      border-top:2px solid #000;
+      border-bottom:2px solid #000;
+      padding:1px 0; margin:1px 0;
+    }
+    .paid-mark { font-size:16px; font-weight:700; }
+
+    .sigs { display:flex; justify-content:space-between; margin-top:4px; }
+    .sig { text-align:center; width:46%; font-size:13px; }
+    .sig-line { border-top:1px dotted #000; margin-top:12px; }
+
+    .note { font-size:8px; margin:0; font-style:italic; }
+
+    .no-print {
+      display:flex; gap:8px; justify-content:center;
+      padding:10px; background:#1e293b; margin-bottom:10px;
+      font-family:system-ui,sans-serif;
+    }
+    .no-print button {
+      padding:7px 16px; font-size:13px; cursor:pointer;
+      border-radius:5px; border:none; font-weight:600;
+    }
+    .btn-p { background:#3b82f6; color:#fff; }
+    .btn-t { background:#7c3aed; color:#fff; }
+    .btn-c { background:#475569; color:#fff; }
+  </style>
+</head>
+<body>
+
+<div class="no-print" id="toolbar">
+  <button class="btn-p" onclick="window.print()">🖨️ Print</button>
+  <button class="btn-t" id="bridgeBtn" onclick="printBridge()">📶 PT-210</button>
+  <button class="btn-c" onclick="history.back()">✕ Close</button>
+</div>
+<script>
+if (new URLSearchParams(window.location.search).get('bridge') === '1') {
+  document.getElementById('toolbar').style.display = 'none';
+}
+</script>
+
+<div class="title">វិក័យប័ត្រប្រចាំបន្ទប់</div>
+<div class="phone">Tel: 010 938 012 / 011 938 012</div>
+<hr class="thick">
+
+<div class="info">
+  <span class="lbl">លេខ</span>
+  <span class="val">{{ receipt.receipt_number }}</span>
+</div>
+<div class="info">
+  <span class="lbl">អ្នកជួល</span>
+  <span class="val">{{ receipt.tenant.name if receipt.tenant else '—' }}</span>
+</div>
+<div class="info">
+  <span class="lbl">ទូរស័ព្ទ</span>
+  <span class="val">{{ receipt.tenant.tel if receipt.tenant else '—' }}</span>
+</div>
+<div class="info">
+  <span class="lbl">បន្ទប់</span>
+  <span class="val">{{ receipt.room.room_number }} · {{ receipt.room.building.name }}</span>
+</div>
+<div class="info">
+  <span class="lbl">កាលបរិច្ឆេទ</span>
+  <span class="val">
+    {% if receipt.tenant and receipt.tenant.move_in_date %}
+      {{ '%02d'|format(receipt.tenant.move_in_date.day) }}/{{ '%02d'|format(receipt.billing_month) }}/{{ receipt.billing_year }}
+    {% else %}
+      {{ '%02d'|format(receipt.billing_month) }}/{{ receipt.billing_year }}
+    {% endif %}
+  </span>
+</div>
+<hr class="thick">
+
+{% if receipt.water_total > 0 or receipt.water_from is not none %}
+<div class="item-block">
+  <div class="item-name">💧 ទឹក{% if receipt.water_units is not none and receipt.water_price_per_unit %} {{ receipt.water_price_per_unit|khr }}/m³{% endif %}</div>
+  {% if receipt.water_from is not none %}
+  <div class="item-row">
+    <span>ចាស់: {{ receipt.water_from|int }}</span>
+    <span>→</span>
+    <span>ថ្មី: {{ receipt.water_to|int }}</span>
+    <span>= {{ '%.0f'|format(receipt.water_units) }} m³</span>
+  </div>
+  {% endif %}
+  <div class="item-total">
+    <span>សរុបទឹក</span>
+    <span>{{ receipt.water_total|khr }}</span>
+  </div>
+</div>
+<hr class="thin">
+{% endif %}
+
+{% if receipt.electricity_total > 0 or receipt.electricity_from is not none %}
+<div class="item-block">
+  <div class="item-name">⚡ អគ្គិសនី{% if receipt.electricity_units is not none and receipt.electricity_price_per_unit %} {{ receipt.electricity_price_per_unit|khr }}/kWh{% endif %}</div>
+  {% if receipt.electricity_from is not none %}
+  <div class="item-row">
+    <span>ចាស់: {{ receipt.electricity_from|int }}</span>
+    <span>→</span>
+    <span>ថ្មី: {{ receipt.electricity_to|int }}</span>
+    <span>= {{ '%.0f'|format(receipt.electricity_units) }} kWh</span>
+  </div>
+  {% endif %}
+  <div class="item-total">
+    <span>សរុបភ្លើង</span>
+    <span>{{ receipt.electricity_total|khr }}</span>
+  </div>
+</div>
+<hr class="thin">
+{% endif %}
+
+<div class="item-block">
+  <div class="item-name">🏠 ថ្លៃបន្ទប់</div>
+  <div class="item-total">
+    <span>ថ្លៃបន្ទប់</span>
+    <span>{{ receipt.room_price|khr }}</span>
+  </div>
+  {% if receipt.previous_balance and receipt.previous_balance > 0 %}
+  <div class="item-row">
+    <span>ជំពាក់ចាស់</span>
+    <span>{{ receipt.previous_balance|khr }}</span>
+  </div>
+  {% endif %}
+  {% if receipt.fee and receipt.fee > 0 %}
+  <div class="item-row">
+    <span>ថ្លៃសេវា</span>
+    <span>{{ receipt.fee|khr }}</span>
+  </div>
+  {% endif %}
+  {% if receipt.late_fee and receipt.late_fee > 0 %}
+  <div class="item-row">
+    <span>ពិន័យ</span>
+    <span>{{ receipt.late_fee|khr }}</span>
+  </div>
+  {% endif %}
+  {% if receipt.discount and receipt.discount > 0 %}
+  <div class="item-row">
+    <span>បញ្ចុះ</span>
+    <span>-{{ receipt.discount|khr }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<hr class="thick">
+
+<div class="total-block">
+  <div class="total-row grand">
+    <span>សរុប</span>
+    <span>{{ receipt.total_amount|khr }}</span>
+  </div>
+  <div class="total-row">
+    <span>បានបង់</span>
+    <span class="paid-mark">
+      {% if receipt.payment_status == 'paid' %}{{ receipt.paid_amount|khr }} ✓
+      {% elif receipt.payment_status == 'partial' %}{{ receipt.paid_amount|khr }}
+      {% else %}—{% endif %}
+    </span>
+  </div>
+  {% if receipt.remaining_balance > 0 %}
+  <div class="total-row" style="color:#cc0000;">
+    <span>នៅជំពាក់</span>
+    <span>{{ receipt.remaining_balance|khr }}</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if receipt.payment_logs %}
+<hr class="thin">
+<div style="font-size:11px;font-weight:700;">ប្រវត្តិការទូទាត់</div>
+{% set ns = namespace(running=receipt.total_amount) %}
+{% for log in receipt.payment_logs %}
+{% set ns.running = ns.running - log.amount %}
+<div class="item-row" style="font-size:10px;">
+  <span>{{ log.payment_date.strftime('%d/%m/%Y') }}
+    {% set m = {'cash':'សាច់','bank_transfer':'ធនា','qr':'QR'} %}
+    · {{ m.get(log.payment_method,'') }}
+  </span>
+  <span>+{{ log.amount|khr }}</span>
+  <span style="color:{{ '#cc0000' if ns.running > 0 else '#007700' }};">{{ ns.running|khr }}</span>
+</div>
+{% endfor %}
+{% endif %}
+
+<hr class="thin">
+<div class="note">អ្នកជួលត្រូវរក្សាទុកវិក័យប័ត្រនេះ។</div>
+
+<div class="sigs">
+  <div class="sig">
+    <div>&nbsp;</div>
+    <div class="sig-line"></div>
+  </div>
+  <div class="sig">
+    <div>&nbsp;</div>
+    <div class="sig-line"></div>
+  </div>
+</div>
+
+<script>
+async function printBridge() {
+  const btn = document.getElementById('bridgeBtn');
+  btn.disabled = true; btn.textContent = '⏳';
+  const id = {{ receipt.id }};
+  if (window.Android && window.Android.isAvailable()) {
+    window.Android.printTable(id);
+    setTimeout(() => { btn.textContent = '📶 PT-210'; btn.disabled = false; }, 4000);
+  } else {
+    try {
+      const r = await fetch('/receipts/' + id + '/escpos');
+      const d = await r.arrayBuffer();
+      await fetch('http://localhost:9100/print', {
+        method:'POST', headers:{'Content-Type':'application/octet-stream'}, body:d
+      });
+      btn.textContent = '✓';
+    } catch(e) { btn.textContent = '❌'; }
+    setTimeout(() => { btn.textContent = '📶 PT-210'; btn.disabled = false; }, 3000);
+  }
+}
+</script>
+</body>
+</html>

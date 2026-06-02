@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}របាយការណ៍លម្អិត{% else %}Breakdown Report{% endif %}{% endblock %}
+
+{% block head %}
+<style>
+.breakdown-header {
+  background: linear-gradient(135deg, #1e3a5f, #1d4ed8);
+  color: #fff;
+  padding: 16px;
+  margin: -12px -12px 0;
+}
+.month-scroller {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding-bottom: 4px; margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.month-scroller::-webkit-scrollbar { display: none; }
+.month-chip {
+  flex-shrink: 0; padding: 5px 12px; border-radius: 20px;
+  font-size: 0.8rem; font-weight: 600;
+  background: rgba(255,255,255,.15); color: #fff;
+  text-decoration: none; white-space: nowrap;
+}
+.month-chip.active { background: #fff; color: #1d4ed8; }
+
+.bd-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid #f1f5f9;
+  font-size: 0.95rem;
+}
+.bd-row:last-child { border-bottom: none; }
+.bd-row .bd-lbl { color: #475569; }
+.bd-row .bd-val { font-weight: 700; font-size: 1rem; }
+.bd-row .bd-unit { font-size: 0.75rem; color: #94a3b8; margin-left: 4px; }
+
+.bd-section-title {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: #94a3b8;
+  padding: 10px 16px 4px; background: #f8fafc;
+}
+.bd-total {
+  background: #1e293b; color: #fff;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px; border-radius: 12px; margin: 12px 0;
+}
+.bd-total .lbl { font-size: 0.85rem; color: #94a3b8; }
+.bd-total .val { font-size: 1.4rem; font-weight: 800; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="breakdown-header">
+  <div style="font-size:.85rem;opacity:.75;margin-bottom:4px;">
+    <span class="km">របាយការណ៍លម្អិត</span><span class="en">Monthly Breakdown</span>
+  </div>
+  <div style="font-size:1.3rem;font-weight:800;margin-bottom:12px;">
+    <span class="km">{{ KM_MONTHS[month-1] }} {{ year }}</span>
+    <span class="en">{{ MONTH_NAMES[month-1] }} {{ year }}</span>
+  </div>
+
+  <!-- Month chips -->
+  <div class="month-scroller">
+    {% for i in range(1,13) %}
+    <a href="{{ url_for('reports.breakdown', month=i, year=year) }}"
+       class="month-chip {{ 'active' if month==i }}">
+      {{ MONTH_NAMES[i-1] }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Year nav -->
+  <div class="d-flex justify-content-between align-items-center">
+    <a href="{{ url_for('reports.breakdown', month=month, year=year-1) }}"
+       style="color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;">
+      ← {{ year-1 }}
+    </a>
+    <span style="font-size:.85rem;font-weight:700;">{{ year }}</span>
+    <a href="{{ url_for('reports.breakdown', month=month, year=year+1) }}"
+       style="color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;">
+      {{ year+1 }} →
+    </a>
+  </div>
+</div>
+
+<!-- Total expected -->
+<div class="bd-total mt-3">
+  <div>
+    <div class="lbl">
+      <span class="km">សរុបរំពឹងទុក</span><span class="en">Total Expected</span>
+      <span class="ms-2" style="font-size:.75rem;">{{ data.count }} <span class="km">វិក័យប័ត្រ</span><span class="en">receipts</span></span>
+    </div>
+    <div class="val">{{ data.total_expected|khr }}</div>
+  </div>
+</div>
+
+<!-- Room -->
+<div class="m-section">
+  <div class="bd-section-title">🏠 <span class="km">ថ្លៃបន្ទប់</span><span class="en">Room Fee</span></div>
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">សរុបថ្លៃបន្ទប់</span><span class="en">Total Room Fee</span></span>
+    <span class="bd-val">{{ data.room_fee|khr }}</span>
+  </div>
+</div>
+
+<!-- Electricity -->
+<div class="m-section">
+  <div class="bd-section-title">⚡ <span class="km">អគ្គិសនី</span><span class="en">Electricity</span></div>
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">ប្រើប្រាស់សរុប</span><span class="en">Total Usage</span></span>
+    <span class="bd-val">{{ '%.1f'|format(data.electricity_units) }}<span class="bd-unit">kWh</span></span>
+  </div>
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">សរុបថ្លៃអគ្គិសនី</span><span class="en">Total Electricity Fee</span></span>
+    <span class="bd-val">{{ data.electricity_fee|khr }}</span>
+  </div>
+</div>
+
+<!-- Water -->
+<div class="m-section">
+  <div class="bd-section-title">💧 <span class="km">ទឹក</span><span class="en">Water</span></div>
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">ប្រើប្រាស់សរុប</span><span class="en">Total Usage</span></span>
+    <span class="bd-val">{{ '%.1f'|format(data.water_units) }}<span class="bd-unit">m³</span></span>
+  </div>
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">សរុបថ្លៃទឹក</span><span class="en">Total Water Fee</span></span>
+    <span class="bd-val">{{ data.water_fee|khr }}</span>
+  </div>
+</div>
+
+<!-- Service fee -->
+{% if data.service_fee > 0 %}
+<div class="m-section">
+  <div class="bd-section-title">💵 <span class="km">ថ្លៃសេវា</span><span class="en">Service Fee</span></div>
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">សរុបថ្លៃសេវា</span><span class="en">Total Service Fee</span></span>
+    <span class="bd-val">{{ data.service_fee|khr }}</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- Payments -->
+<div class="m-section">
+  <div class="bd-section-title">💰 <span class="km">ការទូទាត់</span><span class="en">Payments</span></div>
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">ប្រមូលបាន (Credit)</span><span class="en">Credit Collected</span></span>
+    <span class="bd-val text-success">{{ data.credit|khr }}</span>
+  </div>
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">នៅជំពាក់ (Credit Balance)</span><span class="en">Credit Balance</span></span>
+    <span class="bd-val {{ 'text-danger' if data.credit_balance > 0 else 'text-success' }}">
+      {{ data.credit_balance|khr }}
+    </span>
+  </div>
+  {% if data.deferred > 0 %}
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">ពន្យារខែក្រោយ (Deferred)</span><span class="en">Deferred to Next Month</span></span>
+    <span class="bd-val text-secondary">{{ data.deferred|khr }}</span>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

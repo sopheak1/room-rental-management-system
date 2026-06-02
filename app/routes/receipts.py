@@ -68,6 +68,8 @@ def generate():
         UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).first()
     electricity_price = UtilityPrice.query.filter_by(utility_type='electricity').order_by(
         UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).first()
+    default_fee = UtilityPrice.query.filter_by(utility_type='fee').order_by(
+        UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).first()
 
     if request.method == 'POST':
         room_id = int(request.form['room_id'])
@@ -109,10 +111,11 @@ def generate():
             water_total = round(w_units * w_ppu, 2)
 
         previous_balance = float(request.form.get('previous_balance') or 0)
+        fee = float(request.form.get('fee') or 0)
         late_fee = float(request.form.get('late_fee') or 0)
         discount = float(request.form.get('discount') or 0)
 
-        total_amount = round(room.price + electricity_total + water_total + previous_balance + late_fee - discount, 2)
+        total_amount = round(room.price + electricity_total + water_total + previous_balance + fee + late_fee - discount, 2)
 
         payment_status = request.form.get('payment_status', 'unpaid')
         paid_amount = float(request.form.get('paid_amount') or 0)
@@ -147,6 +150,7 @@ def generate():
             water_price_per_unit=w_ppu,
             water_total=water_total,
             previous_balance=previous_balance,
+            fee=fee,
             late_fee=late_fee,
             discount=discount,
             total_amount=total_amount,
@@ -175,6 +179,7 @@ def generate():
         prev_receipt=prev_receipt,
         water_price=water_price,
         electricity_price=electricity_price,
+        default_fee=default_fee,
         today=date.today(),
         now=now,
         billing_month=billing_month,
@@ -250,6 +255,18 @@ def print_receipt(id):
     receipt = Receipt.query.get_or_404(id)
     bridge = request.args.get('bridge') == '1'
     return render_template('receipts/print.html', receipt=receipt, bridge=bridge)
+
+
+@receipts_bp.route('/receipts/<int:id>/print_table')
+@login_required
+def print_table(id):
+    """Traditional Khmer table-style receipt — 58mm thermal, browser or PT-210."""
+    receipt = Receipt.query.get_or_404(id)
+    bridge = request.args.get('bridge') == '1'
+    KM_MONTHS = ['មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា',
+                 'កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ']
+    return render_template('receipts/print_table.html',
+                           receipt=receipt, KM_MONTHS=KM_MONTHS, bridge=bridge)
 
 
 @receipts_bp.route('/receipts/<int:id>/escpos')

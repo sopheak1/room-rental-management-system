@@ -120,6 +120,7 @@ class Receipt(db.Model):
     water_price_per_unit = db.Column(db.Float, nullable=True)
     water_total = db.Column(db.Float, default=0)
     previous_balance = db.Column(db.Float, default=0)
+    fee = db.Column(db.Float, default=0)
     late_fee = db.Column(db.Float, default=0)
     discount = db.Column(db.Float, default=0)
     total_amount = db.Column(db.Float, nullable=False)

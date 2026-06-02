@@ -42,7 +42,14 @@
     </a>
   </li>
   <li class="nav-item">
-    <a class="nav-link {% if 'reports' in (request.endpoint or '') and request.endpoint != 'reports.summary' %}active{% endif %}"
+    <a class="nav-link {% if request.endpoint == 'reports.breakdown' %}active{% endif %}"
+       href="{{ url_for('reports.breakdown') }}">
+      <i class="bi bi-bar-chart-steps"></i>
+      <span><span class="km">លម្អិតប្រចាំខែ</span><span class="en">Breakdown</span></span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if 'reports' in (request.endpoint or '') and request.endpoint not in ('reports.summary','reports.breakdown') %}active{% endif %}"
        href="{{ url_for('reports.index') }}">
       <i class="bi bi-bar-chart-line"></i>
       <span><span class="km">របាយការណ៍</span><span class="en">Reports</span></span>
