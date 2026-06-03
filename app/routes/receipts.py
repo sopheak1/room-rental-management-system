@@ -16,6 +16,20 @@ def _generate_receipt_number(year, month):
     return f"RCP-{year}{month:02d}-{count + 1:04d}"
 
 
+def _has_next_receipt(receipt):
+    """Check if a receipt for the next billing month already exists."""
+    next_month = receipt.billing_month + 1
+    next_year  = receipt.billing_year
+    if next_month > 12:
+        next_month = 1
+        next_year += 1
+    return Receipt.query.filter_by(
+        room_id=receipt.room_id,
+        billing_month=next_month,
+        billing_year=next_year
+    ).first() is not None
+
+
 def _get_previous_receipt(room_id, year, month):
     return Receipt.query.filter(
         Receipt.room_id == room_id,
@@ -195,7 +209,8 @@ def generate():
 @login_required
 def detail(id):
     receipt = Receipt.query.get_or_404(id)
-    return render_template('receipts/detail.html', receipt=receipt, today=_today())
+    return render_template('receipts/detail.html', receipt=receipt,
+                           today=_today(), locked=_has_next_receipt(receipt))
 
 
 @receipts_bp.route('/receipts/<int:id>/pay', methods=['POST'])
@@ -238,6 +253,10 @@ def pay(id):
 def delete_payment_log(id, log_id):
     receipt = Receipt.query.get_or_404(id)
     log     = PaymentLog.query.get_or_404(log_id)
+
+    if _has_next_receipt(receipt):
+        flash('Cannot delete payment — a receipt for the next month already exists. / មិនអាចលុប — វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ។', 'danger')
+        return redirect(url_for('receipts.detail', id=id))
 
     # Safety: only allow deleting the LAST payment log entry
     last_log = PaymentLog.query.filter_by(receipt_id=id)\
@@ -289,6 +308,10 @@ def undefer_receipt(id):
 @login_required
 def edit_receipt(id):
     receipt = Receipt.query.get_or_404(id)
+
+    if _has_next_receipt(receipt):
+        flash('Cannot edit — a receipt for the next month already exists and carries this balance. / មិនអាចកែប្រែ — វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ។', 'danger')
+        return redirect(url_for('receipts.detail', id=id))
 
     if request.method == 'POST':
         elec_override = receipt.electricity_units is None

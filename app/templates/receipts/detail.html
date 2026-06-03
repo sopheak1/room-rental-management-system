@@ -18,12 +18,20 @@
 </div>
 
 <!-- Edit + Print options -->
+{% if locked %}
+<div class="alert alert-warning py-2 small mb-2">
+  <i class="bi bi-lock-fill me-1"></i>
+  <span class="km">វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ — មិនអាចកែប្រែ ឬលុបការទូទាត់បានទេ។</span>
+  <span class="en">Next month's receipt exists — editing and payment deletion are locked.</span>
+</div>
+{% else %}
 <div class="d-flex gap-2 mb-2">
   <a href="{{ url_for('receipts.edit_receipt', id=receipt.id) }}" class="btn btn-outline-secondary flex-fill btn-sm fw-semibold">
     <i class="bi bi-pencil-square me-1"></i>
     <span class="km">កែប្រែ</span><span class="en">Edit Receipt</span>
   </a>
 </div>
+{% endif %}
 <div class="d-flex gap-2 mb-3">
   <!-- Thermal receipt → PT-210 via Bluetooth -->
   <button onclick="printViaBridge({{ receipt.id }})" class="btn btn-primary flex-fill btn-sm fw-semibold" id="bridgePrintBtn">
@@ -297,7 +305,7 @@
           <span class="text-success">+{{ log.amount|khr }}</span>
           <div class="small {{ 'text-danger' if ns.running > 0 else 'text-success' }}">{{ ns.running|khr }}</div>
         </span>
-        {% if log.id == last_log_id %}
+        {% if log.id == last_log_id and not locked %}
         <form method="POST"
               action="{{ url_for('receipts.delete_payment_log', id=receipt.id, log_id=log.id) }}"
               {% set del_msg = 'លុបការទូទាត់នេះ?' if lang=='km' else 'Delete this payment?' %}
