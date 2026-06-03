@@ -66,7 +66,7 @@
     <div class="m-row mt-2">
       <div>
         <label class="m-label"><span class="km">តម្លៃ/kWh</span><span class="en">Price/kWh</span></label>
-        <input type="number" name="electricity_price_per_unit" class="m-input" step="1"
+        <input type="text" inputmode="numeric" name="electricity_price_per_unit" class="money-input m-input" step="1"
                value="{{ receipt.electricity_price_per_unit|int if receipt.electricity_price_per_unit else (electricity_price.price_per_unit|int if electricity_price else 0) }}"
                oninput="calcElec()">
       </div>
@@ -112,7 +112,7 @@
     <div class="m-row mt-2">
       <div>
         <label class="m-label"><span class="km">តម្លៃ/m³</span><span class="en">Price/m³</span></label>
-        <input type="number" name="water_price_per_unit" class="m-input" step="1"
+        <input type="text" inputmode="numeric" name="water_price_per_unit" class="money-input m-input" step="1"
                value="{{ receipt.water_price_per_unit|int if receipt.water_price_per_unit else (water_price.price_per_unit|int if water_price else 0) }}"
                oninput="calcWater()">
       </div>
@@ -136,31 +136,31 @@
     <label class="m-label"><span class="km">ថ្លៃបន្ទប់ (៛)</span><span class="en">Room Price (៛)</span></label>
     <div class="m-input-group mb-3">
       <span class="m-prefix">៛</span>
-      <input type="number" name="room_price" step="1" min="0"
+      <input class="money-input" type="text" inputmode="numeric" name="room_price" step="1" min="0"
              value="{{ receipt.room_price|int }}" oninput="calcTotal()">
     </div>
     <label class="m-label"><span class="km">សមតុល្យចាស់ (៛)</span><span class="en">Due Balance (៛)</span></label>
     <div class="m-input-group mb-3">
       <span class="m-prefix">៛</span>
-      <input type="number" name="previous_balance" step="1" min="0"
+      <input class="money-input" type="text" inputmode="numeric" name="previous_balance" step="1" min="0"
              value="{{ receipt.previous_balance|int }}" oninput="calcTotal()">
     </div>
     <label class="m-label"><span class="km">ថ្លៃសេវា (៛)</span><span class="en">Service Fee (៛)</span></label>
     <div class="m-input-group mb-3">
       <span class="m-prefix">៛</span>
-      <input type="number" name="fee" step="1" min="0"
+      <input class="money-input" type="text" inputmode="numeric" name="fee" step="1" min="0"
              value="{{ receipt.fee|int if receipt.fee else 0 }}" oninput="calcTotal()">
     </div>
     <label class="m-label"><span class="km">ពិន័យ (៛)</span><span class="en">Late Fee (៛)</span></label>
     <div class="m-input-group mb-3">
       <span class="m-prefix">៛</span>
-      <input type="number" name="late_fee" step="1" min="0"
+      <input class="money-input" type="text" inputmode="numeric" name="late_fee" step="1" min="0"
              value="{{ receipt.late_fee|int if receipt.late_fee else 0 }}" oninput="calcTotal()">
     </div>
     <label class="m-label"><span class="km">បញ្ចុះ (៛)</span><span class="en">Discount (៛)</span></label>
     <div class="m-input-group mb-3">
       <span class="m-prefix">៛</span>
-      <input type="number" name="discount" step="1" min="0"
+      <input class="money-input" type="text" inputmode="numeric" name="discount" step="1" min="0"
              value="{{ receipt.discount|int if receipt.discount else 0 }}" oninput="calcTotal()">
     </div>
     <label class="m-label"><span class="km">កំណត់ចំណាំ</span><span class="en">Notes</span></label>

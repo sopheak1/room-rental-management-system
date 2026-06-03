@@ -336,8 +336,8 @@
           <span class="gen-label">
             <span class="km">តម្លៃ/យូនីត (៛)</span><span class="en">Price/Unit (៛)</span>
           </span>
-          <input type="number" name="electricity_price_per_unit" id="electricity_price_per_unit"
-                 class="gen-input" step="1" min="0"
+          <input type="text" inputmode="numeric" name="electricity_price_per_unit" id="electricity_price_per_unit"
+                 class="money-input gen-input" step="1" min="0"
                  value="{{ electricity_price.price_per_unit if electricity_price else '' }}"
                  data-original="{{ electricity_price.price_per_unit if electricity_price else '' }}"
                  oninput="calcElectricity(); warnIfChanged(this,'w_elec_ppu')">
@@ -422,8 +422,8 @@
           <span class="gen-label">
             <span class="km">តម្លៃ/យូនីត (៛)</span><span class="en">Price/Unit (៛)</span>
           </span>
-          <input type="number" name="water_price_per_unit" id="water_price_per_unit"
-                 class="gen-input" step="1" min="0"
+          <input type="text" inputmode="numeric" name="water_price_per_unit" id="water_price_per_unit"
+                 class="money-input gen-input" step="1" min="0"
                  value="{{ water_price.price_per_unit if water_price else '' }}"
                  data-original="{{ water_price.price_per_unit if water_price else '' }}"
                  oninput="calcWater(); warnIfChanged(this,'w_water_ppu')">

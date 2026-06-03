@@ -52,14 +52,14 @@
     <label class="m-label"><span class="km">ថ្លៃ/ខែ (៛)</span><span class="en">Price/month (៛)</span> *</label>
     <div class="m-input-group">
       <span class="m-prefix">៛</span>
-      <input type="number" name="price" step="1" min="0" required
+      <input class="money-input" type="text" inputmode="numeric" name="price" step="1" min="0" required
              value="{{ room.price|int if room else '' }}" placeholder="200000">
     </div>
 
     <label class="m-label"><span class="km">ប្រាក់បញ្ចាំ (៛)</span><span class="en">Deposit (៛)</span></label>
     <div class="m-input-group">
       <span class="m-prefix">៛</span>
-      <input type="number" name="deposit_amount" step="1" min="0"
+      <input class="money-input" type="text" inputmode="numeric" name="deposit_amount" step="1" min="0"
              value="{{ room.deposit_amount|int if room else 0 }}">
     </div>
   </div>

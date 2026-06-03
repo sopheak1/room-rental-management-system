@@ -194,7 +194,7 @@
           <label class="m-label"><span class="km">ថ្ងៃចេញ</span><span class="en">Move-out Date</span> *</label>
           <input type="date" name="move_out_date" class="m-input mb-3" required value="{{ today.strftime('%Y-%m-%d') }}">
           <label class="m-label"><span class="km">ប្រាក់បញ្ចាំសងត្រឡប់ (៛)</span><span class="en">Deposit Refunded (៛)</span></label>
-          <input type="number" name="deposit_refunded" class="m-input mb-3" step="1" min="0" value="{{ t.deposit_paid|int }}">
+          <input type="text" inputmode="numeric" name="deposit_refunded" class="money-input m-input mb-3" step="1" min="0" value="{{ t.deposit_paid|int }}">
           <label class="m-label"><span class="km">មូលហេតុចេញ</span><span class="en">Move-out Reason</span></label>
           <textarea name="move_out_reason" class="m-input" rows="2" style="font-weight:400;resize:none;"></textarea>
         </div>

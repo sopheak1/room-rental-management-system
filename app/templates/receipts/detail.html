@@ -251,7 +251,7 @@
       <label class="m-label"><span class="km">ចំនួនបង់ (៛)</span><span class="en">Paid Amount (៛)</span></label>
       <div class="m-input-group mb-3">
         <span class="m-prefix">៛</span>
-        <input type="number" name="paid_amount" id="detail_paid_amount" step="1" min="0"
+        <input class="money-input" type="text" inputmode="numeric" name="paid_amount" id="detail_paid_amount" step="1" min="0"
                value="{{ receipt.remaining_balance|int }}" required>
       </div>
       <label class="m-label"><span class="km">វិធីទូទាត់</span><span class="en">Payment Method</span></label>
