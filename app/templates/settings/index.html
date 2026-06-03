@@ -37,11 +37,17 @@
     </div>
     {% endif %}
 
-    <div class="d-flex gap-2 mt-3">
+    <div class="d-flex gap-2 mt-3 flex-wrap">
       <form method="POST" action="{{ url_for('settings.backup_now') }}" class="flex-fill">
         <button class="btn btn-primary w-100 fw-bold">
           <i class="bi bi-cloud-upload me-1"></i>
           <span class="km">បម្រុងទុកឥឡូវ</span><span class="en">Backup Now</span>
+        </button>
+      </form>
+      <form method="POST" action="{{ url_for('settings.test_connection') }}" class="flex-fill">
+        <button class="btn btn-outline-info w-100 fw-bold">
+          <i class="bi bi-wifi me-1"></i>
+          <span class="km">សាកល្បង</span><span class="en">Test</span>
         </button>
       </form>
       <form method="POST" action="{{ url_for('settings.disconnect') }}"

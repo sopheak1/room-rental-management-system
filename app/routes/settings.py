@@ -160,6 +160,51 @@ def backup_now():
     return redirect(url_for('settings.index'))
 
 
+@settings_bp.route('/settings/test', methods=['POST'])
+@login_required
+def test_connection():
+    """Upload a tiny test file to Drive and delete it — confirms everything works."""
+    folder_id = os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '')
+    if not folder_id:
+        flash('Folder ID not set. Complete Step 2 first.', 'warning')
+        return redirect(url_for('settings.index'))
+
+    if not _is_connected():
+        flash('Not connected to Google Drive. Complete Step 3 first.', 'warning')
+        return redirect(url_for('settings.index'))
+
+    try:
+        import io
+        from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
+        from googleapiclient.discovery import build
+        from googleapiclient.http import MediaIoBaseUpload
+
+        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        service = build('drive', 'v3', credentials=creds, cache_discovery=False)
+
+        # Upload a tiny test file
+        content = b'Google Drive backup test - rental management system'
+        media = MediaIoBaseUpload(io.BytesIO(content), mimetype='text/plain')
+        f = service.files().create(
+            body={'name': 'test_connection.txt', 'parents': [folder_id]},
+            media_body=media,
+            fields='id, name'
+        ).execute()
+
+        # Delete it right away
+        service.files().delete(fileId=f['id']).execute()
+
+        flash('✅ Google Drive connection test passed! Upload and delete both worked.', 'success')
+
+    except Exception as e:
+        flash(f'❌ Test failed: {e}', 'danger')
+
+    return redirect(url_for('settings.index'))
+
+
 @settings_bp.route('/settings/disconnect', methods=['POST'])
 @login_required
 def disconnect():
