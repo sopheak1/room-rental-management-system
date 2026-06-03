@@ -15,8 +15,15 @@ def backup_to_drive():
       GOOGLE_DRIVE_FOLDER_ID       — Google Drive folder ID to upload into
     """
     def _run():
-        sa_json   = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
         folder_id = os.environ.get('GOOGLE_DRIVE_FOLDER_ID')
+
+        # Support both: file path OR inline JSON string
+        key_path  = os.environ.get('GOOGLE_SERVICE_ACCOUNT_PATH')
+        sa_json   = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+
+        if key_path and os.path.exists(key_path):
+            with open(key_path) as f:
+                sa_json = f.read()
 
         if not sa_json or not folder_id:
             return  # not configured — skip silently
