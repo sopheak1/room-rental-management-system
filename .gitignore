@@ -13,3 +13,10 @@ print-bridge-android/.gradle/
 print-bridge-android/local.properties
 *.apk
 *.aab
+gdrive_client.json
+gdrive_config.json
+gdrive_token.json
+*.db.prev
+*.db.bak
+*.db.download
+*.db.restore

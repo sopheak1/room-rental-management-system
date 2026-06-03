@@ -6,6 +6,52 @@
   <span class="km">ការកំណត់</span><span class="en">Settings</span>
 </h5>
 
+<!-- Database Backup & Restore -->
+<div class="m-section">
+  <div class="m-section-header" onclick="toggleMSection(this)">
+    <span><i class="bi bi-database me-2 text-primary"></i>
+      <span class="km">ទាញយក & ស្ដារ Database</span>
+      <span class="en">Download & Restore Database</span>
+    </span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="m-section-body">
+    <p class="small text-muted mb-3">
+      <span class="km">ទាញយក rental.db ដើម្បីបម្រុងទុកដោយខ្លួនឯង ឬស្ដារពីឯកសារដែលបានបម្រុងទុក។</span>
+      <span class="en">Download rental.db for manual backup, or restore from a previously downloaded file.</span>
+    </p>
+
+    <!-- Download -->
+    <a href="{{ url_for('settings.download_db') }}" class="btn btn-outline-primary w-100 fw-bold mb-3">
+      <i class="bi bi-download me-2"></i>
+      <span class="km">ទាញយក Database (rental.db)</span>
+      <span class="en">Download Database (rental.db)</span>
+    </a>
+
+    <!-- Upload / Restore -->
+    <label class="m-label">
+      <span class="km">ស្ដារ Database</span>
+      <span class="en">Restore Database</span>
+    </label>
+    <div class="alert alert-warning py-2 small mb-2">
+      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+      <span class="km">ការស្ដារនឹងជំនួស database បច្ចុប្បន្ន! database ចាស់នឹងត្រូវបានរក្សាទុកជា rental.db.prev</span>
+      <span class="en">Restore will replace the current database! The old one is saved as rental.db.prev</span>
+    </div>
+    {% set restore_msg = 'ប្រាកដជាចង់ស្ដារ?' if lang=='km' else 'Are you sure? Current data will be replaced.' %}
+    <form method="POST" action="{{ url_for('settings.upload_db') }}" enctype="multipart/form-data"
+          onsubmit="return confirm('{{ restore_msg }}')">
+      <div class="d-flex gap-2">
+        <input type="file" name="db_file" accept=".db" class="m-input" required>
+        <button class="btn btn-danger fw-bold" style="white-space:nowrap;">
+          <i class="bi bi-upload me-1"></i>
+          <span class="km">ស្ដារ</span><span class="en">Restore</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Google Drive Backup -->
 <div class="m-section">
   <div class="m-section-header">

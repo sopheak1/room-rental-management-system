@@ -1,7 +1,10 @@
 import os
 import json
+import sqlite3
+import shutil
 import threading
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from datetime import datetime
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, send_file
 from flask_login import login_required
 
 settings_bp = Blueprint('settings', __name__)
@@ -201,6 +204,81 @@ def test_connection():
 
     except Exception as e:
         flash(f'❌ Test failed: {e}', 'danger')
+
+    return redirect(url_for('settings.index'))
+
+
+@settings_bp.route('/settings/download-db')
+@login_required
+def download_db():
+    """Download a safe copy of the current database."""
+    db_path = os.path.join(_ROOT, 'instance', 'rental.db')
+    if not os.path.exists(db_path):
+        flash('Database file not found.', 'danger')
+        return redirect(url_for('settings.index'))
+
+    # Create a safe backup copy using SQLite backup API
+    tmp_path = db_path + '.download'
+    try:
+        src = sqlite3.connect(db_path)
+        dst = sqlite3.connect(tmp_path)
+        src.backup(dst)
+        src.close()
+        dst.close()
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return send_file(
+            tmp_path,
+            as_attachment=True,
+            download_name=f'rental_backup_{timestamp}.db',
+            mimetype='application/octet-stream'
+        )
+    except Exception as e:
+        flash(f'Download failed: {e}', 'danger')
+        return redirect(url_for('settings.index'))
+    finally:
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+
+
+@settings_bp.route('/settings/upload-db', methods=['POST'])
+@login_required
+def upload_db():
+    """Restore the database from an uploaded .db file."""
+    f = request.files.get('db_file')
+    if not f or not f.filename.endswith('.db'):
+        flash('Please upload a valid .db file.', 'danger')
+        return redirect(url_for('settings.index'))
+
+    db_path = os.path.join(_ROOT, 'instance', 'rental.db')
+
+    try:
+        # Save uploaded file to a temp location
+        tmp_path = db_path + '.restore'
+        f.save(tmp_path)
+
+        # Validate it's a real SQLite database
+        conn = sqlite3.connect(tmp_path)
+        conn.execute('SELECT name FROM sqlite_master LIMIT 1')
+        conn.close()
+
+        # Backup current DB before replacing
+        if os.path.exists(db_path):
+            shutil.copy2(db_path, db_path + '.prev')
+
+        # Replace database
+        shutil.move(tmp_path, db_path)
+        flash('✅ Database restored successfully! The previous DB was saved as rental.db.prev', 'success')
+
+    except sqlite3.DatabaseError:
+        flash('❌ Invalid database file — not a valid SQLite database.', 'danger')
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+    except Exception as e:
+        flash(f'❌ Restore failed: {e}', 'danger')
 
     return redirect(url_for('settings.index'))
 
