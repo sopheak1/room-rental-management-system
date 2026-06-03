@@ -81,7 +81,11 @@ def create_app():  # noqa: C901
 
     @app.errorhandler(Exception)
     def handle_exception(e):
-        # If session is corrupted (e.g. SECRET_KEY changed), clear and redirect to login
+        from werkzeug.exceptions import HTTPException
+        # Let normal HTTP errors (404, 405, etc.) pass through — don't convert to 500
+        if isinstance(e, HTTPException):
+            return e
+        # For unexpected errors only: check if session is corrupted
         from flask_login import current_user
         try:
             _ = current_user.is_authenticated
@@ -89,6 +93,12 @@ def create_app():  # noqa: C901
             session.clear()
             return redirect(url_for('auth.login'))
         raise e
+
+    @app.route('/favicon.ico')
+    @app.route('/apple-touch-icon.png')
+    @app.route('/apple-touch-icon-precomposed.png')
+    def ignore_browser_icons():
+        return '', 204  # No Content — silently ignore browser auto-requests
 
     @app.context_processor
     def inject_lang():
