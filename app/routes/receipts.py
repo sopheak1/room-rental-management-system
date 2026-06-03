@@ -233,6 +233,38 @@ def pay(id):
     return redirect(url_for('receipts.detail', id=id))
 
 
+@receipts_bp.route('/receipts/<int:id>/payment-log/<int:log_id>/delete', methods=['POST'])
+@login_required
+def delete_payment_log(id, log_id):
+    receipt = Receipt.query.get_or_404(id)
+    log     = PaymentLog.query.get_or_404(log_id)
+
+    # Safety: only allow deleting the LAST payment log entry
+    last_log = PaymentLog.query.filter_by(receipt_id=id)\
+                               .order_by(PaymentLog.created_at.desc()).first()
+    if not last_log or last_log.id != log_id:
+        flash('Only the last payment can be deleted.', 'danger')
+        return redirect(url_for('receipts.detail', id=id))
+
+    # Recalculate paid amount and balance
+    receipt.paid_amount       = round(max(receipt.paid_amount - log.amount, 0), 2)
+    receipt.remaining_balance = round(receipt.total_amount - receipt.paid_amount, 2)
+
+    if receipt.paid_amount <= 0:
+        receipt.payment_status = 'unpaid'
+    elif receipt.paid_amount < receipt.total_amount:
+        receipt.payment_status = 'partial'
+    else:
+        receipt.payment_status = 'paid'
+        receipt.remaining_balance = 0.0
+
+    db.session.delete(log)
+    db.session.commit()
+    backup_to_drive()
+    flash('Payment deleted and balance updated. / ការទូទាត់ត្រូវបានលុប។', 'success')
+    return redirect(url_for('receipts.detail', id=id))
+
+
 @receipts_bp.route('/receipts/<int:id>/defer', methods=['POST'])
 @login_required
 def defer_receipt(id):

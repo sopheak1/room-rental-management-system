@@ -284,6 +284,7 @@
   </div>
   <div class="m-section-body collapsed">
     {% set ns = namespace(running=receipt.total_amount) %}
+    {% set last_log_id = receipt.payment_logs[-1].id if receipt.payment_logs else none %}
     {% for log in receipt.payment_logs %}
     {% set ns.running = ns.running - log.amount %}
     <div class="m-detail-row">
@@ -291,9 +292,21 @@
         {{ log.payment_date.strftime('%d/%m/%Y') }}
         <div class="small">{{ {'cash':'Cash','bank_transfer':'Bank','qr':'QR'}.get(log.payment_method,'—') }}</div>
       </span>
-      <span class="m-dv">
-        <span class="text-success">+{{ log.amount|khr }}</span>
-        <div class="small {{ 'text-danger' if ns.running > 0 else 'text-success' }}">{{ ns.running|khr }}</div>
+      <span class="m-dv d-flex align-items-center gap-2">
+        <span>
+          <span class="text-success">+{{ log.amount|khr }}</span>
+          <div class="small {{ 'text-danger' if ns.running > 0 else 'text-success' }}">{{ ns.running|khr }}</div>
+        </span>
+        {% if log.id == last_log_id %}
+        <form method="POST"
+              action="{{ url_for('receipts.delete_payment_log', id=receipt.id, log_id=log.id) }}"
+              {% set del_msg = 'លុបការទូទាត់នេះ?' if lang=='km' else 'Delete this payment?' %}
+              onsubmit="return confirm('{{ del_msg }}')">
+          <button class="btn btn-sm btn-outline-danger py-0 px-2">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+        {% endif %}
       </span>
     </div>
     {% endfor %}
