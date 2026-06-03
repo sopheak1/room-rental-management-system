@@ -253,6 +253,99 @@ def undefer_receipt(id):
     return redirect(url_for('receipts.detail', id=id))
 
 
+@receipts_bp.route('/receipts/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_receipt(id):
+    receipt = Receipt.query.get_or_404(id)
+
+    if request.method == 'POST':
+        elec_override = receipt.electricity_units is None
+        water_override = receipt.water_units is None
+
+        # Recalculate totals from form
+        if elec_override:
+            electricity_total = float(request.form.get('electricity_total') or 0)
+            elec_from = elec_to = elec_units = elec_ppu = None
+        else:
+            elec_from = float(request.form.get('electricity_from') or 0)
+            elec_to   = float(request.form.get('electricity_to') or 0)
+            elec_units = max(elec_to - elec_from, 0)
+            elec_ppu   = float(request.form.get('electricity_price_per_unit') or 0)
+            electricity_total = round(elec_units * elec_ppu, 2)
+
+        if water_override:
+            water_total = float(request.form.get('water_total') or 0)
+            w_from = w_to = w_units = w_ppu = None
+        else:
+            w_from  = float(request.form.get('water_from') or 0)
+            w_to    = float(request.form.get('water_to') or 0)
+            w_units = max(w_to - w_from, 0)
+            w_ppu   = float(request.form.get('water_price_per_unit') or 0)
+            water_total = round(w_units * w_ppu, 2)
+
+        room_price       = float(request.form.get('room_price') or 0)
+        previous_balance = float(request.form.get('previous_balance') or 0)
+        fee              = float(request.form.get('fee') or 0)
+        late_fee         = float(request.form.get('late_fee') or 0)
+        discount         = float(request.form.get('discount') or 0)
+        notes            = request.form.get('notes', '').strip() or None
+
+        new_total = round(room_price + electricity_total + water_total + previous_balance + fee + late_fee - discount, 2)
+
+        # Option 3: block if new total < already paid
+        if new_total < receipt.paid_amount:
+            flash(f'Cannot reduce total below paid amount ({receipt.paid_amount:,.0f} ៛). Adjust paid amount first.', 'danger')
+            return redirect(url_for('receipts.edit_receipt', id=id))
+
+        # Apply changes
+        receipt.room_price            = room_price
+        receipt.electricity_total     = electricity_total
+        receipt.electricity_from      = elec_from
+        receipt.electricity_to        = elec_to
+        receipt.electricity_units     = elec_units
+        receipt.electricity_price_per_unit = elec_ppu
+        receipt.water_total           = water_total
+        receipt.water_from            = w_from
+        receipt.water_to              = w_to
+        receipt.water_units           = w_units
+        receipt.water_price_per_unit  = w_ppu
+        receipt.previous_balance      = previous_balance
+        receipt.fee                   = fee
+        receipt.late_fee              = late_fee
+        receipt.discount              = discount
+        receipt.notes                 = notes
+        receipt.total_amount          = new_total
+        receipt.remaining_balance     = round(max(new_total - receipt.paid_amount, 0), 2)
+
+        if receipt.paid_amount >= new_total:
+            receipt.payment_status = 'paid'
+            receipt.remaining_balance = 0.0
+        elif receipt.paid_amount > 0:
+            receipt.payment_status = 'partial'
+        else:
+            receipt.payment_status = 'unpaid'
+
+        db.session.commit()
+        backup_to_drive()
+        flash('Receipt updated successfully. / វិក័យប័ត្រត្រូវបានកែប្រែ។', 'success')
+        return redirect(url_for('receipts.detail', id=id))
+
+    water_price       = UtilityPrice.query.filter_by(utility_type='water').order_by(
+        UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).first()
+    electricity_price = UtilityPrice.query.filter_by(utility_type='electricity').order_by(
+        UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).first()
+    default_fee       = UtilityPrice.query.filter_by(utility_type='fee').order_by(
+        UtilityPrice.effective_date.desc(), UtilityPrice.id.desc()).first()
+
+    return render_template('receipts/edit.html',
+        receipt=receipt,
+        water_price=water_price,
+        electricity_price=electricity_price,
+        default_fee=default_fee,
+        today=_today()
+    )
+
+
 @receipts_bp.route('/receipts/<int:id>/print')
 @login_required
 def print_receipt(id):

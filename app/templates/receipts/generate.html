@@ -171,7 +171,7 @@
   </h5>
 </div>
 
-<form method="POST" id="receiptForm">
+<form method="POST" id="receiptForm" onsubmit="return confirmGenerate()">
 
 <!-- ── 1. Room & Month ─────────────────── -->
 <div class="gen-section">
@@ -722,5 +722,28 @@ toggleOverride('water');
 // Restore water override toggle state
 document.getElementById('water_override').checked = false;
 toggleOverride('water');
+
+function confirmGenerate() {
+  const elec  = getElecTotal();
+  const water = getWaterTotal();
+  const total = parseKhr(document.getElementById('s_total').textContent);
+
+  if (total === 0) {
+    alert('{% if lang=="km" %}សូមបំពេញព័ត៌មានវិក័យប័ត្រ!{% else %}Please fill in receipt details before generating.{% endif %}');
+    return false;
+  }
+
+  const warnings = [];
+  if (elec  === 0) warnings.push('⚡ {% if lang=="km" %}អគ្គិសនី = 0 ៛{% else %}Electricity = 0 ៛{% endif %}');
+  if (water === 0) warnings.push('💧 {% if lang=="km" %}ទឹក = 0 ៛{% else %}Water = 0 ៛{% endif %}');
+
+  if (warnings.length > 0) {
+    const msg = '{% if lang=="km" %}⚠️ ចំណាំ:\n{% else %}⚠️ Notice:\n{% endif %}'
+      + warnings.join('\n') + '\n\n'
+      + '{% if lang=="km" %}តម្លៃទាំងនេះត្រឹមត្រូវទេ?\nOK = បន្ត | Cancel = ត្រឡប់ទៅកែ{% else %}Are these values correct?\nOK = Continue | Cancel = Go back to edit{% endif %}';
+    return confirm(msg);
+  }
+  return true;
+}
 </script>
 {% endblock %}
