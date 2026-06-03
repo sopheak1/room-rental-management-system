@@ -1,32 +1,77 @@
 import os
-import io
-import json
 import sqlite3
 import threading
 from datetime import datetime
 
+# Paths (can be overridden via env vars)
+_DEFAULT_TOKEN  = os.path.join(os.path.dirname(__file__), '..', '..', 'gdrive_token.json')
+_DEFAULT_CLIENT = os.path.join(os.path.dirname(__file__), '..', '..', 'gdrive_client.json')
+
+
+def _get_drive_service():
+    """Build an authenticated Drive service using OAuth2 stored token."""
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    from googleapiclient.discovery import build
+
+    token_path  = os.environ.get('GOOGLE_TOKEN_PATH',  _DEFAULT_TOKEN)
+    client_path = os.environ.get('GOOGLE_CLIENT_PATH', _DEFAULT_CLIENT)
+
+    if not os.path.exists(token_path):
+        raise FileNotFoundError(f"Token not found: {token_path}. Run authorize_gdrive.py first.")
+
+    creds = Credentials.from_authorized_user_file(
+        token_path,
+        scopes=['https://www.googleapis.com/auth/drive.file']
+    )
+
+    # Auto-refresh token if expired
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        with open(token_path, 'w') as f:
+            f.write(creds.to_json())
+
+    return build('drive', 'v3', credentials=creds, cache_discovery=False)
+
+
+def authorize():
+    """
+    One-time authorization. Run this once from a machine with a browser.
+    Creates gdrive_token.json which is used for all future backups.
+    """
+    from google_auth_oauthlib.flow import InstalledAppFlow
+
+    client_path = os.environ.get('GOOGLE_CLIENT_PATH', _DEFAULT_CLIENT)
+    token_path  = os.environ.get('GOOGLE_TOKEN_PATH',  _DEFAULT_TOKEN)
+
+    if not os.path.exists(client_path):
+        raise FileNotFoundError(f"OAuth client file not found: {client_path}")
+
+    flow = InstalledAppFlow.from_client_secrets_file(
+        client_path,
+        scopes=['https://www.googleapis.com/auth/drive.file']
+    )
+    creds = flow.run_local_server(port=0)
+
+    with open(token_path, 'w') as f:
+        f.write(creds.to_json())
+
+    print(f"✅ Authorization successful! Token saved to: {token_path}")
+
+
 def backup_to_drive():
     """
-    Safely backup rental.db to Google Drive using SQLite's built-in backup API.
-    Runs in a background thread — never slows down the main request.
-
-    Required environment variables:
-      GOOGLE_SERVICE_ACCOUNT_JSON  — full JSON content of the service account key
-      GOOGLE_DRIVE_FOLDER_ID       — Google Drive folder ID to upload into
+    Safely backup rental.db to Google Drive using OAuth2.
+    Runs in background thread — never slows down the main request.
+    Requires: gdrive_token.json (created by running authorize())
+    Optional env vars:
+      GOOGLE_TOKEN_PATH   — path to token file (default: project root/gdrive_token.json)
+      GOOGLE_DRIVE_FOLDER_ID — Google Drive folder ID
     """
     def _run():
         folder_id = os.environ.get('GOOGLE_DRIVE_FOLDER_ID')
-
-        # Support both: file path OR inline JSON string
-        key_path  = os.environ.get('GOOGLE_SERVICE_ACCOUNT_PATH')
-        sa_json   = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
-
-        if key_path and os.path.exists(key_path):
-            with open(key_path) as f:
-                sa_json = f.read()
-
-        if not sa_json or not folder_id:
-            return  # not configured — skip silently
+        if not folder_id:
+            return  # not configured
 
         db_path = os.path.join(
             os.path.dirname(__file__), '..', '..', 'instance', 'rental.db'
@@ -35,41 +80,9 @@ def backup_to_drive():
             return
 
         try:
-            from google.oauth2 import service_account
-            from googleapiclient.discovery import build
-            from googleapiclient.http import MediaIoBaseUpload
+            from googleapiclient.http import MediaFileUpload
 
-            # ── Safe SQLite backup into memory ─────────────────────
-            # Uses SQLite's backup API — safe even during active writes
-            backup_buf = io.BytesIO()
-            src = sqlite3.connect(db_path)
-            dst = sqlite3.connect(':memory:')
-            src.backup(dst)
-            src.close()
-            # Serialize in-memory DB to bytes
-            for chunk in dst.iterdump():
-                pass  # ensure fully loaded
-            dst.close()
-
-            # Re-read to bytes properly
-            src = sqlite3.connect(db_path)
-            dst_file = io.BytesIO()
-            dst_conn = sqlite3.connect(':memory:')
-            src.backup(dst_conn)
-            src.close()
-            # Write memory DB to BytesIO
-            tmp_path = db_path + '.bak'
-            backup_conn = sqlite3.connect(tmp_path)
-            with sqlite3.connect(db_path) as src2:
-                src2.backup(backup_conn)
-            backup_conn.close()
-
-            # ── Upload to Google Drive ──────────────────────────────
-            creds = service_account.Credentials.from_service_account_info(
-                json.loads(sa_json),
-                scopes=['https://www.googleapis.com/auth/drive.file']
-            )
-            service = build('drive', 'v3', credentials=creds, cache_discovery=False)
+            service = _get_drive_service()
 
             # Keep only 10 most recent backups
             existing = service.files().list(
@@ -85,25 +98,30 @@ def backup_to_drive():
                     except Exception:
                         pass
 
-            # Upload the safe backup copy
+            # Safe SQLite backup to temp file
+            tmp_path = db_path + '.bak'
+            src = sqlite3.connect(db_path)
+            dst = sqlite3.connect(tmp_path)
+            src.backup(dst)
+            src.close()
+            dst.close()
+
+            # Upload
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename  = f"rental_backup_{timestamp}.db"
+            media = MediaFileUpload(tmp_path, mimetype='application/octet-stream', resumable=False)
+            service.files().create(
+                body={'name': filename, 'parents': [folder_id]},
+                media_body=media,
+                fields='id'
+            ).execute()
 
-            with open(tmp_path, 'rb') as f:
-                media = MediaIoBaseUpload(f, mimetype='application/octet-stream', resumable=False)
-                service.files().create(
-                    body={'name': filename, 'parents': [folder_id]},
-                    media_body=media,
-                    fields='id'
-                ).execute()
-
-            # Clean up temp file
             try:
                 os.remove(tmp_path)
             except Exception:
                 pass
 
         except Exception:
-            pass  # silent fail — never break the main request
+            pass  # silent fail
 
     threading.Thread(target=_run, daemon=True).start()
