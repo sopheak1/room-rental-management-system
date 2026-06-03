@@ -6,3 +6,6 @@ reportlab>=4.0.0
 Werkzeug>=2.3.0
 gunicorn==21.2.0
 python-escpos[images]>=3.1
+google-api-python-client==2.111.0
+google-auth==2.27.0
+google-auth-httplib2==0.2.0

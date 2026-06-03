@@ -3,6 +3,7 @@ from flask_login import login_required
 from app.models import Receipt, Room, Tenant, UtilityPrice, Building, PaymentLog
 from app import db
 from datetime import date, datetime
+from app.utils.google_drive import backup_to_drive
 
 receipts_bp = Blueprint('receipts', __name__)
 
@@ -163,6 +164,7 @@ def generate():
         )
         db.session.add(receipt)
         db.session.commit()
+        backup_to_drive()
         flash(f'Receipt {receipt.receipt_number} generated. / វិក័យប័ត្រត្រូវបានបង្កើតជោគជ័យ។', 'success')
         return redirect(url_for('receipts.detail', id=receipt.id))
 
@@ -225,6 +227,7 @@ def pay(id):
     )
     db.session.add(log)
     db.session.commit()
+    backup_to_drive()
     flash('Payment recorded. / ការទូទាត់ត្រូវបានកត់ត្រា។', 'success')
     return redirect(url_for('receipts.detail', id=id))
 
