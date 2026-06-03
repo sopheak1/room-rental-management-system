@@ -50,8 +50,9 @@
           <span class="km">សាកល្បង</span><span class="en">Test</span>
         </button>
       </form>
+      {% set confirm_msg = 'ផ្តាច់ Google Drive?' if lang=='km' else 'Disconnect Google Drive?' %}
       <form method="POST" action="{{ url_for('settings.disconnect') }}"
-            onsubmit="return confirm('{% if lang==\"km\" %}ផ្តាច់ Google Drive?{% else %}Disconnect Google Drive?{% endif %}')">
+            onsubmit="return confirm('{{ confirm_msg }}')">
         <button class="btn btn-outline-danger">
           <i class="bi bi-x-circle"></i>
         </button>
