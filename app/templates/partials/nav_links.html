@@ -55,4 +55,11 @@
       <span><span class="km">របាយការណ៍</span><span class="en">Reports</span></span>
     </a>
   </li>
+  <li class="nav-item">
+    <a class="nav-link {% if 'settings' in (request.endpoint or '') %}active{% endif %}"
+       href="{{ url_for('settings.index') }}">
+      <i class="bi bi-gear"></i>
+      <span><span class="km">ការកំណត់</span><span class="en">Settings</span></span>
+    </a>
+  </li>
 </ul>

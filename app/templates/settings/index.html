@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}ការកំណត់{% else %}Settings{% endif %}{% endblock %}
+{% block content %}
+
+<h5 class="m-page-title mb-3">
+  <span class="km">ការកំណត់</span><span class="en">Settings</span>
+</h5>
+
+<!-- Google Drive Backup -->
+<div class="m-section">
+  <div class="m-section-header">
+    <span>
+      <i class="bi bi-google me-2" style="color:#4285F4;"></i>
+      <span class="km">បម្រុងទុកទៅ Google Drive</span>
+      <span class="en">Google Drive Backup</span>
+    </span>
+    {% if connected %}
+    <span class="badge bg-success">✅ <span class="km">បានភ្ជាប់</span><span class="en">Connected</span></span>
+    {% else %}
+    <span class="badge bg-secondary">❌ <span class="km">មិនបានភ្ជាប់</span><span class="en">Not connected</span></span>
+    {% endif %}
+  </div>
+  <div class="m-section-body">
+
+    {% if connected %}
+    <!-- Connected state -->
+    <div class="alert alert-success py-2 small mb-3">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <span class="km">Google Drive បានភ្ជាប់។ ការបម្រុងទុកដំណើរការដោយស្វ័យប្រវត្តិ។</span>
+      <span class="en">Google Drive is connected. Backup runs automatically after each receipt/payment.</span>
+    </div>
+
+    {% if folder_id %}
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">Folder ID</span></span>
+      <span class="m-dv small text-muted">{{ folder_id[:20] }}...</span>
+    </div>
+    {% endif %}
+
+    <div class="d-flex gap-2 mt-3">
+      <form method="POST" action="{{ url_for('settings.backup_now') }}" class="flex-fill">
+        <button class="btn btn-primary w-100 fw-bold">
+          <i class="bi bi-cloud-upload me-1"></i>
+          <span class="km">បម្រុងទុកឥឡូវ</span><span class="en">Backup Now</span>
+        </button>
+      </form>
+      <form method="POST" action="{{ url_for('settings.disconnect') }}"
+            onsubmit="return confirm('{% if lang==\"km\" %}ផ្តាច់ Google Drive?{% else %}Disconnect Google Drive?{% endif %}')">
+        <button class="btn btn-outline-danger">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </form>
+    </div>
+
+    {% else %}
+    <!-- Step 1: Upload client JSON -->
+    <div class="mb-4">
+      <div class="fw-semibold mb-1">
+        <span class="badge bg-primary me-2">1</span>
+        <span class="km">បង្ហោះ OAuth Client JSON</span>
+        <span class="en">Upload OAuth Client JSON</span>
+        {% if has_client %}<span class="badge bg-success ms-2">✅ Done</span>{% endif %}
+      </div>
+      <div class="small text-muted mb-2">
+        <span class="km">ពី Google Cloud Console → APIs & Services → Credentials → Create OAuth Client ID (Desktop app) → Download JSON</span>
+        <span class="en">From Google Cloud Console → APIs & Services → Credentials → Create OAuth Client ID (Desktop app) → Download JSON</span>
+      </div>
+      <form method="POST" action="{{ url_for('settings.upload_client') }}" enctype="multipart/form-data">
+        <div class="d-flex gap-2">
+          <input type="file" name="client_file" accept=".json" class="m-input" required>
+          <button class="btn btn-primary" style="white-space:nowrap;">
+            <span class="km">បង្ហោះ</span><span class="en">Upload</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 2: Folder ID -->
+    <div class="mb-4">
+      <div class="fw-semibold mb-1">
+        <span class="badge bg-primary me-2">2</span>
+        <span class="km">បញ្ចូល Google Drive Folder ID</span>
+        <span class="en">Enter Google Drive Folder ID</span>
+        {% if folder_id %}<span class="badge bg-success ms-2">✅ Done</span>{% endif %}
+      </div>
+      <div class="small text-muted mb-2">
+        <span class="km">បង្កើតថតឯកសារក្នុង Google Drive → Copy ID ពី URL: drive.google.com/drive/folders/<strong>THIS_PART</strong></span>
+        <span class="en">Create a folder in Google Drive → copy ID from URL: drive.google.com/drive/folders/<strong>THIS_PART</strong></span>
+      </div>
+      <form method="POST" action="{{ url_for('settings.save_folder') }}">
+        <div class="d-flex gap-2">
+          <input type="text" name="folder_id" class="m-input"
+                 value="{{ folder_id }}" placeholder="1aBcDeFgHiJkLmNoPqRsTuVw" required>
+          <button class="btn btn-primary" style="white-space:nowrap;">
+            <span class="km">រក្សាទុក</span><span class="en">Save</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 3: Connect -->
+    <div class="mb-2">
+      <div class="fw-semibold mb-2">
+        <span class="badge bg-primary me-2">3</span>
+        <span class="km">ភ្ជាប់ Google Account</span>
+        <span class="en">Connect Google Account</span>
+      </div>
+      {% if has_client and folder_id %}
+      <a href="{{ url_for('settings.auth_google') }}" class="btn btn-success w-100 fw-bold py-3">
+        <i class="bi bi-google me-2"></i>
+        <span class="km">ភ្ជាប់ Google Drive</span>
+        <span class="en">Connect Google Drive</span>
+      </a>
+      {% else %}
+      <button class="btn btn-secondary w-100" disabled>
+        <span class="km">បំពេញជំហានទី 1 និង 2 សិន</span>
+        <span class="en">Complete steps 1 & 2 first</span>
+      </button>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

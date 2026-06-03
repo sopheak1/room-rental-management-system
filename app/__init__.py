@@ -49,6 +49,7 @@ def create_app():  # noqa: C901
     from app.routes.utilities import utilities_bp
     from app.routes.receipts import receipts_bp
     from app.routes.reports import reports_bp
+    from app.routes.settings import settings_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -58,6 +59,16 @@ def create_app():  # noqa: C901
     app.register_blueprint(utilities_bp)
     app.register_blueprint(receipts_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(settings_bp)
+
+    # Load Google Drive folder ID from config file if present
+    import os as _os, json as _json
+    _config_path = _os.path.join(_os.path.abspath(_os.path.dirname(__file__)), '..', 'gdrive_config.json')
+    if _os.path.exists(_config_path):
+        with open(_config_path) as _f:
+            _cfg = _json.load(_f)
+        if _cfg.get('folder_id'):
+            _os.environ.setdefault('GOOGLE_DRIVE_FOLDER_ID', _cfg['folder_id'])
 
     with app.app_context():
         db.create_all()

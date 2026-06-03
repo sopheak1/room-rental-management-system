@@ -14,11 +14,10 @@ def _get_drive_service():
     from google.auth.transport.requests import Request
     from googleapiclient.discovery import build
 
-    token_path  = os.environ.get('GOOGLE_TOKEN_PATH',  _DEFAULT_TOKEN)
-    client_path = os.environ.get('GOOGLE_CLIENT_PATH', _DEFAULT_CLIENT)
+    token_path = os.environ.get('GOOGLE_TOKEN_PATH', _DEFAULT_TOKEN)
 
     if not os.path.exists(token_path):
-        raise FileNotFoundError(f"Token not found: {token_path}. Run authorize_gdrive.py first.")
+        raise FileNotFoundError(f"Token not found: {token_path}. Connect Google Drive via Settings.")
 
     creds = Credentials.from_authorized_user_file(
         token_path,
