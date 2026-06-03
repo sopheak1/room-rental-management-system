@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request
 from flask_login import login_required
 from app.models import Receipt, Room, Building
 from app import db
+from app.utils.timezone import now as _now, today as _today
 from datetime import datetime
 
 reports_bp = Blueprint('reports', __name__)
@@ -18,7 +19,7 @@ def index():
 @reports_bp.route('/reports/breakdown')
 @login_required
 def breakdown():
-    now = datetime.now()
+    now = _now()
     month = request.args.get('month', type=int, default=now.month)
     year  = request.args.get('year',  type=int, default=now.year)
 
@@ -50,7 +51,7 @@ def breakdown():
 @reports_bp.route('/reports/summary')
 @login_required
 def summary():
-    now = datetime.now()
+    now = _now()
     month = request.args.get('month', type=int, default=now.month)
     year  = request.args.get('year',  type=int, default=now.year)
 
@@ -90,7 +91,7 @@ def summary():
 @reports_bp.route('/reports/revenue')
 @login_required
 def revenue():
-    year = request.args.get('year', type=int, default=datetime.now().year)
+    year = request.args.get('year', type=int, default=_now().year)
     monthly_data = []
     for m in range(1, 13):
         receipts = Receipt.query.filter_by(billing_year=year, billing_month=m).all()
@@ -111,7 +112,7 @@ def revenue():
 @login_required
 def overdue():
     from app.models import Room
-    now = datetime.now()
+    now = _now()
     today_day = now.day
 
     # Past months: unpaid/partial receipts before current month (deferred excluded)

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required
 from app.models import Room, Building, Receipt, TenantHistory
 from app import db
+from app.utils.timezone import now as _now, today as _today
 from datetime import date
 
 rooms_bp = Blueprint('rooms', __name__)
@@ -83,7 +84,7 @@ def detail(id):
     history = TenantHistory.query.filter_by(room_id=id).order_by(TenantHistory.move_in_date.desc()).all()
     receipts = Receipt.query.filter_by(room_id=id).order_by(
         Receipt.billing_year.desc(), Receipt.billing_month.desc()).all()
-    return render_template('rooms/detail.html', room=room, history=history, receipts=receipts, today=date.today())
+    return render_template('rooms/detail.html', room=room, history=history, receipts=receipts, today=_today())
 
 
 @rooms_bp.route('/rooms/<int:id>/delete', methods=['POST'])

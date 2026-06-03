@@ -3,6 +3,7 @@ import json
 import sqlite3
 import shutil
 import threading
+from app.utils.timezone import now as _now, today as _today
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session, send_file
 from flask_login import login_required
@@ -225,7 +226,7 @@ def download_db():
         src.backup(dst)
         src.close()
         dst.close()
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = _now().strftime('%Y%m%d_%H%M%S')
         return send_file(
             tmp_path,
             as_attachment=True,

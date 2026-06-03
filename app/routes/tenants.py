@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required
 from app.models import Room, Tenant, TenantHistory
 from app import db
+from app.utils.timezone import now as _now, today as _today
 from datetime import date
 
 tenants_bp = Blueprint('tenants', __name__)
@@ -19,7 +20,7 @@ def add(room_id):
         try:
             move_in_date = date.fromisoformat(request.form['move_in_date'])
         except (ValueError, KeyError):
-            move_in_date = date.today()
+            move_in_date = _today()
 
         tenant = Tenant(
             room_id=room_id,
@@ -82,7 +83,7 @@ def checkout(id):
     try:
         move_out_date = date.fromisoformat(request.form['move_out_date'])
     except (ValueError, KeyError):
-        move_out_date = date.today()
+        move_out_date = _today()
 
     history = TenantHistory(
         room_id=room.id,

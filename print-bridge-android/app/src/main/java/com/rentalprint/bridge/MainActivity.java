@@ -30,6 +30,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -42,10 +44,11 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_BLUETOOTH = 1;
-    static final String PREFS       = "PrintBridgePrefs";
-    static final String PREF_DEVICE = "selected_device";
-    static final String PREF_URL    = "server_url";
-    static final String DEFAULT_URL = "http://192.168.50.24:8080";
+    static final String PREFS        = "PrintBridgePrefs";
+    static final String PREF_DEVICE  = "selected_device";
+    static final String PREF_URL     = "server_url";
+    static final String PREF_ENVS    = "saved_environments";
+    static final String DEFAULT_URL  = "http://192.168.50.24:8080";
 
     private WebView webView;
     private TextView tvBridgeStatus;
@@ -350,20 +353,157 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // ── Environment helpers ────────────────────────────────────
+    private JSONArray getSavedEnvs() {
+        try {
+            String json = prefs.getString(PREF_ENVS, null);
+            if (json != null) return new JSONArray(json);
+        } catch (Exception ignored) {}
+        // Default environments
+        try {
+            JSONArray arr = new JSONArray();
+            JSONObject local = new JSONObject();
+            local.put("label", "Local (Mac)");
+            local.put("url", "http://192.168.50.24:8080");
+            arr.put(local);
+            JSONObject prod = new JSONObject();
+            prod.put("label", "Production");
+            prod.put("url", "https://sopheak.pythonanywhere.com");
+            arr.put(prod);
+            return arr;
+        } catch (Exception e) { return new JSONArray(); }
+    }
+
+    private void saveEnvs(JSONArray arr) {
+        prefs.edit().putString(PREF_ENVS, arr.toString()).apply();
+    }
+
+    private void switchToUrl(String url) {
+        prefs.edit().putString(PREF_URL, url).apply();
+        CookieManager.getInstance().removeAllCookies(null);
+        CookieManager.getInstance().flush();
+        stopBridge(); loadWebApp(); startBridge();
+        tvBridgeStatus.setText("🟢 Switched — please log in");
+    }
+
     // ── Settings dialog ────────────────────────────────────────
     @SuppressLint("InflateParams")
     private void showSettingsDialog() {
+        showEnvSwitcher();
+    }
+
+    private void showEnvSwitcher() {
+        JSONArray envs  = getSavedEnvs();
+        String current  = prefs.getString(PREF_URL, DEFAULT_URL);
+        List<String> labels = new ArrayList<>();
+        List<String> urls   = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < envs.length(); i++) {
+                JSONObject e = envs.getJSONObject(i);
+                String url   = e.getString("url");
+                String label = e.getString("label");
+                String mark  = url.equals(current) ? " ✅" : "";
+                labels.add(label + mark + "\n" + url);
+                urls.add(url);
+            }
+        } catch (Exception ignored) {}
+
+        labels.add("➕ Add new environment");
+        urls.add("__add__");
+
+        new AlertDialog.Builder(this)
+            .setTitle("🌐 Select Environment")
+            .setItems(labels.toArray(new String[0]), (d, which) -> {
+                if (which == urls.size() - 1) {
+                    showAddEnvDialog();
+                } else {
+                    String selected = urls.get(which);
+                    showEnvOptions(selected, which);
+                }
+            })
+            .setNeutralButton("⚙️ More", (d, w) -> showMoreSettings())
+            .setNegativeButton("Close", null)
+            .show();
+    }
+
+    private void showEnvOptions(String url, int index) {
+        new AlertDialog.Builder(this)
+            .setTitle(url)
+            .setItems(new String[]{"✅ Switch to this", "🗑️ Delete"}, (d, which) -> {
+                if (which == 0) {
+                    switchToUrl(url);
+                    Toast.makeText(this, "Switched — please log in", Toast.LENGTH_SHORT).show();
+                } else {
+                    JSONArray envs = getSavedEnvs();
+                    JSONArray newEnvs = new JSONArray();
+                    try {
+                        for (int i = 0; i < envs.length(); i++) {
+                            if (i != index) newEnvs.put(envs.get(i));
+                        }
+                    } catch (Exception ignored) {}
+                    saveEnvs(newEnvs);
+                    Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                    showEnvSwitcher();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showAddEnvDialog() {
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 16, 48, 0);
+
+        EditText etLabel = new EditText(this);
+        etLabel.setHint("Label (e.g. Production)");
+        layout.addView(etLabel);
+
+        EditText etUrl = new EditText(this);
+        etUrl.setHint("URL (e.g. https://...)");
+        etUrl.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        layout.addView(etUrl);
+
+        new AlertDialog.Builder(this)
+            .setTitle("➕ Add Environment")
+            .setView(layout)
+            .setPositiveButton("Add", (d, w) -> {
+                String label = etLabel.getText().toString().trim();
+                String url   = etUrl.getText().toString().trim();
+                if (url.endsWith("/")) url = url.substring(0, url.length() - 1);
+                if (TextUtils.isEmpty(label) || TextUtils.isEmpty(url)) {
+                    Toast.makeText(this, "Label and URL are required", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                try {
+                    JSONArray envs = getSavedEnvs();
+                    JSONObject e = new JSONObject();
+                    e.put("label", label);
+                    e.put("url", url);
+                    envs.put(e);
+                    saveEnvs(envs);
+                    Toast.makeText(this, "Added: " + label, Toast.LENGTH_SHORT).show();
+                    showEnvSwitcher();
+                } catch (Exception ex) {
+                    Toast.makeText(this, "Error: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showMoreSettings() {
         View v = getLayoutInflater().inflate(R.layout.dialog_settings, null);
-        EditText etUrl     = v.findViewById(R.id.etUrl);
-        TextView tvCurrent = v.findViewById(R.id.tvCurrentUrl);
         TextView tvDevice  = v.findViewById(R.id.tvDeviceAddr);
         TextView tvStatus  = v.findViewById(R.id.tvBridgeStatusDialog);
         Button btnPrinter  = v.findViewById(R.id.btnPickPrinter);
         Button btnBridge   = v.findViewById(R.id.btnToggleBridge);
 
-        String savedUrl = prefs.getString(PREF_URL, DEFAULT_URL);
-        etUrl.setText(savedUrl);
-        tvCurrent.setText("Current: " + savedUrl);
+        // Hide URL fields — env handled separately
+        v.findViewById(R.id.etUrl).setVisibility(View.GONE);
+        v.findViewById(R.id.tvCurrentUrl).setVisibility(View.GONE);
+
         String addr = prefs.getString(PREF_DEVICE, null);
         tvDevice.setText(addr != null ? addr : "None selected");
         boolean running = printServer != null && printServer.isRunning();
@@ -383,20 +523,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         new AlertDialog.Builder(this)
-            .setTitle("⚙️ Print Bridge Settings")
+            .setTitle("⚙️ Printer & Bridge")
             .setView(v)
-            .setPositiveButton("Save URL & Reload", (d, w) -> {
-                String newUrl = etUrl.getText().toString().trim();
-                if (newUrl.endsWith("/")) newUrl = newUrl.substring(0, newUrl.length() - 1);
-                if (!TextUtils.isEmpty(newUrl)) {
-                    prefs.edit().putString(PREF_URL, newUrl).apply();
-                    // Clear old session cookies so login page shows correctly on new server
-                    CookieManager.getInstance().removeAllCookies(null);
-                    CookieManager.getInstance().flush();
-                    stopBridge(); loadWebApp(); startBridge();
-                    Toast.makeText(this, "URL saved — please log in", Toast.LENGTH_SHORT).show();
-                }
-            })
             .setNegativeButton("Close", null)
             .create().show();
     }

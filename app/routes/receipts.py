@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required
 from app.models import Receipt, Room, Tenant, UtilityPrice, Building, PaymentLog
 from app import db
+from app.utils.timezone import now as _now, today as _today
 from datetime import date, datetime
 from app.utils.google_drive import backup_to_drive
 
@@ -28,7 +29,7 @@ def _get_previous_receipt(room_id, year, month):
 @receipts_bp.route('/receipts')
 @login_required
 def list():
-    now = datetime.now()
+    now = _now()
     month = request.args.get('month', type=int, default=now.month)
     year = request.args.get('year', type=int, default=now.year)
     status = request.args.get('status', '')
@@ -168,7 +169,7 @@ def generate():
         flash(f'Receipt {receipt.receipt_number} generated. / វិក័យប័ត្រត្រូវបានបង្កើតជោគជ័យ។', 'success')
         return redirect(url_for('receipts.detail', id=receipt.id))
 
-    now = datetime.now()
+    now = _now()
     room_id = request.args.get('room_id', type=int)
     billing_month = request.args.get('billing_month', type=int, default=now.month)
     billing_year = request.args.get('billing_year', type=int, default=now.year)
@@ -182,7 +183,7 @@ def generate():
         water_price=water_price,
         electricity_price=electricity_price,
         default_fee=default_fee,
-        today=date.today(),
+        today=_today(),
         now=now,
         billing_month=billing_month,
         billing_year=billing_year,
@@ -194,7 +195,7 @@ def generate():
 @login_required
 def detail(id):
     receipt = Receipt.query.get_or_404(id)
-    return render_template('receipts/detail.html', receipt=receipt, today=date.today())
+    return render_template('receipts/detail.html', receipt=receipt, today=_today())
 
 
 @receipts_bp.route('/receipts/<int:id>/pay', methods=['POST'])
@@ -204,7 +205,7 @@ def pay(id):
     new_payment = float(request.form.get('paid_amount') or 0)
     payment_method = request.form.get('payment_method')
     date_str = request.form.get('payment_date')
-    payment_date = date.fromisoformat(date_str) if date_str else date.today()
+    payment_date = date.fromisoformat(date_str) if date_str else _today()
 
     receipt.paid_amount = round(receipt.paid_amount + new_payment, 2)
     receipt.payment_method = payment_method

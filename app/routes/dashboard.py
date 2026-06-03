@@ -2,6 +2,7 @@ from flask import Blueprint, render_template
 from flask_login import login_required
 from app.models import Room, Receipt
 from app import db
+from app.utils.timezone import now as _now, today as _today
 from datetime import datetime
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -10,7 +11,7 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @dashboard_bp.route('/')
 @login_required
 def index():
-    now = datetime.now()
+    now = _now()
     current_month = now.month
     current_year = now.year
     today_day = now.day

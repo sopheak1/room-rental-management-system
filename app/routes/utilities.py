@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required
 from app.models import UtilityPrice
 from app import db
+from app.utils.timezone import now as _now, today as _today
 from datetime import date
 
 utilities_bp = Blueprint('utilities', __name__)
@@ -26,7 +27,7 @@ def index():
         current_water=current_water,
         current_electricity=current_electricity,
         current_fee=current_fee,
-        today=date.today()
+        today=_today()
     )
 
 
