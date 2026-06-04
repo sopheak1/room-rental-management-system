@@ -4,6 +4,20 @@ function toggleMSection(header) {
   header.nextElementSibling.classList.toggle('collapsed');
 }
 
+// Sync --navbar-h CSS variable to actual navbar height
+(function () {
+  function syncNavbarHeight() {
+    var nav = document.querySelector('.navbar');
+    if (nav) {
+      document.documentElement.style.setProperty('--navbar-h', nav.offsetHeight + 'px');
+    }
+  }
+  syncNavbarHeight();
+  window.addEventListener('resize', syncNavbarHeight);
+  // Also sync after fonts/icons finish loading (can change height slightly)
+  document.addEventListener('DOMContentLoaded', syncNavbarHeight);
+})();
+
 // ── Global money input formatter ──────────────────────────────
 // Add class="money-input" to any input that should format as #,###
 document.addEventListener('DOMContentLoaded', function () {
