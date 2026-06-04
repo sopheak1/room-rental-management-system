@@ -137,12 +137,23 @@
       <input type="date" name="move_out_date" class="m-input mb-3" required
              value="{{ today.strftime('%Y-%m-%d') }}">
 
-      <label class="m-label"><span class="km">ប្រាក់បញ្ចាំសងត្រឡប់ (៛)</span><span class="en">Deposit Refunded (៛)</span></label>
-      <div class="m-input-group mb-3">
+      <label class="m-label">
+        <span class="km">ប្រាក់តម្កល់ត្រឡប់ (៛)</span><span class="en">Deposit Refunded (៛)</span>
+        <span class="small text-muted ms-1">
+          (<span class="km">ប្រាក់ដើម:</span><span class="en">Original:</span>
+          {{ tenant.deposit_paid|khr }})
+        </span>
+      </label>
+      <div class="m-input-group">
         <span class="m-prefix">៛</span>
-        <input type="number" name="deposit_refunded" class="money-input" step="1" min="0"
-               value="{{ tenant.deposit_paid|int }}">
+        <input type="number" name="deposit_refunded" id="deposit_refunded"
+               class="money-input" step="1" min="0"
+               value="{{ tenant.deposit_paid|int }}"
+               data-original="{{ tenant.deposit_paid|int }}"
+               oninput="checkDeposit(this)">
       </div>
+      <div id="deposit_remark" class="small mt-1" style="display:none;"></div>
+      <div class="mb-3"></div>
 
       <label class="m-label"><span class="km">មូលហេតុចេញ</span><span class="en">Move-out Reason</span></label>
       <textarea name="move_out_reason" class="m-input mb-3" rows="2"
@@ -159,4 +170,28 @@
   </div>
 </div>
 
+{% endblock %}
+{% block scripts %}
+<script>
+function checkDeposit(input) {
+  const original = parseInt(input.dataset.original) || 0;
+  const current  = parseInt(input.value.replace(/,/g, '')) || 0;
+  const remark   = document.getElementById('deposit_remark');
+  const fmt      = n => n.toLocaleString('en-US') + ' ៛';
+
+  if (current === original) {
+    remark.style.display = 'none';
+  } else if (current < original) {
+    remark.style.display = 'block';
+    remark.style.color   = '#d97706';
+    remark.innerHTML = '⚠️ {% if lang=="km" %}សងតិចជាងប្រាក់បញ្ចាំ — ភាពខុសគ្នា: {% else %}Refunding less than deposit — difference: {% endif %}'
+      + '<strong>' + fmt(original - current) + '</strong>';
+  } else {
+    remark.style.display = 'block';
+    remark.style.color   = '#dc2626';
+    remark.innerHTML = '⚠️ {% if lang=="km" %}សងច្រើនជាងប្រាក់បញ្ចាំ — ភាពខុសគ្នា: {% else %}Refunding more than deposit — difference: {% endif %}'
+      + '<strong>+' + fmt(current - original) + '</strong>';
+  }
+}
+</script>
 {% endblock %}
