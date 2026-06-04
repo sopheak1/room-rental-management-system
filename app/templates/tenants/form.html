@@ -45,7 +45,7 @@
     <input type="text" name="nid" class="m-input" value="{{ tenant.nid if tenant else '' }}">
 
     <label class="m-label"><span class="km">ទូរស័ព្ទ</span><span class="en">Phone</span></label>
-    <input type="text" name="tel" class="m-input" value="{{ tenant.tel if tenant else '' }}">
+    <input type="tel" name="tel" class="m-input" inputmode="numeric" pattern="[0-9 ]*" value="{{ tenant.tel if tenant else '' }}" oninput="this.value=this.value.replace(/[^0-9 ]/g,'')">
   </div>
 </div>
 
@@ -61,7 +61,7 @@
     <input type="text" name="emergency_contact_name" class="m-input"
            value="{{ tenant.emergency_contact_name if tenant else '' }}">
     <label class="m-label"><span class="km">ទូរស័ព្ទ</span><span class="en">Phone</span></label>
-    <input type="text" name="emergency_contact_tel" class="m-input"
+    <input type="tel" name="emergency_contact_tel" class="m-input" inputmode="numeric" pattern="[0-9 ]*" oninput="this.value=this.value.replace(/[^0-9 ]/g,'')"
            value="{{ tenant.emergency_contact_tel if tenant else '' }}">
   </div>
 </div>
