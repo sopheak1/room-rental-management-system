@@ -289,12 +289,6 @@
   <div class="gen-section-body">
     <!-- Direct input mode (default) -->
     <div id="electricity_override_field">
-      {% if electricity_price %}
-      <div class="info-row mb-1" style="font-size:0.78rem;color:#0369a1;background:#f0f9ff;padding:5px 8px;border-radius:6px;">
-        <span>ℹ️ <span class="km">ពី Utility Price</span><span class="en">From Utility Price</span></span>
-        <strong>{{ electricity_price.price_per_unit|khr }}/kWh</strong>
-      </div>
-      {% endif %}
       <span class="gen-label">
         <span class="km">ចំនួនអគ្គិសនី (៛)</span><span class="en">Electricity Amount (៛)</span>
       </span>
@@ -381,12 +375,6 @@
   <div class="gen-section-body">
     <!-- Direct input (hidden by default for water) -->
     <div id="water_override_field" style="display:none;">
-      {% if water_price %}
-      <div class="info-row mb-1" style="font-size:0.78rem;color:#0369a1;background:#f0f9ff;padding:5px 8px;border-radius:6px;">
-        <span>ℹ️ <span class="km">ពី Utility Price</span><span class="en">From Utility Price</span></span>
-        <strong>{{ water_price.price_per_unit|khr }}/m³</strong>
-      </div>
-      {% endif %}
       <span class="gen-label">
         <span class="km">ចំនួនទឹក (៛)</span><span class="en">Water Amount (៛)</span>
       </span>
