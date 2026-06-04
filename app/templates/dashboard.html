@@ -220,8 +220,8 @@
   </div>
   {% endif %}
   {% for e in tab_overdue | sort(attribute='start_day') %}
-  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="room-card overdue"
-     data-day="{{ e.start_day }}">
+  <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
+     class="room-card overdue" data-day="{{ e.start_day }}">
     <div class="room-card-left">
       <div class="room-card-number">
         <i class="bi bi-door-closed me-1"></i>{{ e.room.room_number }}
@@ -230,13 +230,23 @@
       <div class="room-card-tenant">{{ e.tenant.name }}</div>
     </div>
     <div class="room-card-right">
+      {% if e.receipt %}
       <div class="room-card-amount due">{{ e.receipt.remaining_balance|khr }}</div>
       <div class="room-card-badge badge-overdue">
         <span class="km">ថ្ងៃ {{ e.start_day }} · ហួស</span>
         <span class="en">Day {{ e.start_day }} · Overdue</span>
       </div>
+      {% else %}
+      <div class="room-card-amount" style="color:#94a3b8;">{{ e.room.price|khr }}</div>
+      <div class="room-card-badge" style="background:#f1f5f9;color:#475569;">
+        <span class="km">ថ្ងៃ {{ e.start_day }} · បង្កើត</span>
+        <span class="en">Day {{ e.start_day }} · Generate</span>
+      </div>
+      {% endif %}
     </div>
-    <span class="room-card-arrow"><i class="bi bi-chevron-right"></i></span>
+    <span class="room-card-arrow">
+      <i class="bi bi-{{ 'chevron-right' if e.receipt else 'plus-circle text-primary' }}"></i>
+    </span>
   </a>
   {% else %}
   <div class="empty-tab">
@@ -263,8 +273,8 @@
   </div>
   {% endif %}
   {% for e in tab_upcoming | sort(attribute='start_day') %}
-  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="room-card upcoming"
-     data-day="{{ e.start_day }}">
+  <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
+     class="room-card upcoming" data-day="{{ e.start_day }}">
     <div class="room-card-left">
       <div class="room-card-number">
         <i class="bi bi-door-closed me-1"></i>{{ e.room.room_number }}
@@ -273,13 +283,23 @@
       <div class="room-card-tenant">{{ e.tenant.name }}</div>
     </div>
     <div class="room-card-right">
+      {% if e.receipt %}
       <div class="room-card-amount">{{ e.receipt.remaining_balance|khr }}</div>
       <div class="room-card-badge badge-upcoming">
         <span class="km">ថ្ងៃ {{ e.start_day }}</span>
         <span class="en">Day {{ e.start_day }}</span>
       </div>
+      {% else %}
+      <div class="room-card-amount" style="color:#94a3b8;">{{ e.room.price|khr }}</div>
+      <div class="room-card-badge" style="background:#f1f5f9;color:#475569;">
+        <span class="km">ថ្ងៃ {{ e.start_day }} · បង្កើត</span>
+        <span class="en">Day {{ e.start_day }} · Generate</span>
+      </div>
+      {% endif %}
     </div>
-    <span class="room-card-arrow"><i class="bi bi-chevron-right"></i></span>
+    <span class="room-card-arrow">
+      <i class="bi bi-{{ 'chevron-right' if e.receipt else 'plus-circle text-primary' }}"></i>
+    </span>
   </a>
   {% else %}
   <div class="empty-tab">

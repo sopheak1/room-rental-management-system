@@ -69,8 +69,8 @@ def index():
     EN_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
     # Split month_status into tabs — only rooms WITH a receipt
-    tab_overdue  = [e for e in month_status if e['status'] == 'overdue'  and e['receipt']]
-    tab_upcoming = [e for e in month_status if e['status'] == 'upcoming' and e['receipt']]
+    tab_overdue  = [e for e in month_status if e['status'] == 'overdue']
+    tab_upcoming = [e for e in month_status if e['status'] == 'upcoming']
     tab_paid     = [e for e in month_status if e['status'] == 'paid'     and e['receipt']]
 
     return render_template('dashboard.html',
