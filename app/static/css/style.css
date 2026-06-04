@@ -331,7 +331,7 @@ select {
 /* Page header */
 .m-page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -340,8 +340,17 @@ select {
   text-decoration: none;
   font-size: 1.2rem;
   padding: 4px;
+  flex-shrink: 0;   /* never shrink — back button always visible */
 }
-.m-page-title { font-size: 1.2rem; font-weight: 700; color: #1e293b; flex: 1; margin: 0; }
+.m-page-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e293b;
+  flex: 1;
+  min-width: 0;     /* allow text to wrap instead of overflow */
+  word-break: break-word;
+  margin: 0;
+}
 
 /* Amount big display */
 .m-amount-big {
