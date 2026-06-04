@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}ចេញពីបន្ទប់{% else %}Check Out{% endif %}{% endblock %}
+{% block content %}
+
+<div class="m-page-header">
+  <a href="javascript:history.back()" class="m-back"><i class="bi bi-arrow-left"></i></a>
+  <div>
+    <h5 class="m-page-title">
+      <span class="km">ចេញពីបន្ទប់</span><span class="en">Check Out</span>
+    </h5>
+    <div class="small text-muted">
+      {{ tenant.name }} · <span class="km">បន្ទប់</span><span class="en">Room</span> {{ room.room_number }}
+    </div>
+  </div>
+</div>
+
+<!-- ── Step 1: Outstanding Balances ───── -->
+<div class="m-section">
+  <div class="m-section-header">
+    <span>
+      <span class="badge bg-{{ 'danger' if outstanding else 'success' }} me-2">
+        {% if outstanding %}⚠️ 1{% else %}✅{% endif %}
+      </span>
+      <span class="km">សមតុល្យនៅជំពាក់</span><span class="en">Outstanding Balances</span>
+    </span>
+  </div>
+  <div class="m-section-body">
+    {% if outstanding %}
+    <div class="alert py-2 small mb-3" style="background:#f8d7da;color:#58151c;border-radius:8px;">
+      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+      <span class="km">មានសមតុល្យ {{ outstanding|length }} វិក័យប័ត្រ សរុប {{ total_outstanding|khr }} — ត្រូវបង់ ឬលើកលែងសិន។</span>
+      <span class="en">{{ outstanding|length }} receipt(s) with total {{ total_outstanding|khr }} outstanding — pay or write off first.</span>
+    </div>
+
+    {% for r in outstanding %}
+    <div class="m-detail-row">
+      <span class="m-dl">
+        {{ r.billing_label }}
+        <div class="small text-muted">{{ r.receipt_number }}</div>
+      </span>
+      <span class="m-dv d-flex align-items-center gap-2">
+        <span class="text-danger fw-bold">{{ r.remaining_balance|khr }}</span>
+        <a href="{{ url_for('receipts.detail', id=r.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">
+          <span class="km">បង់</span><span class="en">Pay</span>
+        </a>
+      </span>
+    </div>
+    {% endfor %}
+
+    <hr class="my-3">
+
+    <!-- Write Off option -->
+    <div class="alert alert-secondary py-2 small mb-3">
+      <i class="bi bi-info-circle me-1"></i>
+      <span class="km">ជំរើសលើកលែង: ការលើកលែងនឹងកត់ជា "Paid" ដោយមានកំណត់ចំណាំ "[Written off at checkout]"</span>
+      <span class="en">Write-off option: marks receipts as Paid with note "[Written off at checkout]"</span>
+    </div>
+    {% set confirm_wo = 'លើកលែងសមតុល្យទាំងអស់ ' + total_outstanding|khr + '?' if lang=='km' else 'Write off all balances ' + total_outstanding|khr + '?' %}
+    <form method="POST" action="{{ url_for('tenants.write_off', id=tenant.id) }}"
+          onsubmit="return confirm('{{ confirm_wo }}')">
+      <button class="btn btn-outline-warning w-100 fw-bold">
+        <i class="bi bi-eraser me-1"></i>
+        <span class="km">លើកលែងទាំងអស់ ({{ total_outstanding|khr }})</span>
+        <span class="en">Write Off All ({{ total_outstanding|khr }})</span>
+      </button>
+    </form>
+
+    {% else %}
+    <div class="text-center py-3 text-success">
+      <i class="bi bi-check-circle-fill" style="font-size:2rem;"></i>
+      <div class="fw-bold mt-2">
+        <span class="km">គ្មានសមតុល្យនៅជំពាក់ ✅</span>
+        <span class="en">No outstanding balances ✅</span>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── Step 2: Final Receipt ───────────── -->
+<div class="m-section">
+  <div class="m-section-header">
+    <span>
+      <span class="badge bg-{{ 'success' if current_receipt else 'warning text-dark' }} me-2">
+        {% if current_receipt %}✅ 2{% else %}⚠️ 2{% endif %}
+      </span>
+      <span class="km">វិក័យប័ត្រចុងក្រោយ ({{ now.strftime('%b %Y') }})</span>
+      <span class="en">Final Receipt ({{ now.strftime('%b %Y') }})</span>
+    </span>
+  </div>
+  <div class="m-section-body">
+    {% if current_receipt %}
+    <div class="m-detail-row">
+      <span class="m-dl">{{ current_receipt.receipt_number }}</span>
+      <span class="m-dv">
+        <span class="badge status-{{ current_receipt.payment_status }}">{{ current_receipt.payment_status|title }}</span>
+        <div class="small">{{ current_receipt.total_amount|khr }}</div>
+      </span>
+    </div>
+    <a href="{{ url_for('receipts.detail', id=current_receipt.id) }}" class="btn btn-outline-primary btn-sm w-100 mt-2">
+      <span class="km">មើលវិក័យប័ត្រ</span><span class="en">View Receipt</span>
+    </a>
+    {% else %}
+    <div class="alert alert-warning py-2 small mb-3">
+      <i class="bi bi-receipt me-1"></i>
+      <span class="km">មិនទាន់មានវិក័យប័ត្រសម្រាប់ខែនេះ — សូមបង្កើតវិក័យប័ត្រចុងក្រោយ។</span>
+      <span class="en">No receipt for current month — please generate the final receipt.</span>
+    </div>
+    <a href="{{ url_for('receipts.generate') }}?room_id={{ room.id }}"
+       class="btn btn-primary w-100 fw-bold">
+      <i class="bi bi-receipt me-1"></i>
+      <span class="km">បង្កើតវិក័យប័ត្រចុងក្រោយ</span>
+      <span class="en">Generate Final Receipt</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── Step 3: Complete Checkout ──────── -->
+<div class="m-section">
+  <div class="m-section-header">
+    <span>
+      <span class="badge bg-secondary me-2">3</span>
+      <span class="km">បញ្ចប់ការចេញ</span><span class="en">Complete Checkout</span>
+    </span>
+  </div>
+  <div class="m-section-body">
+    {% if outstanding %}
+    <div class="alert alert-danger py-2 small">
+      <i class="bi bi-lock-fill me-1"></i>
+      <span class="km">ត្រូវបង់ ឬលើកលែងសមតុល្យទាំងអស់សិន។</span>
+      <span class="en">Clear all outstanding balances first (Step 1).</span>
+    </div>
+    {% else %}
+    <form method="POST" action="{{ url_for('tenants.checkout', id=tenant.id) }}">
+      <label class="m-label"><span class="km">ថ្ងៃចេញ</span><span class="en">Move-out Date</span> *</label>
+      <input type="date" name="move_out_date" class="m-input mb-3" required
+             value="{{ today.strftime('%Y-%m-%d') }}">
+
+      <label class="m-label"><span class="km">ប្រាក់បញ្ចាំសងត្រឡប់ (៛)</span><span class="en">Deposit Refunded (៛)</span></label>
+      <div class="m-input-group mb-3">
+        <span class="m-prefix">៛</span>
+        <input type="number" name="deposit_refunded" class="money-input" step="1" min="0"
+               value="{{ tenant.deposit_paid|int }}">
+      </div>
+
+      <label class="m-label"><span class="km">មូលហេតុចេញ</span><span class="en">Move-out Reason</span></label>
+      <textarea name="move_out_reason" class="m-input mb-3" rows="2"
+                style="font-weight:400;resize:none;"></textarea>
+
+      {% set confirm_co = 'បញ្ជាក់ការចេញ?' if lang=='km' else 'Confirm check out?' %}
+      <button type="submit" class="btn btn-danger w-100 fw-bold py-3"
+              onclick="return confirm('{{ confirm_co }}')">
+        <i class="bi bi-box-arrow-right me-2"></i>
+        <span class="km">បញ្ជាក់ចេញ</span><span class="en">Confirm Check Out</span>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
