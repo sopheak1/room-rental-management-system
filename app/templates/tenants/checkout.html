@@ -146,8 +146,8 @@
       </label>
       <div class="m-input-group">
         <span class="m-prefix">៛</span>
-        <input type="number" name="deposit_refunded" id="deposit_refunded"
-               class="money-input" step="1" min="0"
+        <input type="text" inputmode="numeric" name="deposit_refunded" id="deposit_refunded"
+               class="money-input"
                value="{{ tenant.deposit_paid|int }}"
                data-original="{{ tenant.deposit_paid|int }}"
                oninput="checkDeposit(this)">
