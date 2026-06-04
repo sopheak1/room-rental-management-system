@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="m-page-header">
-  <a href="{{ url_for('buildings.list') }}" class="m-back"><i class="bi bi-arrow-left"></i></a>
+  <a href="javascript:history.back()" class="m-back"><i class="bi bi-arrow-left"></i></a>
   <h5 class="m-page-title">
     {% if building %}<span class="km">កែប្រែអគារ</span><span class="en">Edit Building</span>
     {% else %}<span class="km">អគារថ្មី</span><span class="en">New Building</span>{% endif %}

@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="m-page-header">
-  <a href="{{ url_for('rooms.list') }}" class="m-back"><i class="bi bi-arrow-left"></i></a>
+  <a href="javascript:history.back()" class="m-back"><i class="bi bi-arrow-left"></i></a>
   <h5 class="m-page-title">
     {% if room %}<span class="km">កែប្រែបន្ទប់</span><span class="en">Edit Room</span>
     {% else %}<span class="km">បន្ទប់ថ្មី</span><span class="en">New Room</span>{% endif %}
