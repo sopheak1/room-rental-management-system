@@ -21,11 +21,11 @@ function toggleMSection(header) {
 // ── Global money input formatter ──────────────────────────────
 // Add class="money-input" to any input that should format as #,###
 document.addEventListener('DOMContentLoaded', function () {
-  // Format existing values on load
+  // Format existing values on load — use parseFloat first so "1500.0" → 1500, not 15000
   document.querySelectorAll('input.money-input').forEach(function (el) {
-    const raw = el.value.replace(/[^0-9]/g, '');
-    if (raw && raw !== '0') {
-      el.value = parseInt(raw).toLocaleString('en-US');
+    const num = parseInt(parseFloat(el.value) || 0);
+    if (num) {
+      el.value = num.toLocaleString('en-US');
     }
   });
 

@@ -645,7 +645,7 @@ function getElecTotal() {
   }
   const from = parseFloat(document.getElementById('electricity_from').value) || 0;
   const to   = parseFloat(document.getElementById('electricity_to').value) || 0;
-  const ppu  = parseFloat(document.getElementById('electricity_price_per_unit').value) || 0;
+  const ppu  = parseKhr(document.getElementById('electricity_price_per_unit').value);
   return Math.max(to - from, 0) * ppu;
 }
 
@@ -655,14 +655,14 @@ function getWaterTotal() {
   }
   const from = parseFloat(document.getElementById('water_from').value) || 0;
   const to   = parseFloat(document.getElementById('water_to').value) || 0;
-  const ppu  = parseFloat(document.getElementById('water_price_per_unit').value) || 0;
+  const ppu  = parseKhr(document.getElementById('water_price_per_unit').value);
   return Math.max(to - from, 0) * ppu;
 }
 
 function calcElectricity() {
   const from = parseFloat(document.getElementById('electricity_from').value) || 0;
   const to   = parseFloat(document.getElementById('electricity_to').value) || 0;
-  const ppu  = parseFloat(document.getElementById('electricity_price_per_unit').value) || 0;
+  const ppu  = parseKhr(document.getElementById('electricity_price_per_unit').value);
   const units = Math.max(to - from, 0);
   document.getElementById('electricity_units_display').value = units.toFixed(2);
   document.getElementById('electricity_total_display').textContent = formatKhr(units * ppu);
@@ -672,7 +672,7 @@ function calcElectricity() {
 function calcWater() {
   const from = parseFloat(document.getElementById('water_from').value) || 0;
   const to   = parseFloat(document.getElementById('water_to').value) || 0;
-  const ppu  = parseFloat(document.getElementById('water_price_per_unit').value) || 0;
+  const ppu  = parseKhr(document.getElementById('water_price_per_unit').value);
   const units = Math.max(to - from, 0);
   document.getElementById('water_units_display').value = units.toFixed(2);
   document.getElementById('water_total_display').textContent = formatKhr(units * ppu);
