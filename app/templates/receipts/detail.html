@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ receipt.receipt_number }}{% endblock %}
 {% block content %}
-{% set status_labels = {'paid': {'km':'បានបង់','en':'Paid'}, 'unpaid': {'km':'មិនទាន់បង់','en':'Unpaid'}, 'partial': {'km':'បង់មួយផ្នែក','en':'Partial'}, 'deferred': {'km':'ពន្យារ','en':'Deferred'}} %}
 
 <!-- Header -->
 <div class="m-page-header">
@@ -12,7 +11,7 @@
   </div>
   <div class="d-flex flex-wrap gap-2 align-items-center">
     <span class="badge status-{{ receipt.payment_status }} fs-6 px-3 py-2">
-      {% set sl = status_labels.get(receipt.payment_status, {}) %}{{ sl.km if lang=="km" else sl.get("en", receipt.payment_status|title) }}
+      {{ receipt.payment_status|status_label }}
     </span>
   </div>
 </div>
@@ -24,24 +23,17 @@
   <span class="km">វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ — មិនអាចកែប្រែ ឬលុបការទូទាត់បានទេ។</span>
   <span class="en">Next month's receipt exists — editing and payment deletion are locked.</span>
 </div>
-{% else %}
-<div class="d-flex gap-2 mb-2">
-  <a href="{{ url_for('receipts.edit_receipt', id=receipt.id) }}" class="btn btn-outline-secondary flex-fill btn-sm fw-semibold">
-    <i class="bi bi-pencil-square me-1"></i>
-    <span class="km">កែប្រែ</span><span class="en">Edit Receipt</span>
-  </a>
-</div>
 {% endif %}
 <div class="d-flex gap-2 mb-3">
-  <!-- Thermal receipt → PT-210 via Bluetooth -->
-  <button onclick="printViaBridge({{ receipt.id }})" class="btn btn-primary flex-fill btn-sm fw-semibold" id="bridgePrintBtn">
-    <i class="bi bi-bluetooth me-1"></i>
-    <span class="km">បោះពុម្ព (ព្រីន)</span><span class="en">Print Thermal</span>
-  </button>
-  <!-- Table receipt → print via PT-210 (same flow, different template) -->
-  <button onclick="printTableViaBridge({{ receipt.id }})" class="btn btn-outline-secondary flex-fill btn-sm fw-semibold" id="tablePrintBtn">
-    <i class="bi bi-table me-1"></i>
-    <span class="km">វិក័យប័ត្រតារាង</span><span class="en">Table Receipt</span>
+  {% if not locked %}
+  <a href="{{ url_for('receipts.edit_receipt', id=receipt.id) }}" class="btn btn-outline-secondary flex-fill btn-sm fw-semibold">
+    <i class="bi bi-pencil-square me-1"></i>
+    <span class="km">កែប្រែ</span><span class="en">Edit</span>
+  </a>
+  {% endif %}
+  <button onclick="printTableViaBridge({{ receipt.id }})" class="btn btn-primary flex-fill btn-sm fw-semibold" id="tablePrintBtn">
+    <i class="bi bi-printer-fill me-1"></i>
+    <span class="km">បោះពុម្ពវិក័យប័ត្រ</span><span class="en">Print</span>
   </button>
 </div>
 
@@ -110,7 +102,6 @@
     {% set water_direct = receipt.water_units is none %}
     {% set direct_count = (1 if elec_direct else 0) + (1 if water_direct else 0) %}
     {% set per_item_fee = (receipt.fee / direct_count)|int if (receipt.fee and direct_count > 0) else 0 %}
-
     <div class="m-detail-row">
       <span class="m-dl">
         <span class="km">អគ្គិសនី</span><span class="en">Electricity</span>
@@ -120,19 +111,8 @@
           {{ '%.0f'|format(receipt.electricity_units) }}u × {{ receipt.electricity_price_per_unit|khr }}
         </div>
         {% endif %}
-        {% if elec_direct and per_item_fee > 0 %}
-        <div class="small" style="font-weight:400;color:#d97706;">
-          💵 <span class="km">ថ្លៃសេវា</span><span class="en">Service Fee</span>: +{{ per_item_fee|khr }}
-        </div>
-        {% endif %}
       </span>
-      <span class="m-dv">
-        {% if elec_direct and per_item_fee > 0 %}
-          {{ (receipt.electricity_total + per_item_fee)|khr }}
-        {% else %}
-          {{ receipt.electricity_total|khr }}
-        {% endif %}
-      </span>
+      <span class="m-dv">{{ (receipt.electricity_total + (per_item_fee if elec_direct else 0))|khr }}</span>
     </div>
     <div class="m-detail-row">
       <span class="m-dl">
@@ -143,19 +123,8 @@
           {{ '%.0f'|format(receipt.water_units) }}m³ × {{ receipt.water_price_per_unit|khr }}
         </div>
         {% endif %}
-        {% if water_direct and per_item_fee > 0 %}
-        <div class="small" style="font-weight:400;color:#d97706;">
-          💵 <span class="km">ថ្លៃសេវា</span><span class="en">Service Fee</span>: +{{ per_item_fee|khr }}
-        </div>
-        {% endif %}
       </span>
-      <span class="m-dv">
-        {% if water_direct and per_item_fee > 0 %}
-          {{ (receipt.water_total + per_item_fee)|khr }}
-        {% else %}
-          {{ receipt.water_total|khr }}
-        {% endif %}
-      </span>
+      <span class="m-dv">{{ (receipt.water_total + (per_item_fee if water_direct else 0))|khr }}</span>
     </div>
     {% if receipt.previous_balance and receipt.previous_balance > 0 %}
     <div class="m-detail-row">
@@ -229,7 +198,7 @@
       <span class="m-dl"><span class="km">ស្ថានភាពបច្ចុប្បន្ន</span><span class="en">Current Status</span></span>
       <span class="m-dv">
         <span class="badge status-{{ receipt.payment_status }}">
-          {% set sl = status_labels.get(receipt.payment_status, {}) %}{{ sl.km if lang=="km" else sl.get("en", receipt.payment_status|title) }}
+          {{ receipt.payment_status|status_label }}
         </span>
       </span>
     </div>

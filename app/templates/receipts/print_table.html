@@ -130,24 +130,10 @@ if (new URLSearchParams(window.location.search).get('bridge') === '1') {
 </div>
 <hr class="thick">
 
-{% if receipt.water_total > 0 or receipt.water_from is not none %}
-<div class="item-block">
-  <div class="item-name">💧 ទឹក{% if receipt.water_units is not none and receipt.water_price_per_unit %} {{ receipt.water_price_per_unit|khr }}/m³{% endif %}</div>
-  {% if receipt.water_from is not none %}
-  <div class="item-row">
-    <span>ចាស់: {{ receipt.water_from|int }}</span>
-    <span>→</span>
-    <span>ថ្មី: {{ receipt.water_to|int }}</span>
-    <span>= {{ '%.0f'|format(receipt.water_units) }} m³</span>
-  </div>
-  {% endif %}
-  <div class="item-total">
-    <span>សរុបទឹក</span>
-    <span>{{ receipt.water_total|khr }}</span>
-  </div>
-</div>
-<hr class="thin">
-{% endif %}
+{% set elec_direct = receipt.electricity_units is none %}
+{% set water_direct = receipt.water_units is none %}
+{% set direct_count = (1 if elec_direct else 0) + (1 if water_direct else 0) %}
+{% set per_item_fee = (receipt.fee / direct_count)|int if (receipt.fee and direct_count > 0) else 0 %}
 
 {% if receipt.electricity_total > 0 or receipt.electricity_from is not none %}
 <div class="item-block">
@@ -162,7 +148,26 @@ if (new URLSearchParams(window.location.search).get('bridge') === '1') {
   {% endif %}
   <div class="item-total">
     <span>សរុបភ្លើង</span>
-    <span>{{ receipt.electricity_total|khr }}</span>
+    <span>{{ (receipt.electricity_total + (per_item_fee if elec_direct else 0))|khr }}</span>
+  </div>
+</div>
+<hr class="thin">
+{% endif %}
+
+{% if receipt.water_total > 0 or receipt.water_from is not none %}
+<div class="item-block">
+  <div class="item-name">💧 ទឹក{% if receipt.water_units is not none and receipt.water_price_per_unit %} {{ receipt.water_price_per_unit|khr }}/m³{% endif %}</div>
+  {% if receipt.water_from is not none %}
+  <div class="item-row">
+    <span>ចាស់: {{ receipt.water_from|int }}</span>
+    <span>→</span>
+    <span>ថ្មី: {{ receipt.water_to|int }}</span>
+    <span>= {{ '%.0f'|format(receipt.water_units) }} m³</span>
+  </div>
+  {% endif %}
+  <div class="item-total">
+    <span>សរុបទឹក</span>
+    <span>{{ (receipt.water_total + (per_item_fee if water_direct else 0))|khr }}</span>
   </div>
 </div>
 <hr class="thin">
@@ -178,12 +183,6 @@ if (new URLSearchParams(window.location.search).get('bridge') === '1') {
   <div class="item-row">
     <span>ជំពាក់ចាស់</span>
     <span>{{ receipt.previous_balance|khr }}</span>
-  </div>
-  {% endif %}
-  {% if receipt.fee and receipt.fee > 0 %}
-  <div class="item-row">
-    <span>ថ្លៃសេវា</span>
-    <span>{{ receipt.fee|khr }}</span>
   </div>
   {% endif %}
   {% if receipt.late_fee and receipt.late_fee > 0 %}

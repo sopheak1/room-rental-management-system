@@ -171,6 +171,29 @@
   </h5>
 </div>
 
+{% if existing_receipt %}
+<div class="alert py-2 mb-3 d-flex align-items-center gap-2"
+     style="background:#f8d7da;color:#58151c;border-radius:10px;border:none;">
+  <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+  <div>
+    <strong>
+      <span class="km">វិក័យប័ត្រខែនេះបានបង្កើតរួចហើយ!</span>
+      <span class="en">Receipt already exists for this month!</span>
+    </strong>
+    <div class="small mt-1">
+      {{ existing_receipt.receipt_number }} ·
+      <span class="badge status-{{ existing_receipt.payment_status }}">{{ existing_receipt.payment_status|status_label }}</span>
+      · {{ existing_receipt.total_amount|khr }}
+    </div>
+    <a href="{{ url_for('receipts.detail', id=existing_receipt.id) }}"
+       class="btn btn-sm btn-outline-danger mt-2 py-0">
+      <i class="bi bi-receipt me-1"></i>
+      <span class="km">មើលវិក័យប័ត្រ</span><span class="en">View Receipt</span>
+    </a>
+  </div>
+</div>
+{% endif %}
+
 <form method="POST" id="receiptForm" onsubmit="return confirmGenerate()">
 
 <!-- ── 1. Room & Month ─────────────────── -->
@@ -207,8 +230,9 @@
       </div>
       <div>
         <span class="gen-label"><span class="km">ឆ្នាំ</span><span class="en">Year</span> *</span>
-        <input type="number" name="billing_year" class="gen-input"
-               value="{{ billing_year }}" required>
+        <input type="text" name="billing_year" class="gen-input" readonly
+               value="{{ billing_year }}"
+               style="background:#f1f5f9;color:#64748b;cursor:not-allowed;">
       </div>
     </div>
   </div>
@@ -268,12 +292,12 @@
 
 <!-- ── 3. Electricity ──────────────────── -->
 <div class="gen-section">
-  <div class="gen-section-header" onclick="toggleSection(this)">
+  <div class="gen-section-header" style="cursor:default;">
     <span><i class="bi bi-lightning-charge-fill text-warning me-2"></i>
       <span class="km">អគ្គិសនី</span><span class="en">Electricity</span>
     </span>
     <div class="d-flex align-items-center gap-3">
-      <div class="gen-toggle" onclick="event.stopPropagation()">
+      <div class="gen-toggle">
         <span style="font-size:0.75rem;font-weight:400;">
           <span class="km">បញ្ចូលផ្ទាល់</span><span class="en">Direct</span>
         </span>
@@ -283,7 +307,6 @@
                  onchange="toggleOverride('electricity')">
         </div>
       </div>
-      <i class="bi bi-chevron-down chevron"></i>
     </div>
   </div>
   <div class="gen-section-body">
@@ -336,12 +359,10 @@
           <span class="gen-label">
             <span class="km">តម្លៃ/យូនីត (៛)</span><span class="en">Price/Unit (៛)</span>
           </span>
-          <input type="text" inputmode="numeric" name="electricity_price_per_unit" id="electricity_price_per_unit"
-                 class="money-input gen-input" step="1" min="0"
+          <input type="text" name="electricity_price_per_unit" id="electricity_price_per_unit"
+                 class="money-input gen-input" readonly
                  value="{{ electricity_price.price_per_unit if electricity_price else '' }}"
-                 data-original="{{ electricity_price.price_per_unit if electricity_price else '' }}"
-                 oninput="calcElectricity(); warnIfChanged(this,'w_elec_ppu')">
-          <div id="w_elec_ppu" class="warn-msg">⚠ <span class="km">មកពីតម្លៃប្រើប្រាស់</span><span class="en">From utility price</span></div>
+                 style="background:#f1f5f9;color:#64748b;cursor:not-allowed;">
         </div>
       </div>
     </div>
@@ -354,12 +375,12 @@
 
 <!-- ── 4. Water ────────────────────────── -->
 <div class="gen-section">
-  <div class="gen-section-header" onclick="toggleSection(this)">
+  <div class="gen-section-header" style="cursor:default;">
     <span><i class="bi bi-droplet-fill text-info me-2"></i>
       <span class="km">ទឹក</span><span class="en">Water</span>
     </span>
     <div class="d-flex align-items-center gap-3">
-      <div class="gen-toggle" onclick="event.stopPropagation()">
+      <div class="gen-toggle">
         <span style="font-size:0.75rem;font-weight:400;">
           <span class="km">បញ្ចូលផ្ទាល់</span><span class="en">Direct</span>
         </span>
@@ -369,7 +390,6 @@
                  onchange="toggleOverride('water')">
         </div>
       </div>
-      <i class="bi bi-chevron-down chevron"></i>
     </div>
   </div>
   <div class="gen-section-body">
@@ -422,12 +442,10 @@
           <span class="gen-label">
             <span class="km">តម្លៃ/យូនីត (៛)</span><span class="en">Price/Unit (៛)</span>
           </span>
-          <input type="text" inputmode="numeric" name="water_price_per_unit" id="water_price_per_unit"
-                 class="money-input gen-input" step="1" min="0"
+          <input type="text" name="water_price_per_unit" id="water_price_per_unit"
+                 class="money-input gen-input" readonly
                  value="{{ water_price.price_per_unit if water_price else '' }}"
-                 data-original="{{ water_price.price_per_unit if water_price else '' }}"
-                 oninput="calcWater(); warnIfChanged(this,'w_water_ppu')">
-          <div id="w_water_ppu" class="warn-msg">⚠ <span class="km">មកពីតម្លៃប្រើប្រាស់</span><span class="en">From utility price</span></div>
+                 style="background:#f1f5f9;color:#64748b;cursor:not-allowed;">
         </div>
       </div>
     </div>
@@ -443,23 +461,23 @@
 
 <!-- ── 5. Due Balance ──────────────────── -->
 <div class="gen-section">
-  <div class="gen-section-header" onclick="toggleSection(this)">
+  <div class="gen-section-header {{ 'collapsed' if prev_balance == 0 }}" onclick="toggleSection(this)">
     <span><i class="bi bi-clock-history text-danger me-2"></i>
       <span class="km">សមតុល្យចាស់</span><span class="en">Due Balance</span>
     </span>
     <i class="bi bi-chevron-down chevron"></i>
   </div>
-  <div class="gen-section-body">
+  <div class="gen-section-body {{ 'collapsed' if prev_balance == 0 }}">
     <span class="gen-label">
       <span class="km">ចំនួន (៛)</span><span class="en">Amount (៛)</span>
     </span>
     <div class="gen-input-group">
       <span class="prefix">៛</span>
       <input type="text" id="previous_balance_display" inputmode="numeric"
-             value="{{ '{:,}'.format(prev_receipt.remaining_balance|int) if prev_receipt else '0' }}"
+             value="{{ '{:,}'.format(prev_balance|int) }}"
              oninput="onMoneyInput(this,'previous_balance');calcTotal()">
       <input type="hidden" name="previous_balance" id="previous_balance"
-             value="{{ prev_receipt.remaining_balance|int if prev_receipt else 0 }}">
+             value="{{ prev_balance|int }}">
     </div>
   </div>
 </div>

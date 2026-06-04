@@ -92,15 +92,17 @@ def generate():
         billing_month = int(request.form['billing_month'])
         billing_year = int(request.form['billing_year'])
 
+        room = Room.query.get_or_404(room_id)
+        tenant = room.active_tenant
+
+        # Block duplicate only for the same tenant — different tenant (new move-in) is allowed
         existing = Receipt.query.filter_by(
-            room_id=room_id, billing_month=billing_month, billing_year=billing_year
+            room_id=room_id, billing_month=billing_month, billing_year=billing_year,
+            tenant_id=tenant.id if tenant else None
         ).first()
         if existing:
             flash('វិក័យប័ត្រនេះបានបង្កើតរួចហើយ។ / Receipt already exists for this room and month.', 'warning')
             return redirect(url_for('receipts.detail', id=existing.id))
-
-        room = Room.query.get_or_404(room_id)
-        tenant = room.active_tenant
 
         # Electricity
         elec_override = request.form.get('electricity_override') == 'on'
@@ -190,10 +192,28 @@ def generate():
     selected_room = Room.query.get(room_id) if room_id else None
     prev_receipt = _get_previous_receipt(room_id, billing_year, billing_month) if room_id else None
 
+    # Don't carry over balance from a previous tenant — only meter readings transfer
+    active_tenant = selected_room.active_tenant if selected_room else None
+    same_tenant = (
+        prev_receipt and active_tenant and
+        prev_receipt.tenant_id == active_tenant.id
+    )
+    prev_balance = prev_receipt.remaining_balance if (prev_receipt and same_tenant) else 0
+
+    # Warn upfront if this tenant already has a receipt for the selected month
+    existing_receipt = Receipt.query.filter_by(
+        room_id=room_id,
+        billing_month=billing_month,
+        billing_year=billing_year,
+        tenant_id=active_tenant.id if active_tenant else None
+    ).first() if room_id else None
+
     return render_template('receipts/generate.html',
         rooms=rooms,
         selected_room=selected_room,
         prev_receipt=prev_receipt,
+        prev_balance=prev_balance,
+        existing_receipt=existing_receipt,
         water_price=water_price,
         electricity_price=electricity_price,
         default_fee=default_fee,

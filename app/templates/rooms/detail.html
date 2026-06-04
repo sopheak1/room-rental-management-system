@@ -136,7 +136,7 @@
       <div class="m-card-amount {{ 'text-danger' if r.remaining_balance > 0 else 'text-success' }}">
         {{ r.remaining_balance|khr if r.remaining_balance > 0 else r.total_amount|khr }}
       </div>
-      <div class="mt-1"><span class="badge status-{{ r.payment_status }}">{{ r.payment_status|title }}</span></div>
+      <div class="mt-1"><span class="badge status-{{ r.payment_status }}">{{ r.payment_status|status_label }}</span></div>
     </div>
     <i class="bi bi-chevron-right m-card-arrow"></i>
   </a>

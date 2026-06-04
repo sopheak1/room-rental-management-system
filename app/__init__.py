@@ -104,6 +104,19 @@ def create_app():  # noqa: C901
     def inject_lang():
         return {'lang': session.get('lang', 'km')}
 
+    _STATUS_LABELS = {
+        'paid':      {'km': 'បានបង់',       'en': 'Paid'},
+        'unpaid':    {'km': 'មិនទាន់បង់',   'en': 'Unpaid'},
+        'partial':   {'km': 'បង់មួយផ្នែក',  'en': 'Partial'},
+        'deferred':  {'km': 'បង់ពន្យារ',    'en': 'Deferred'},
+    }
+
+    @app.template_filter('status_label')
+    def status_label_filter(value):
+        lang = session.get('lang', 'km')
+        entry = _STATUS_LABELS.get(value, {})
+        return entry.get(lang, value.title() if value else '')
+
     @app.route('/lang/<code>')
     def set_lang(code):
         if code in ('km', 'en'):

@@ -93,7 +93,7 @@
     <div class="m-detail-row">
       <span class="m-dl">{{ current_receipt.receipt_number }}</span>
       <span class="m-dv">
-        <span class="badge status-{{ current_receipt.payment_status }}">{{ current_receipt.payment_status|title }}</span>
+        <span class="badge status-{{ current_receipt.payment_status }}">{{ current_receipt.payment_status|status_label }}</span>
         <div class="small">{{ current_receipt.total_amount|khr }}</div>
       </span>
     </div>

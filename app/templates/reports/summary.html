@@ -186,7 +186,7 @@
   </div>
   <div class="m-card-right">
     <div class="m-card-amount text-danger">{{ r.remaining_balance|khr }}</div>
-    <div class="mt-1"><span class="badge status-{{ r.payment_status }}">{{ r.payment_status|title }}</span></div>
+    <div class="mt-1"><span class="badge status-{{ r.payment_status }}">{{ r.payment_status|status_label }}</span></div>
   </div>
   <i class="bi bi-chevron-right m-card-arrow"></i>
 </a>
