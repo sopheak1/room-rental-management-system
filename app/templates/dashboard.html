@@ -206,8 +206,22 @@
 
 <!-- ── Overdue tab ────────────────────── -->
 <div id="tab-overdue" class="tab-panel active">
-  {% for e in tab_overdue %}
-  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="room-card overdue">
+  {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
+  {% if tab_overdue %}
+  <div class="m-filter-bar mb-2">
+    <button class="m-filter-chip active" onclick="filterDay('overdue', 0, this)">
+      <span class="km">ទាំងអស់</span><span class="en">All</span>
+    </button>
+    {% for day in overdue_days %}
+    <button class="m-filter-chip" onclick="filterDay('overdue', {{ day }}, this)">
+      <span class="km">ថ្ងៃ {{ day }}</span><span class="en">Day {{ day }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% for e in tab_overdue | sort(attribute='start_day') %}
+  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="room-card overdue"
+     data-day="{{ e.start_day }}">
     <div class="room-card-left">
       <div class="room-card-number">
         <i class="bi bi-door-closed me-1"></i>{{ e.room.room_number }}
@@ -218,7 +232,8 @@
     <div class="room-card-right">
       <div class="room-card-amount due">{{ e.receipt.remaining_balance|khr }}</div>
       <div class="room-card-badge badge-overdue">
-        <span class="km">ហួសកំណត់</span><span class="en">Overdue</span>
+        <span class="km">ថ្ងៃ {{ e.start_day }} · ហួស</span>
+        <span class="en">Day {{ e.start_day }} · Overdue</span>
       </div>
     </div>
     <span class="room-card-arrow"><i class="bi bi-chevron-right"></i></span>
@@ -234,8 +249,22 @@
 
 <!-- ── Upcoming tab ───────────────────── -->
 <div id="tab-upcoming" class="tab-panel">
-  {% for e in tab_upcoming %}
-  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="room-card upcoming">
+  {% set upcoming_days = tab_upcoming | map(attribute='start_day') | list | unique | sort %}
+  {% if tab_upcoming %}
+  <div class="m-filter-bar mb-2">
+    <button class="m-filter-chip active" onclick="filterDay('upcoming', 0, this)">
+      <span class="km">ទាំងអស់</span><span class="en">All</span>
+    </button>
+    {% for day in upcoming_days %}
+    <button class="m-filter-chip" onclick="filterDay('upcoming', {{ day }}, this)">
+      <span class="km">ថ្ងៃ {{ day }}</span><span class="en">Day {{ day }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% for e in tab_upcoming | sort(attribute='start_day') %}
+  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="room-card upcoming"
+     data-day="{{ e.start_day }}">
     <div class="room-card-left">
       <div class="room-card-number">
         <i class="bi bi-door-closed me-1"></i>{{ e.room.room_number }}
@@ -247,7 +276,7 @@
       <div class="room-card-amount">{{ e.receipt.remaining_balance|khr }}</div>
       <div class="room-card-badge badge-upcoming">
         <span class="km">ថ្ងៃ {{ e.start_day }}</span>
-        <span class="en">Due {{ e.start_day }}</span>
+        <span class="en">Day {{ e.start_day }}</span>
       </div>
     </div>
     <span class="room-card-arrow"><i class="bi bi-chevron-right"></i></span>
@@ -298,6 +327,20 @@ function switchTab(name, btn) {
   document.querySelectorAll('.home-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
+  // Reset day filter when switching tabs
+  const firstChip = document.querySelector('#tab-' + name + ' .m-filter-chip');
+  if (firstChip) filterDay(name, 0, firstChip);
+}
+
+function filterDay(tabName, day, btn) {
+  // Update chip active state within this tab only
+  const tab = document.getElementById('tab-' + tabName);
+  tab.querySelectorAll('.m-filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Filter cards
+  tab.querySelectorAll('.room-card').forEach(card => {
+    card.style.display = (day === 0 || parseInt(card.dataset.day) === day) ? '' : 'none';
+  });
 }
 </script>
 {% endblock %}
