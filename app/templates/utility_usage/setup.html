@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}កត់ទឹកភ្លើង{% else %}Utility Usage{% endif %}{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="m-page-title mb-0">
+    <i class="bi bi-speedometer2 me-2"></i>
+    <span class="km">កត់ទឹកភ្លើង</span><span class="en">Utility Usage</span>
+  </h5>
+  <button type="button" onclick="printUsageViaBridge()" class="btn btn-outline-primary btn-sm" id="usagePrintBtn">
+    <i class="bi bi-bluetooth me-1"></i>
+    <span class="km">បោះពុម្ព</span><span class="en">Print</span>
+  </button>
+</div>
+
+<form method="GET" action="{{ url_for('utility_usage.batch_input') }}" id="setupForm">
+  <!-- Billing period -->
+  <div class="m-section mb-3">
+    <div class="m-section-body">
+      <label class="m-label"><span class="km">ខែ/ឆ្នាំ</span><span class="en">Billing Period</span></label>
+      <div class="d-flex gap-2">
+        <select name="month" class="m-input" onchange="reloadForPeriod()">
+          {% for i in range(1, 13) %}
+          <option value="{{ i }}" {{ 'selected' if i == month }}>{{ month_names[i-1] }}</option>
+          {% endfor %}
+        </select>
+        <input type="number" name="year" class="m-input" value="{{ year }}" style="max-width:110px;" onchange="reloadForPeriod()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Which utility -->
+  <div class="m-section mb-3">
+    <div class="m-section-body">
+      <label class="m-label mb-2"><span class="km">តើចង់កត់ត្រាអ្វី?</span><span class="en">What do you want to record?</span></label>
+      <div class="d-flex flex-column gap-2">
+        <label class="m-radio-card">
+          <input type="radio" name="utility" value="electricity" checked>
+          <span>⚡ <span class="km">អគ្គិសនីប៉ុណ្ណោះ</span><span class="en">Electricity only</span></span>
+        </label>
+        <label class="m-radio-card">
+          <input type="radio" name="utility" value="water">
+          <span>💧 <span class="km">ទឹកប៉ុណ្ណោះ</span><span class="en">Water only</span></span>
+        </label>
+        <label class="m-radio-card">
+          <input type="radio" name="utility" value="both">
+          <span>⚡💧 <span class="km">ទាំងពីរ</span><span class="en">Both Electricity &amp; Water</span></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Which rooms -->
+  <div class="m-section mb-3">
+    <div class="m-section-body">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <label class="m-label mb-0"><span class="km">ជ្រើសរើសបន្ទប់</span><span class="en">Select Rooms</span></label>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllRooms()">
+          <span class="km">ជ្រើសរើស/លុបទាំងអស់</span><span class="en">Select / Clear All</span>
+        </button>
+      </div>
+      <p class="text-muted small mb-2">
+        <i class="bi bi-info-circle me-1"></i>
+        <span class="km">ប្រអប់ធីកខាងក្រោមក៏កំណត់ផងដែរថាបន្ទប់ណាខ្លះនឹងត្រូវបោះពុម្ព</span>
+        <span class="en">The checkboxes below also control which rooms get printed</span>
+      </p>
+      <div class="d-flex flex-column gap-2">
+        {% for room in rooms %}
+        <label class="m-room-check">
+          <input type="checkbox" name="room_id" value="{{ room.id }}" class="room-checkbox" checked>
+          <span class="d-flex align-items-center justify-content-between flex-fill">
+            <span>
+              <strong>{{ room.room_number }}</strong>
+              <span class="text-muted small ms-1">{{ room.building.name -}}
+                {%- if room.active_tenant %} · {{ room.active_tenant.name }}{% endif -%}
+                {%- if room.active_tenant and room.active_tenant.move_in_date -%}
+                  {%- set d = room.active_tenant.move_in_date.day -%}
+                  {{ ' · Move-in ' }}{{ d }}{{ 'st' if d in (1, 21, 31) else 'nd' if d in (2, 22) else 'rd' if d in (3, 23) else 'th' }}
+                {%- endif %}</span>
+            </span>
+            {% set f = filled.get(room.id) %}
+            {% if f and (f.electricity or f.water) %}
+            <span class="ms-2" style="font-size:0.95rem;" title="{% if lang=='km'%}បានបំពេញរួច{% else %}Already filled{% endif %}">
+              {% if f.electricity %}⚡{% endif %}{% if f.water %}💧{% endif %}
+            </span>
+            {% endif %}
+          </span>
+        </label>
+        {% else %}
+        <div class="m-empty">
+          <p><span class="km">មិនមានបន្ទប់កំពុងជួល</span><span class="en">No occupied rooms</span></p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary w-100 fw-bold py-3 fs-5" id="continueBtn">
+    <i class="bi bi-arrow-right-circle me-2"></i>
+    <span class="km">បន្ត</span><span class="en">Continue</span>
+  </button>
+</form>
+
+<style>
+.m-radio-card, .m-room-check {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 12px;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  cursor: pointer; font-size: 0.95rem;
+  transition: background .15s, border-color .15s;
+}
+.m-radio-card:has(input:checked), .m-room-check:has(input:checked) {
+  background: #eff6ff; border-color: var(--app-primary, #3b82f6);
+}
+.m-radio-card input, .m-room-check input { width: 18px; height: 18px; flex-shrink: 0; }
+</style>
+
+<script>
+function reloadForPeriod() {
+  const month = document.querySelector('select[name="month"]').value;
+  const year = document.querySelector('input[name="year"]').value;
+  const params = new URLSearchParams({ month, year });
+  window.location.href = '{{ url_for("utility_usage.setup") }}?' + params.toString();
+}
+
+function toggleAllRooms() {
+  const boxes = document.querySelectorAll('.room-checkbox');
+  const anyUnchecked = Array.from(boxes).some(b => !b.checked);
+  boxes.forEach(b => b.checked = anyUnchecked);
+}
+
+document.getElementById('setupForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const month = this.month.value;
+  const year = this.year.value;
+  const utility = this.querySelector('input[name="utility"]:checked').value;
+  const roomIds = Array.from(document.querySelectorAll('.room-checkbox:checked')).map(b => b.value);
+
+  if (roomIds.length === 0) {
+    alert('{{ "សូមជ្រើសរើសបន្ទប់យ៉ាងហោចណាស់មួយ។ / Please select at least one room." }}');
+    return;
+  }
+
+  const allRoomIds = Array.from(document.querySelectorAll('.room-checkbox')).map(b => b.value);
+  const roomIdsParam = (roomIds.length === allRoomIds.length) ? 'all' : roomIds.join(',');
+
+  const params = new URLSearchParams({ month, year, utility, room_ids: roomIdsParam });
+  window.location.href = '{{ url_for("utility_usage.batch_input") }}?' + params.toString();
+});
+
+// ── Print via Android Bridge / PT-210 ───────────
+const USAGE_BRIDGE_URL = 'http://localhost:9100';
+async function printUsageViaBridge() {
+  const checkedIds = Array.from(document.querySelectorAll('.room-checkbox:checked')).map(b => b.value);
+  if (checkedIds.length === 0) {
+    alert('{{ "សូមជ្រើសរើសបន្ទប់យ៉ាងហោចណាស់មួយ។ / Please select at least one room." }}');
+    return;
+  }
+
+  const btn = document.getElementById('usagePrintBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i><span class="km">កំពុងបោះពុម្ព...</span><span class="en">Printing...</span>';
+
+  const month = document.querySelector('select[name="month"]').value;
+  const year = document.querySelector('input[name="year"]').value;
+  const allIds = Array.from(document.querySelectorAll('.room-checkbox')).map(b => b.value);
+  const params = new URLSearchParams({ month, year });
+  if (checkedIds.length > 0 && checkedIds.length < allIds.length) {
+    params.set('room_ids', checkedIds.join(','));
+  }
+
+  try {
+    const res = await fetch('{{ url_for("utility_usage.escpos") }}?' + params.toString());
+    if (!res.ok) throw new Error('ESC/POS failed');
+    const bytes = await res.arrayBuffer();
+    const pr = await fetch(`${USAGE_BRIDGE_URL}/print`, {
+      method: 'POST', headers: {'Content-Type': 'application/octet-stream'}, body: bytes
+    });
+    if (!pr.ok) throw new Error('Bridge error');
+    btn.innerHTML = '<i class="bi bi-check-circle me-1"></i><span class="km">បានបោះពុម្ព</span><span class="en">Printed</span>';
+    btn.classList.replace('btn-outline-primary', 'btn-success');
+  } catch (e) {
+    btn.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i><span class="km">បរាជ័យ</span><span class="en">Failed</span>';
+    btn.classList.replace('btn-outline-primary', 'btn-danger');
+  }
+  setTimeout(() => {
+    btn.innerHTML = orig;
+    btn.classList.remove('btn-success', 'btn-danger');
+    btn.classList.add('btn-outline-primary');
+    btn.disabled = false;
+  }, 3000);
+}
+</script>
+
+{% endblock %}

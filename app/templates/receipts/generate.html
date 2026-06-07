@@ -211,7 +211,7 @@
       <option value="">— {% if lang=='km'%}ជ្រើសបន្ទប់{% else %}Select Room{% endif %} —</option>
       {% for r in rooms %}
       <option value="{{ r.id }}" {{ 'selected' if selected_room and selected_room.id == r.id }}>
-        {{ r.room_number }} — {{ r.building.name }}
+        {{ r.building.name }} — {{ r.room_number }}
         {% if r.active_tenant %}· {{ r.active_tenant.name }}{% endif %}
       </option>
       {% endfor %}
@@ -270,7 +270,7 @@
         <strong>{{ prev_receipt.water_to|int if prev_receipt.water_to is not none else '—' }} m³</strong>
       </div>
       <div class="info-row">
-        <span>💰 <span class="km">សមតុល្យចាស់</span><span class="en">Due Balance</span></span>
+        <span>💰 <span class="km">ជំពាក់ចាស់</span><span class="en">Due Balance</span></span>
         <strong class="{{ 'text-danger' if prev_receipt.remaining_balance > 0 else '' }}">
           {{ prev_receipt.remaining_balance|khr }}
         </strong>
@@ -290,6 +290,23 @@
 </div>
 {% endif %}
 
+{% set usage_elec_amount = usage.electricity_amount if usage else None %}
+{% set usage_elec_from = usage.electricity_from if usage else None %}
+{% set usage_elec_to = usage.electricity_to if usage else None %}
+{% set usage_elec_meter = usage_elec_from is not none or usage_elec_to is not none %}
+{% set usage_water_amount = usage.water_amount if usage else None %}
+{% set usage_water_from = usage.water_from if usage else None %}
+{% set usage_water_to = usage.water_to if usage else None %}
+{% set usage_water_meter = usage_water_from is not none or usage_water_to is not none %}
+
+{% if usage %}
+<div class="alert alert-info py-2 px-3 mb-3" style="font-size:0.85rem;">
+  <i class="bi bi-info-circle me-1"></i>
+  <span class="km">បំពេញស្វ័យប្រវត្តិពីការអានមីទ័រដែលបានកត់ត្រាទុក។ អ្នកអាចកែបាន — វានឹងមិនប៉ះពាល់ទិន្នន័យដើមទេ។</span>
+  <span class="en">Pre-filled from your saved meter reading. You can edit these — it won't change the saved reading.</span>
+</div>
+{% endif %}
+
 <!-- ── 3. Electricity ──────────────────── -->
 <div class="gen-section">
   <div class="gen-section-header" style="cursor:default;">
@@ -303,7 +320,7 @@
         </span>
         <div class="form-check form-switch mb-0">
           <input class="form-check-input" type="checkbox" id="electricity_override"
-                 name="electricity_override" checked
+                 name="electricity_override" {{ '' if usage_elec_meter else 'checked' }}
                  onchange="toggleOverride('electricity')">
         </div>
       </div>
@@ -318,8 +335,11 @@
       <div class="gen-input-group">
         <span class="prefix">៛</span>
         <input type="text" id="electricity_override_display" inputmode="numeric"
-               placeholder="0" oninput="onMoneyInput(this,'electricity_total_override');calcTotal()">
-        <input type="hidden" name="electricity_total_override" id="electricity_total_override" value="0">
+               placeholder="0"
+               value="{{ '{:,}'.format(usage_elec_amount|int) if usage_elec_amount is not none else '' }}"
+               oninput="onMoneyInput(this,'electricity_total_override');calcTotal()">
+        <input type="hidden" name="electricity_total_override" id="electricity_total_override"
+               value="{{ usage_elec_amount|int if usage_elec_amount is not none else 0 }}">
       </div>
       <!-- Service fee sub-line (direct input only) -->
       <div class="subtotal-row mt-1" style="font-size:0.8rem;color:#d97706;">
@@ -336,7 +356,7 @@
           </span>
           <input type="number" name="electricity_from" id="electricity_from"
                  class="gen-input" step="0.01" min="0"
-                 value="{{ prev_receipt.electricity_to if prev_receipt and prev_receipt.electricity_to is not none else '' }}"
+                 value="{{ usage_elec_from if usage_elec_from is not none else (prev_receipt.electricity_to if prev_receipt and prev_receipt.electricity_to is not none else '') }}"
                  data-original="{{ prev_receipt.electricity_to if prev_receipt and prev_receipt.electricity_to is not none else '' }}"
                  oninput="calcElectricity(); warnIfChanged(this,'w_elec_from')">
           <div id="w_elec_from" class="warn-msg">⚠ <span class="km">មកពីវិក័យប័ត្រមុន</span><span class="en">From previous receipt</span></div>
@@ -346,7 +366,9 @@
             <span class="km">ដល់ (ថ្មី)</span><span class="en">To</span>
           </span>
           <input type="number" name="electricity_to" id="electricity_to"
-                 class="gen-input" step="0.01" min="0" oninput="calcElectricity()">
+                 class="gen-input" step="0.01" min="0"
+                 value="{{ usage_elec_to if usage_elec_to is not none else '' }}"
+                 oninput="calcElectricity()">
         </div>
       </div>
       <div class="gen-row">
@@ -386,7 +408,7 @@
         </span>
         <div class="form-check form-switch mb-0">
           <input class="form-check-input" type="checkbox" id="water_override"
-                 name="water_override"
+                 name="water_override" {{ 'checked' if usage_water_amount is not none else '' }}
                  onchange="toggleOverride('water')">
         </div>
       </div>
@@ -401,8 +423,11 @@
       <div class="gen-input-group">
         <span class="prefix">៛</span>
         <input type="text" id="water_override_display" inputmode="numeric"
-               placeholder="0" oninput="onMoneyInput(this,'water_total_override');calcTotal()">
-        <input type="hidden" name="water_total_override" id="water_total_override" value="0">
+               placeholder="0"
+               value="{{ '{:,}'.format(usage_water_amount|int) if usage_water_amount is not none else '' }}"
+               oninput="onMoneyInput(this,'water_total_override');calcTotal()">
+        <input type="hidden" name="water_total_override" id="water_total_override"
+               value="{{ usage_water_amount|int if usage_water_amount is not none else 0 }}">
       </div>
       <!-- Service fee sub-line (direct input only) -->
       <div class="subtotal-row mt-1" style="font-size:0.8rem;color:#d97706;">
@@ -419,7 +444,7 @@
           </span>
           <input type="number" name="water_from" id="water_from"
                  class="gen-input" step="0.01" min="0"
-                 value="{{ prev_receipt.water_to if prev_receipt and prev_receipt.water_to is not none else '' }}"
+                 value="{{ usage_water_from if usage_water_from is not none else (prev_receipt.water_to if prev_receipt and prev_receipt.water_to is not none else '') }}"
                  data-original="{{ prev_receipt.water_to if prev_receipt and prev_receipt.water_to is not none else '' }}"
                  oninput="calcWater(); warnIfChanged(this,'w_water_from')">
           <div id="w_water_from" class="warn-msg">⚠ <span class="km">មកពីវិក័យប័ត្រមុន</span><span class="en">From previous receipt</span></div>
@@ -429,7 +454,9 @@
             <span class="km">ដល់ (ថ្មី)</span><span class="en">To</span>
           </span>
           <input type="number" name="water_to" id="water_to"
-                 class="gen-input" step="0.01" min="0" oninput="calcWater()">
+                 class="gen-input" step="0.01" min="0"
+                 value="{{ usage_water_to if usage_water_to is not none else '' }}"
+                 oninput="calcWater()">
         </div>
       </div>
       <div class="gen-row">
@@ -463,7 +490,7 @@
 <div class="gen-section">
   <div class="gen-section-header {{ 'collapsed' if prev_balance == 0 }}" onclick="toggleSection(this)">
     <span><i class="bi bi-clock-history text-danger me-2"></i>
-      <span class="km">សមតុល្យចាស់</span><span class="en">Due Balance</span>
+      <span class="km">ជំពាក់ចាស់</span><span class="en">Due Balance</span>
     </span>
     <i class="bi bi-chevron-down chevron"></i>
   </div>
@@ -518,62 +545,15 @@
   </div>
 </div>
 
-<!-- ── 7. Payment ─────────────────────── -->
-<div class="gen-section">
-  <div class="gen-section-header" onclick="toggleSection(this)">
-    <span><i class="bi bi-cash-stack text-success me-2"></i>
-      <span class="km">ការទូទាត់</span><span class="en">Payment</span>
-    </span>
-    <i class="bi bi-chevron-down chevron"></i>
-  </div>
-  <div class="gen-section-body">
-    <span class="gen-label"><span class="km">ស្ថានភាព</span><span class="en">Status</span></span>
-    <select name="payment_status" id="payment_status" class="gen-input"
-            onchange="handleStatusChange(this.value)" style="font-size:1rem;">
-      <option value="unpaid">{% if lang=='km'%}មិនទាន់បង់{% else %}Unpaid{% endif %}</option>
-      <option value="partial">{% if lang=='km'%}បង់មួយផ្នែក{% else %}Partial{% endif %}</option>
-      <option value="paid">{% if lang=='km'%}បានបង់ទាំងស្រុង{% else %}Paid in Full{% endif %}</option>
-    </select>
-
-    <div id="paid_amount_group" style="display:none;">
-      <span class="gen-label">
-        <span class="km">ចំនួនបង់ (៛)</span><span class="en">Paid Amount (៛)</span>
-      </span>
-      <div class="gen-input-group">
-        <span class="prefix">៛</span>
-        <input type="text" id="paid_amount_display" inputmode="numeric"
-               placeholder="0" oninput="onMoneyInput(this,'paid_amount');calcRemaining()">
-        <input type="hidden" name="paid_amount" id="paid_amount" value="0">
-      </div>
-    </div>
-
-    <div id="payment_extra" style="display:none;">
-      <span class="gen-label"><span class="km">វិធីទូទាត់</span><span class="en">Method</span></span>
-      <select name="payment_method" class="gen-input" style="font-size:1rem;">
-        <option value="">— {% if lang=='km'%}ជ្រើស{% else %}Select{% endif %} —</option>
-        <option value="cash">{% if lang=='km'%}សាច់ប្រាក់{% else %}Cash{% endif %}</option>
-        <option value="bank_transfer">{% if lang=='km'%}ផ្ទេរធនាគារ{% else %}Bank Transfer{% endif %}</option>
-        <option value="qr">QR Code</option>
-      </select>
-      <span class="gen-label"><span class="km">ថ្ងៃទូទាត់</span><span class="en">Date</span></span>
-      <input type="date" name="payment_date" class="gen-input"
-             value="{{ today.strftime('%Y-%m-%d') }}">
-    </div>
-  </div>
-</div>
-
-<!-- Hidden paid_amount_hidden for unpaid/paid full -->
-<input type="hidden" id="paid_amount_hidden" name="paid_amount">
+<!-- Payment is recorded later from the receipt detail page —
+     receipts are generated as "unpaid" so they can be shared with the renter first. -->
+<input type="hidden" name="payment_status" value="unpaid">
 
 <!-- ── Sticky total + generate ────────── -->
 <div class="totals-bar">
   <div>
     <div class="total-label"><span class="km">សរុប</span><span class="en">TOTAL</span></div>
     <div class="total-amount" id="s_total">0 ៛</div>
-    <div id="s_remaining_row" style="display:none;font-size:0.75rem;color:#fbbf24;">
-      <span class="km">នៅជំពាក់:</span><span class="en">Remaining:</span>
-      <span id="s_remaining">0 ៛</span>
-    </div>
   </div>
   <button type="submit" class="btn btn-primary btn-generate">
     <i class="bi bi-receipt me-1"></i>
@@ -709,37 +689,16 @@ function calcTotal() {
   document.getElementById('s_total').textContent = formatKhr(total);
   document.getElementById('electricity_total_display').textContent = formatKhr(elec);
   document.getElementById('water_total_display').textContent = formatKhr(water);
-  document.getElementById('paid_amount_hidden').value = Math.round(total);
-  calcRemaining();
-}
-
-function calcRemaining() {
-  const total  = parseKhr(document.getElementById('s_total').textContent);
-  const status = document.getElementById('payment_status').value;
-  let paid = 0;
-  if (status === 'paid') paid = total;
-  else if (status === 'partial') paid = parseFloat(document.getElementById('paid_amount').value) || 0;
-  const rem = Math.max(total - paid, 0);
-  const remRow = document.getElementById('s_remaining_row');
-  document.getElementById('s_remaining').textContent = formatKhr(rem);
-  remRow.style.display = status === 'partial' ? 'block' : 'none';
-  document.getElementById('paid_amount_hidden').value = Math.round(paid);
-}
-
-function handleStatusChange(val) {
-  document.getElementById('paid_amount_group').style.display = val === 'partial' ? 'block' : 'none';
-  document.getElementById('payment_extra').style.display = (val !== 'unpaid') ? 'block' : 'none';
-  calcRemaining();
 }
 
 // ── Init ────────────────────────────────
 calcTotal();
-// Init electricity override display
+// Show the right fields (direct vs. meter) based on each checkbox's initial checked state
 toggleOverride('electricity');
 toggleOverride('water');
-// Restore water override toggle state
-document.getElementById('water_override').checked = false;
-toggleOverride('water');
+// Recalculate so any pre-filled values (e.g. from a saved meter reading) show in the totals
+calcElectricity();
+calcWater();
 
 function confirmGenerate() {
   const elec  = getElecTotal();

@@ -116,7 +116,7 @@ if (new URLSearchParams(window.location.search).get('bridge') === '1') {
 </div>
 <div class="info">
   <span class="lbl">បន្ទប់</span>
-  <span class="val">{{ receipt.room.room_number }} · {{ receipt.room.building.name }}</span>
+  <span class="val">{{ receipt.room.building.name }} · {{ receipt.room.room_number }}</span>
 </div>
 <div class="info">
   <span class="lbl">កាលបរិច្ឆេទ</span>
@@ -210,7 +210,7 @@ if (new URLSearchParams(window.location.search).get('bridge') === '1') {
     <span>បានបង់</span>
     <span class="paid-mark">
       {% if receipt.payment_status == 'paid' %}{{ receipt.paid_amount|khr }} ✓
-      {% elif receipt.payment_status == 'partial' %}{{ receipt.paid_amount|khr }}
+      {% elif receipt.payment_status in ('partial', 'deferred') %}{{ receipt.paid_amount|khr }}
       {% else %}—{% endif %}
     </span>
   </div>

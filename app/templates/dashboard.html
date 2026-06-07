@@ -3,204 +3,77 @@
 
 {% block head %}
 <style>
-/* ── Mobile home ─────────────────────── */
-.home-header {
-  background: linear-gradient(135deg, #1d4ed8, #1e3a5f);
-  color: #fff;
-  padding: 20px 16px 16px;
-  margin: -12px -12px 0;
-}
-.home-month {
-  font-size: 1rem;
-  opacity: 0.8;
-  margin-bottom: 2px;
-}
-.home-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-.home-stats {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.home-stat {
-  background: rgba(255,255,255,0.15);
-  border-radius: 10px;
-  padding: 8px 14px;
-  text-align: center;
-  flex: 1;
-  min-width: 80px;
-}
-.home-stat .num { font-size: 1.5rem; font-weight: 700; }
-.home-stat .lbl { font-size: 0.7rem; opacity: 0.85; }
-
-/* ── Generate button ─────────────────── */
-.btn-generate-big {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 14px;
-  font-size: 1rem;
-  font-weight: 700;
-  border-radius: 12px;
-  margin: 14px 0 4px;
-}
-
-/* ── Room cards ──────────────────────── */
-.room-card {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  text-decoration: none;
-  color: inherit;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  border-left: 4px solid #e2e8f0;
-  transition: box-shadow 0.15s;
-}
-.room-card:active { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-.room-card.overdue  { border-left-color: #f8d7da; }
-.room-card.upcoming { border-left-color: #0ea5e9; }
-.room-card.paid     { border-left-color: #16a34a; }
-
-.room-card-left { flex: 1; }
-.room-card-number {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e293b;
-  line-height: 1.2;
-}
-.room-card-building { font-size: 0.78rem; color: #94a3b8; }
-.room-card-tenant   { font-size: 0.9rem; color: #475569; margin-top: 2px; }
-
-.room-card-right { text-align: right; }
-.room-card-amount {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-.room-card-amount.due   { color: #58151c; }
-.room-card-amount.green { color: #16a34a; }
-
-.room-card-badge {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-top: 4px;
-}
-.badge-overdue  { background: #f8d7da; color: #58151c; }
-.badge-upcoming { background: #e0f2fe; color: #0369a1; }
-.badge-paid     { background: #dcfce7; color: #166534; }
-
-.room-card-arrow { color: #cbd5e1; margin-left: 10px; font-size: 1rem; }
-
-/* ── Tabs ────────────────────────────── */
-.home-tabs {
-  display: flex;
-  background: #f1f5f9;
-  border-radius: 10px;
-  padding: 4px;
-  margin-bottom: 14px;
-}
-.home-tab {
-  flex: 1;
-  text-align: center;
-  padding: 8px 6px;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.15s;
-  border: none;
-  background: transparent;
-}
-.home-tab.active {
-  background: #fff;
-  color: #1d4ed8;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.home-tab-count {
-  display: inline-block;
-  font-size: 0.7rem;
-  background: #e2e8f0;
-  border-radius: 10px;
-  padding: 0 5px;
-  margin-left: 3px;
-}
-.home-tab.active .home-tab-count {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-
 .empty-tab {
   text-align: center;
   padding: 40px 20px;
-  color: #94a3b8;
+  color: var(--app-text-3);
   font-size: 0.9rem;
 }
 .empty-tab .icon { font-size: 2.5rem; margin-bottom: 8px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- ── Header ─────────────────────────── -->
-<div class="home-header">
-  <div class="home-month">
-    <span class="km">{{ KM_MONTHS[current_month-1] }} {{ current_year }}</span>
-    <span class="en">{{ MONTH_NAMES[current_month-1] }} {{ current_year }}</span>
-  </div>
-  <div class="home-title">
-    <span class="km">ការគ្រប់គ្រងជួល</span>
-    <span class="en">Rental Management</span>
-  </div>
-  <div class="home-stats">
-    <div class="home-stat">
-      <div class="num text-warning">{{ tab_overdue|length }}</div>
-      <div class="lbl"><span class="km">ហួស</span><span class="en">Overdue</span></div>
+<!-- ── Hero card ──────────────────────── -->
+<div class="dash-hero">
+  <div>
+    <div class="dash-hero-greeting">
+      <span class="km">សួស្តី, {{ current_user.full_name or current_user.username }}</span>
+      <span class="en">Hello, {{ current_user.full_name or current_user.username }}</span>
     </div>
-    <div class="home-stat">
-      <div class="num text-info">{{ tab_upcoming|length }}</div>
-      <div class="lbl"><span class="km">មិនទាន់</span><span class="en">Upcoming</span></div>
+    <div class="dash-hero-month">
+      <span class="km">{{ KM_MONTHS[current_month-1] }} {{ current_year }}</span>
+      <span class="en">{{ MONTH_NAMES[current_month-1] }} {{ current_year }}</span>
     </div>
-    <div class="home-stat">
-      <div class="num" style="color:#86efac;">{{ tab_paid|length }}</div>
-      <div class="lbl"><span class="km">បានបង់</span><span class="en">Paid</span></div>
+    <div class="dash-hero-sub">
+      <span class="km">សង្ខេបការទូទាត់ប្រចាំខែនេះ</span>
+      <span class="en">This month's payment overview</span>
     </div>
   </div>
+  <div class="dash-hero-icon"><i class="bi bi-building-fill"></i></div>
+</div>
+
+<!-- ── Stat cards ─────────────────────── -->
+<div class="dash-stat-grid">
+  <a href="#" onclick="switchTab('overdue', document.querySelector('[data-tab=overdue]')); return false;" class="dash-stat-card overdue">
+    <span class="dash-stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
+    <span class="dash-stat-number">{{ tab_overdue|length }}</span>
+    <span class="dash-stat-label"><span class="km">ហួសកំណត់</span><span class="en">Overdue</span></span>
+  </a>
+  <a href="#" onclick="switchTab('upcoming', document.querySelector('[data-tab=upcoming]')); return false;" class="dash-stat-card upcoming">
+    <span class="dash-stat-icon"><i class="bi bi-clock-fill"></i></span>
+    <span class="dash-stat-number">{{ tab_upcoming|length }}</span>
+    <span class="dash-stat-label"><span class="km">មិនទាន់ដល់</span><span class="en">Upcoming</span></span>
+  </a>
+  <a href="#" onclick="switchTab('paid', document.querySelector('[data-tab=paid]')); return false;" class="dash-stat-card paid">
+    <span class="dash-stat-icon"><i class="bi bi-check-circle-fill"></i></span>
+    <span class="dash-stat-number">{{ tab_paid|length }}</span>
+    <span class="dash-stat-label"><span class="km">បានបង់</span><span class="en">Paid</span></span>
+  </a>
 </div>
 
 <!-- ── Generate button ────────────────── -->
-<a href="{{ url_for('receipts.generate') }}" class="btn btn-primary btn-generate-big">
-  <i class="bi bi-plus-circle-fill fs-5"></i>
+<a href="{{ url_for('receipts.generate') }}" class="btn-dash-generate">
+  <i class="bi bi-plus-circle-fill"></i>
   <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
 </a>
 
 <!-- ── 3-Tab selector ─────────────────── -->
-<div class="home-tabs">
-  <button class="home-tab active" onclick="switchTab('overdue', this)">
-    ⚠️ <span class="km">ហួស</span><span class="en">Overdue</span>
-    <span class="home-tab-count">{{ tab_overdue|length }}</span>
+<div class="dash-tab-bar">
+  <button class="dash-tab-btn active-overdue" data-tab="overdue" onclick="switchTab('overdue', this)">
+    <span class="km">ហួស</span><span class="en">Overdue</span>
+    <span class="dash-tab-count">{{ tab_overdue|length }}</span>
   </button>
-  <button class="home-tab" onclick="switchTab('upcoming', this)">
-    🕐 <span class="km">មិនទាន់</span><span class="en">Upcoming</span>
-    <span class="home-tab-count">{{ tab_upcoming|length }}</span>
+  <button class="dash-tab-btn" data-tab="upcoming" onclick="switchTab('upcoming', this)">
+    <span class="km">មិនទាន់</span><span class="en">Upcoming</span>
+    <span class="dash-tab-count">{{ tab_upcoming|length }}</span>
   </button>
-  <button class="home-tab" onclick="switchTab('paid', this)">
-    ✅ <span class="km">បានបង់</span><span class="en">Paid</span>
-    <span class="home-tab-count">{{ tab_paid|length }}</span>
+  <button class="dash-tab-btn" data-tab="paid" onclick="switchTab('paid', this)">
+    <span class="km">បានបង់</span><span class="en">Paid</span>
+    <span class="dash-tab-count">{{ tab_paid|length }}</span>
   </button>
 </div>
 
@@ -208,12 +81,12 @@
 <div id="tab-overdue" class="tab-panel active">
   {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
   {% if tab_overdue %}
-  <div class="m-filter-bar mb-2">
-    <button class="m-filter-chip active" onclick="filterDay('overdue', 0, this)">
+  <div class="dash-day-filter mb-2">
+    <button class="dash-day-chip active" onclick="filterDay('overdue', 0, this)">
       <span class="km">ទាំងអស់</span><span class="en">All</span>
     </button>
     {% for day in overdue_days %}
-    <button class="m-filter-chip" onclick="filterDay('overdue', {{ day }}, this)">
+    <button class="dash-day-chip" onclick="filterDay('overdue', {{ day }}, this)">
       <span class="km">ថ្ងៃ {{ day }}</span><span class="en">Day {{ day }}</span>
     </button>
     {% endfor %}
@@ -221,30 +94,30 @@
   {% endif %}
   {% for e in tab_overdue | sort(attribute='start_day') %}
   <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
-     class="room-card overdue" data-day="{{ e.start_day }}">
-    <div class="room-card-left">
-      <div class="room-card-number">
-        <i class="bi bi-door-closed me-1"></i>{{ e.room.room_number }}
+     class="dash-room-card" data-day="{{ e.start_day }}">
+    <span class="dash-room-avatar red">{{ e.room.room_number[:2] }}</span>
+    <div class="dash-room-info">
+      <div class="dash-room-number">
+        <span class="dash-room-status-dot" style="background:#dc2626;"></span>{{ e.room.building.name }} · {{ e.room.room_number }}
       </div>
-      <div class="room-card-building">{{ e.room.building.name }}</div>
-      <div class="room-card-tenant">{{ e.tenant.name }}</div>
+      <div class="dash-room-tenant">{{ e.tenant.name }}</div>
     </div>
-    <div class="room-card-right">
+    <div class="dash-room-right">
       {% if e.receipt %}
-      <div class="room-card-amount due">{{ e.receipt.remaining_balance|khr }}</div>
-      <div class="room-card-badge badge-overdue">
+      <div class="dash-room-amount red">{{ e.receipt.remaining_balance|khr }}</div>
+      <div class="dash-room-badge dash-badge-overdue">
         <span class="km">ថ្ងៃ {{ e.start_day }} · ហួស</span>
         <span class="en">Day {{ e.start_day }} · Overdue</span>
       </div>
       {% else %}
-      <div class="room-card-amount" style="color:#94a3b8;">{{ e.room.price|khr }}</div>
-      <div class="room-card-badge" style="background:#f1f5f9;color:#475569;">
+      <div class="dash-room-amount" style="color:var(--app-text-3);">{{ e.room.price|khr }}</div>
+      <div class="dash-room-badge dash-badge-generate">
         <span class="km">ថ្ងៃ {{ e.start_day }} · បង្កើត</span>
         <span class="en">Day {{ e.start_day }} · Generate</span>
       </div>
       {% endif %}
     </div>
-    <span class="room-card-arrow">
+    <span class="dash-room-arrow">
       <i class="bi bi-{{ 'chevron-right' if e.receipt else 'plus-circle text-primary' }}"></i>
     </span>
   </a>
@@ -261,12 +134,12 @@
 <div id="tab-upcoming" class="tab-panel">
   {% set upcoming_days = tab_upcoming | map(attribute='start_day') | list | unique | sort %}
   {% if tab_upcoming %}
-  <div class="m-filter-bar mb-2">
-    <button class="m-filter-chip active" onclick="filterDay('upcoming', 0, this)">
+  <div class="dash-day-filter mb-2">
+    <button class="dash-day-chip active" onclick="filterDay('upcoming', 0, this)">
       <span class="km">ទាំងអស់</span><span class="en">All</span>
     </button>
     {% for day in upcoming_days %}
-    <button class="m-filter-chip" onclick="filterDay('upcoming', {{ day }}, this)">
+    <button class="dash-day-chip" onclick="filterDay('upcoming', {{ day }}, this)">
       <span class="km">ថ្ងៃ {{ day }}</span><span class="en">Day {{ day }}</span>
     </button>
     {% endfor %}
@@ -274,30 +147,30 @@
   {% endif %}
   {% for e in tab_upcoming | sort(attribute='start_day') %}
   <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
-     class="room-card upcoming" data-day="{{ e.start_day }}">
-    <div class="room-card-left">
-      <div class="room-card-number">
-        <i class="bi bi-door-closed me-1"></i>{{ e.room.room_number }}
+     class="dash-room-card" data-day="{{ e.start_day }}">
+    <span class="dash-room-avatar indigo">{{ e.room.room_number[:2] }}</span>
+    <div class="dash-room-info">
+      <div class="dash-room-number">
+        <span class="dash-room-status-dot" style="background:var(--app-info);"></span>{{ e.room.building.name }} · {{ e.room.room_number }}
       </div>
-      <div class="room-card-building">{{ e.room.building.name }}</div>
-      <div class="room-card-tenant">{{ e.tenant.name }}</div>
+      <div class="dash-room-tenant">{{ e.tenant.name }}</div>
     </div>
-    <div class="room-card-right">
+    <div class="dash-room-right">
       {% if e.receipt %}
-      <div class="room-card-amount">{{ e.receipt.remaining_balance|khr }}</div>
-      <div class="room-card-badge badge-upcoming">
+      <div class="dash-room-amount indigo">{{ e.receipt.remaining_balance|khr }}</div>
+      <div class="dash-room-badge dash-badge-upcoming">
         <span class="km">ថ្ងៃ {{ e.start_day }}</span>
         <span class="en">Day {{ e.start_day }}</span>
       </div>
       {% else %}
-      <div class="room-card-amount" style="color:#94a3b8;">{{ e.room.price|khr }}</div>
-      <div class="room-card-badge" style="background:#f1f5f9;color:#475569;">
+      <div class="dash-room-amount" style="color:var(--app-text-3);">{{ e.room.price|khr }}</div>
+      <div class="dash-room-badge dash-badge-generate">
         <span class="km">ថ្ងៃ {{ e.start_day }} · បង្កើត</span>
         <span class="en">Day {{ e.start_day }} · Generate</span>
       </div>
       {% endif %}
     </div>
-    <span class="room-card-arrow">
+    <span class="dash-room-arrow">
       <i class="bi bi-{{ 'chevron-right' if e.receipt else 'plus-circle text-primary' }}"></i>
     </span>
   </a>
@@ -313,21 +186,21 @@
 <!-- ── Paid tab ───────────────────────── -->
 <div id="tab-paid" class="tab-panel">
   {% for e in tab_paid %}
-  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="room-card paid">
-    <div class="room-card-left">
-      <div class="room-card-number">
-        <i class="bi bi-door-closed me-1"></i>{{ e.room.room_number }}
+  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="dash-room-card">
+    <span class="dash-room-avatar green">{{ e.room.room_number[:2] }}</span>
+    <div class="dash-room-info">
+      <div class="dash-room-number">
+        <span class="dash-room-status-dot" style="background:var(--app-success);"></span>{{ e.room.building.name }} · {{ e.room.room_number }}
       </div>
-      <div class="room-card-building">{{ e.room.building.name }}</div>
-      <div class="room-card-tenant">{{ e.tenant.name }}</div>
+      <div class="dash-room-tenant">{{ e.tenant.name }}</div>
     </div>
-    <div class="room-card-right">
-      <div class="room-card-amount green">{{ e.receipt.paid_amount|khr }}</div>
-      <div class="room-card-badge badge-paid">
+    <div class="dash-room-right">
+      <div class="dash-room-amount green">{{ e.receipt.paid_amount|khr }}</div>
+      <div class="dash-room-badge dash-badge-paid">
         <span class="km">បានបង់</span><span class="en">Paid</span>
       </div>
     </div>
-    <span class="room-card-arrow"><i class="bi bi-chevron-right"></i></span>
+    <span class="dash-room-arrow"><i class="bi bi-chevron-right"></i></span>
   </a>
   {% else %}
   <div class="empty-tab">
@@ -344,21 +217,21 @@
 <script>
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.home-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active-overdue', 'active-upcoming', 'active-paid'));
   document.getElementById('tab-' + name).classList.add('active');
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active-' + name);
   // Reset day filter when switching tabs
-  const firstChip = document.querySelector('#tab-' + name + ' .m-filter-chip');
+  const firstChip = document.querySelector('#tab-' + name + ' .dash-day-chip');
   if (firstChip) filterDay(name, 0, firstChip);
 }
 
 function filterDay(tabName, day, btn) {
   // Update chip active state within this tab only
   const tab = document.getElementById('tab-' + tabName);
-  tab.querySelectorAll('.m-filter-chip').forEach(b => b.classList.remove('active'));
+  tab.querySelectorAll('.dash-day-chip').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   // Filter cards
-  tab.querySelectorAll('.room-card').forEach(card => {
+  tab.querySelectorAll('.dash-room-card').forEach(card => {
     card.style.display = (day === 0 || parseInt(card.dataset.day) === day) ? '' : 'none';
   });
 }

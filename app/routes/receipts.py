@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, Response
+from flask import Blueprint, render_template, redirect, url_for, flash, request, Response, session
 from flask_login import login_required
-from app.models import Receipt, Room, Tenant, UtilityPrice, Building, PaymentLog
+from app.models import Receipt, Room, Tenant, UtilityPrice, Building, PaymentLog, UtilityUsage
 from app import db
 from app.utils.timezone import now as _now, today as _today
 from datetime import date, datetime
@@ -9,6 +9,12 @@ from app.utils.google_drive import backup_to_drive
 receipts_bp = Blueprint('receipts', __name__)
 
 MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+
+def _flash_lang(en, km, category='info'):
+    """Flash a message in whichever language the user currently has selected,
+    instead of showing both languages glued together."""
+    flash(km if session.get('lang', 'km') == 'km' else en, category)
 
 
 def _generate_receipt_number(year, month):
@@ -101,7 +107,8 @@ def generate():
             tenant_id=tenant.id if tenant else None
         ).first()
         if existing:
-            flash('វិក័យប័ត្រនេះបានបង្កើតរួចហើយ។ / Receipt already exists for this room and month.', 'warning')
+            _flash_lang('Receipt already exists for this room and month.',
+                        'វិក័យប័ត្រនេះបានបង្កើតរួចហើយ។', 'warning')
             return redirect(url_for('receipts.detail', id=existing.id))
 
         # Electricity
@@ -182,7 +189,8 @@ def generate():
         db.session.add(receipt)
         db.session.commit()
         backup_to_drive()
-        flash(f'Receipt {receipt.receipt_number} generated. / វិក័យប័ត្រត្រូវបានបង្កើតជោគជ័យ។', 'success')
+        _flash_lang(f'Receipt {receipt.receipt_number} generated.',
+                    f'វិក័យប័ត្រ {receipt.receipt_number} ត្រូវបានបង្កើតជោគជ័យ។', 'success')
         return redirect(url_for('receipts.detail', id=receipt.id))
 
     now = _now()
@@ -191,6 +199,12 @@ def generate():
     billing_year = request.args.get('billing_year', type=int, default=now.year)
     selected_room = Room.query.get(room_id) if room_id else None
     prev_receipt = _get_previous_receipt(room_id, billing_year, billing_month) if room_id else None
+
+    # Pre-fill from a staged batch reading, if the user already recorded one for this room/period.
+    # This is read-only — generating the receipt never writes back to UtilityUsage.
+    usage = UtilityUsage.query.filter_by(
+        room_id=room_id, billing_month=billing_month, billing_year=billing_year
+    ).first() if room_id else None
 
     # Don't carry over balance from a previous tenant — only meter readings transfer
     active_tenant = selected_room.active_tenant if selected_room else None
@@ -212,6 +226,7 @@ def generate():
         rooms=rooms,
         selected_room=selected_room,
         prev_receipt=prev_receipt,
+        usage=usage,
         prev_balance=prev_balance,
         existing_receipt=existing_receipt,
         water_price=water_price,
@@ -264,7 +279,7 @@ def pay(id):
     db.session.add(log)
     db.session.commit()
     backup_to_drive()
-    flash('Payment recorded. / ការទូទាត់ត្រូវបានកត់ត្រា។', 'success')
+    _flash_lang('Payment recorded.', 'ការទូទាត់ត្រូវបានកត់ត្រា។', 'success')
     return redirect(url_for('receipts.detail', id=id))
 
 
@@ -275,7 +290,8 @@ def delete_payment_log(id, log_id):
     log     = PaymentLog.query.get_or_404(log_id)
 
     if _has_next_receipt(receipt):
-        flash('Cannot delete payment — a receipt for the next month already exists. / មិនអាចលុប — វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ។', 'danger')
+        _flash_lang('Cannot delete payment — a receipt for the next month already exists.',
+                    'មិនអាចលុប — វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ។', 'danger')
         return redirect(url_for('receipts.detail', id=id))
 
     # Safety: only allow deleting the LAST payment log entry
@@ -300,7 +316,7 @@ def delete_payment_log(id, log_id):
     db.session.delete(log)
     db.session.commit()
     backup_to_drive()
-    flash('Payment deleted and balance updated. / ការទូទាត់ត្រូវបានលុប។', 'success')
+    _flash_lang('Payment deleted and balance updated.', 'ការទូទាត់ត្រូវបានលុប។', 'success')
     return redirect(url_for('receipts.detail', id=id))
 
 
@@ -310,7 +326,8 @@ def defer_receipt(id):
     receipt = Receipt.query.get_or_404(id)
     receipt.payment_status = 'deferred'
     db.session.commit()
-    flash('Balance deferred to next month. It will carry over automatically. / សមតុល្យត្រូវបានពន្យារដល់ខែក្រោយ។', 'info')
+    _flash_lang('Balance deferred to next month. It will carry over automatically.',
+                'សមតុល្យត្រូវបានពន្យារដល់ខែក្រោយ។', 'info')
     return redirect(url_for('receipts.detail', id=id))
 
 
@@ -330,7 +347,8 @@ def edit_receipt(id):
     receipt = Receipt.query.get_or_404(id)
 
     if _has_next_receipt(receipt):
-        flash('Cannot edit — a receipt for the next month already exists and carries this balance. / មិនអាចកែប្រែ — វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ។', 'danger')
+        _flash_lang('Cannot edit — a receipt for the next month already exists and carries this balance.',
+                    'មិនអាចកែប្រែ — វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ។', 'danger')
         return redirect(url_for('receipts.detail', id=id))
 
     if request.method == 'POST':
@@ -402,7 +420,7 @@ def edit_receipt(id):
 
         db.session.commit()
         backup_to_drive()
-        flash('Receipt updated successfully. / វិក័យប័ត្រត្រូវបានកែប្រែ។', 'success')
+        _flash_lang('Receipt updated successfully.', 'វិក័យប័ត្រត្រូវបានកែប្រែ។', 'success')
         return redirect(url_for('receipts.detail', id=id))
 
     water_price       = UtilityPrice.query.filter_by(utility_type='water').order_by(
@@ -419,14 +437,6 @@ def edit_receipt(id):
         default_fee=default_fee,
         today=_today()
     )
-
-
-@receipts_bp.route('/receipts/<int:id>/print')
-@login_required
-def print_receipt(id):
-    receipt = Receipt.query.get_or_404(id)
-    bridge = request.args.get('bridge') == '1'
-    return render_template('receipts/print.html', receipt=receipt, bridge=bridge)
 
 
 @receipts_bp.route('/receipts/<int:id>/print_table')
@@ -452,8 +462,8 @@ def escpos(id):
 
     receipt = Receipt.query.get_or_404(id)
 
-    # --- 1. Render print.html to PNG via headless Chrome ---
-    print_url = url_for('receipts.print_receipt', id=id, _external=True)
+    # --- 1. Render print_table.html to PNG via headless Chrome ---
+    print_url = url_for('receipts.print_table', id=id, _external=True)
     # Add ?bridge=1 so the page can hide the toolbar
     print_url += '?bridge=1'
 

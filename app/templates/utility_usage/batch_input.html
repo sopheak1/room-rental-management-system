@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}បញ្ចូលការអានមីទ័រ{% else %}Enter Readings{% endif %}{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-2">
+  <h5 class="m-page-title mb-0">
+    <a href="{{ url_for('utility_usage.setup') }}" class="m-back me-2"><i class="bi bi-arrow-left"></i></a>
+    {% if utility == 'electricity' %}⚡ <span class="km">អគ្គិសនី</span><span class="en">Electricity</span>
+    {% elif utility == 'water' %}💧 <span class="km">ទឹក</span><span class="en">Water</span>
+    {% else %}⚡💧 <span class="km">អគ្គិសនី & ទឹក</span><span class="en">Electricity &amp; Water</span>
+    {% endif %}
+  </h5>
+  <span class="small text-muted">{{ month_names[month-1] }} {{ year }}</span>
+</div>
+<div class="small text-muted mb-3">{{ entries|length }} <span class="km">បន្ទប់</span><span class="en">room(s)</span></div>
+
+<form method="POST" action="{{ url_for('utility_usage.save') }}" id="batchForm">
+  <input type="hidden" name="month" value="{{ month }}">
+  <input type="hidden" name="year" value="{{ year }}">
+  <input type="hidden" name="utility" value="{{ utility }}">
+  <input type="hidden" name="room_ids" value="{{ room_ids }}">
+
+  {% for e in entries %}
+  {% set rid = e.room.id %}
+  <div class="m-card-static mb-3">
+    <input type="hidden" name="room_id" value="{{ rid }}">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div>
+        <strong>{{ e.room.room_number }}</strong>
+        <span class="text-muted small ms-1">{{ e.room.building.name }}</span>
+      </div>
+      <span class="text-muted small">{{ e.tenant.name if e.tenant else '—' }}</span>
+    </div>
+
+    {% if utility in ('electricity', 'both') %}
+    <div class="u-block">
+      <div class="u-block-title">⚡ <span class="km">អគ្គិសនី</span><span class="en">Electricity</span></div>
+      <input type="hidden" name="electricity_mode_{{ rid }}" value="{{ e.electricity_mode }}">
+      {% if e.electricity_mode == 'direct' %}
+        <label class="u-flabel"><span class="km">ចំនួនទឹកប្រាក់ (៛)</span><span class="en">Amount (៛)</span></label>
+        <input type="text" inputmode="numeric" class="u-input" name="electricity_amount_{{ rid }}"
+               value="{{ e.electricity_amount|int if e.electricity_amount is not none else '' }}"
+               placeholder="0">
+      {% else %}
+        <div class="d-flex gap-2">
+          <div class="flex-fill">
+            <label class="u-flabel"><span class="km">លេខចាស់</span><span class="en">From</span></label>
+            <input type="text" inputmode="decimal" class="u-input" name="electricity_from_{{ rid }}"
+                   value="{{ e.electricity_from|int if e.electricity_from is not none else '' }}"
+                   placeholder="—">
+          </div>
+          <div class="flex-fill">
+            <label class="u-flabel"><span class="km">លេខថ្មី</span><span class="en">To</span></label>
+            <input type="text" inputmode="decimal" class="u-input u-input-new" name="electricity_to_{{ rid }}"
+                   value="{{ e.electricity_to|int if e.electricity_to is not none else '' }}"
+                   placeholder="">
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if utility in ('water', 'both') %}
+    <div class="u-block">
+      <div class="u-block-title">💧 <span class="km">ទឹក</span><span class="en">Water</span></div>
+      <input type="hidden" name="water_mode_{{ rid }}" value="{{ e.water_mode }}">
+      {% if e.water_mode == 'direct' %}
+        <label class="u-flabel"><span class="km">ចំនួនទឹកប្រាក់ (៛)</span><span class="en">Amount (៛)</span></label>
+        <input type="text" inputmode="numeric" class="u-input" name="water_amount_{{ rid }}"
+               value="{{ e.water_amount|int if e.water_amount is not none else '' }}"
+               placeholder="0">
+      {% else %}
+        <div class="d-flex gap-2">
+          <div class="flex-fill">
+            <label class="u-flabel"><span class="km">លេខចាស់</span><span class="en">From</span></label>
+            <input type="text" inputmode="decimal" class="u-input" name="water_from_{{ rid }}"
+                   value="{{ e.water_from|int if e.water_from is not none else '' }}"
+                   placeholder="—">
+          </div>
+          <div class="flex-fill">
+            <label class="u-flabel"><span class="km">លេខថ្មី</span><span class="en">To</span></label>
+            <input type="text" inputmode="decimal" class="u-input u-input-new" name="water_to_{{ rid }}"
+                   value="{{ e.water_to|int if e.water_to is not none else '' }}"
+                   placeholder="">
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <div class="m-save-bar">
+    <button type="submit" class="btn btn-success w-100 fw-bold py-3 fs-5">
+      <i class="bi bi-check-circle me-2"></i>
+      <span class="km">រក្សាទុកទាំងអស់</span><span class="en">Save All</span>
+    </button>
+  </div>
+</form>
+
+<style>
+.m-card-static {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+  padding: 14px 16px;
+}
+.u-block { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; }
+.u-block:first-of-type { margin-top: 6px; }
+.u-block-title { font-size: 0.85rem; font-weight: 600; color: var(--app-text-3, #64748b); margin-bottom: 6px; }
+.u-flabel { display:block; font-size: 0.72rem; color: var(--app-text-3, #64748b); margin-bottom: 3px; }
+.u-input {
+  width: 100%; font-size: 1.1rem; font-weight: 600; text-align: center;
+  padding: 12px 8px; border-radius: 10px; border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+}
+.u-input:focus { outline: none; border-color: var(--app-primary, #3b82f6); background: #fff; }
+.u-input-new { border-color: var(--app-primary, #93c5fd); background: #eff6ff; }
+
+.m-save-bar {
+  position: sticky; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, #fff 60%, transparent);
+  padding: 14px 0 6px;
+  margin-top: 6px;
+}
+</style>
+
+{% endblock %}

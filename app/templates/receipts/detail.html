@@ -4,19 +4,24 @@
 
 <!-- Header -->
 <div class="m-page-header">
-  <a href="javascript:history.back()" class="m-back"><i class="bi bi-arrow-left"></i></a>
+  <a href="javascript:void(0)" class="m-back" id="receiptBackBtn"><i class="bi bi-arrow-left"></i></a>
   <div class="flex-1">
     <div class="m-page-title">{{ receipt.receipt_number }}</div>
-    <div class="small text-muted">{{ receipt.billing_label }} · {{ receipt.room.room_number }} · {{ receipt.room.building.name }}</div>
+    <div class="small text-muted">{{ receipt.billing_label }} · {{ receipt.room.building.name }} · {{ receipt.room.room_number }}</div>
   </div>
   <div class="d-flex flex-wrap gap-2 align-items-center">
     <span class="badge status-{{ receipt.payment_status }} fs-6 px-3 py-2">
       {{ receipt.payment_status|status_label }}
     </span>
+    {% if not locked %}
+    <a href="{{ url_for('receipts.edit_receipt', id=receipt.id) }}" class="btn btn-outline-secondary btn-sm" title="{% if lang=='km'%}កែប្រែ{% else %}Edit{% endif %}">
+      <i class="bi bi-pencil-square"></i>
+    </a>
+    {% endif %}
   </div>
 </div>
 
-<!-- Edit + Print options -->
+<!-- Print options -->
 {% if locked %}
 <div class="alert alert-warning py-2 small mb-2">
   <i class="bi bi-lock-fill me-1"></i>
@@ -25,15 +30,13 @@
 </div>
 {% endif %}
 <div class="d-flex gap-2 mb-3">
-  {% if not locked %}
-  <a href="{{ url_for('receipts.edit_receipt', id=receipt.id) }}" class="btn btn-outline-secondary flex-fill btn-sm fw-semibold">
-    <i class="bi bi-pencil-square me-1"></i>
-    <span class="km">កែប្រែ</span><span class="en">Edit</span>
-  </a>
-  {% endif %}
-  <button onclick="printTableViaBridge({{ receipt.id }})" class="btn btn-primary flex-fill btn-sm fw-semibold" id="tablePrintBtn">
+  <button onclick="printTableViaBridge({{ receipt.id }})" class="btn btn-primary btn-sm fw-semibold" id="tablePrintBtn" style="flex: 1 1 0;">
     <i class="bi bi-printer-fill me-1"></i>
     <span class="km">បោះពុម្ពវិក័យប័ត្រ</span><span class="en">Print</span>
+  </button>
+  <button onclick="downloadReceiptImage(this)" class="btn btn-outline-primary btn-sm fw-semibold" id="downloadImgBtn" style="flex: 1 1 0;">
+    <i class="bi bi-image me-1"></i>
+    <span class="km">ទាញយករូបភាព</span><span class="en">Save as Image</span>
   </button>
 </div>
 
@@ -95,16 +98,22 @@
   </div>
   <div class="m-section-body">
     <div class="m-detail-row">
-      <span class="m-dl"><span class="km">ថ្លៃបន្ទប់</span><span class="en">Room Rent</span></span>
+      <span class="m-dl"><span class="km">ថ្លៃបន្ទប់</span><span class="en">Room Price</span></span>
       <span class="m-dv">{{ receipt.room_price|khr }}</span>
     </div>
     {% set elec_direct = receipt.electricity_units is none %}
     {% set water_direct = receipt.water_units is none %}
     {% set direct_count = (1 if elec_direct else 0) + (1 if water_direct else 0) %}
     {% set per_item_fee = (receipt.fee / direct_count)|int if (receipt.fee and direct_count > 0) else 0 %}
+    {% set elec_line = receipt.electricity_total + (per_item_fee if elec_direct else 0) %}
+    {% set water_line = receipt.water_total + (per_item_fee if water_direct else 0) %}
     <div class="m-detail-row">
+      <span class="m-dl"><span class="km">សរុបប្រើប្រាស់</span><span class="en">Total Utility</span></span>
+      <span class="m-dv">{{ (elec_line + water_line)|khr }}</span>
+    </div>
+    <div class="m-detail-subrow">
       <span class="m-dl">
-        <span class="km">អគ្គិសនី</span><span class="en">Electricity</span>
+        ⚡ <span class="km">អគ្គិសនី</span><span class="en">Electricity</span>
         {% if not elec_direct %}
         <div class="small text-muted" style="font-weight:400;">
           {{ receipt.electricity_from|int }}→{{ receipt.electricity_to|int }},
@@ -112,11 +121,11 @@
         </div>
         {% endif %}
       </span>
-      <span class="m-dv">{{ (receipt.electricity_total + (per_item_fee if elec_direct else 0))|khr }}</span>
+      <span class="m-dv">{{ elec_line|khr }}</span>
     </div>
-    <div class="m-detail-row">
+    <div class="m-detail-subrow">
       <span class="m-dl">
-        <span class="km">ទឹក</span><span class="en">Water</span>
+        💧 <span class="km">ទឹក</span><span class="en">Water</span>
         {% if not water_direct %}
         <div class="small text-muted" style="font-weight:400;">
           {{ receipt.water_from|int }}→{{ receipt.water_to|int }},
@@ -124,14 +133,12 @@
         </div>
         {% endif %}
       </span>
-      <span class="m-dv">{{ (receipt.water_total + (per_item_fee if water_direct else 0))|khr }}</span>
+      <span class="m-dv">{{ water_line|khr }}</span>
     </div>
-    {% if receipt.previous_balance and receipt.previous_balance > 0 %}
     <div class="m-detail-row">
-      <span class="m-dl"><span class="km">សមតុល្យចាស់</span><span class="en">Due Balance</span></span>
-      <span class="m-dv text-danger">{{ receipt.previous_balance|khr }}</span>
+      <span class="m-dl"><span class="km">ជំពាក់ចាស់</span><span class="en">Due Balance (prev.)</span></span>
+      <span class="m-dv {{ 'text-danger' if receipt.previous_balance and receipt.previous_balance > 0 }}">{{ (receipt.previous_balance or 0)|khr }}</span>
     </div>
-    {% endif %}
     {% if receipt.late_fee and receipt.late_fee > 0 %}
     <div class="m-detail-row">
       <span class="m-dl"><span class="km">ពិន័យ</span><span class="en">Late Fee</span></span>
@@ -293,7 +300,34 @@
 
 {% endblock %}
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
+// Remember the page we actually arrived from, so that recording a payment
+// (which redirects back to this same detail page, adding a duplicate history
+// entry) doesn't trap the back button in a detail <-> detail loop.
+(function() {
+  var key = 'receipt_origin_{{ receipt.id }}';
+  var current = window.location.href;
+  var ref = document.referrer;
+  var origin = sessionStorage.getItem(key);
+  if (ref && ref !== current) {
+    // Fresh arrival from a different page — always refresh, so a stale origin
+    // captured on a much earlier visit (e.g. right after generating the receipt)
+    // doesn't keep overriding where we actually came from this time.
+    sessionStorage.setItem(key, ref);
+    origin = ref;
+  }
+  // else: referrer is this same detail page (e.g. the redirect after recording
+  // a payment) — keep whatever origin was already stored.
+  document.getElementById('receiptBackBtn').addEventListener('click', function() {
+    if (origin) {
+      window.location.href = origin;
+    } else {
+      history.back();
+    }
+  });
+})();
+
 function onStatusChange(sel) {
   const paidInput = document.getElementById('detail_paid_amount');
   if (!paidInput) return;
@@ -350,7 +384,7 @@ async function printTableViaBridge(receiptId) {
     } catch(e) {}
   }
   setTimeout(() => {
-    btn.innerHTML = '<i class="bi bi-table me-1"></i><span class="km">វិក័យប័ត្រតារាង</span><span class="en">Table Receipt</span>';
+    btn.innerHTML = '<i class="bi bi-printer-fill me-1"></i><span class="km">បោះពុម្ពវិក័យប័ត្រ</span><span class="en">Print</span>';
     btn.disabled = false;
   }, 4000);
 }
@@ -367,6 +401,52 @@ function showBridgeError(m) {
   b.innerHTML='<i class="bi bi-exclamation-triangle"></i>';
   b.classList.replace('btn-primary','btn-danger');
   setTimeout(()=>{ b.innerHTML='<i class="bi bi-bluetooth"></i>'; b.classList.replace('btn-danger','btn-primary'); b.disabled=false; },4000);
+}
+
+async function downloadReceiptImage(btn) {
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i><span class="km">កំពុងរៀបចំ...</span><span class="en">Preparing...</span>';
+
+  // Load the actual print-receipt layout into a hidden iframe, then snapshot it —
+  // this keeps the downloaded image visually identical to what gets printed/shared.
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:240px;height:900px;border:0;';
+  document.body.appendChild(iframe);
+
+  try {
+    await new Promise((resolve, reject) => {
+      iframe.onload = resolve;
+      iframe.onerror = reject;
+      iframe.src = '{{ url_for("receipts.print_table", id=receipt.id) }}?bridge=1';
+    });
+
+    const doc = iframe.contentDocument;
+    const body = doc.body;
+    // Match canvas height to actual rendered content
+    iframe.style.height = body.scrollHeight + 'px';
+
+    const canvas = await html2canvas(body, {
+      backgroundColor: '#ffffff',
+      scale: 3,
+      useCORS: true,
+      logging: false,
+      windowWidth: body.scrollWidth,
+      windowHeight: body.scrollHeight
+    });
+
+    const link = document.createElement('a');
+    link.download = '{{ receipt.receipt_number }}.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    btn.innerHTML = '<i class="bi bi-check-circle me-1"></i><span class="km">បានរក្សាទុក</span><span class="en">Saved</span>';
+  } catch (e) {
+    btn.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i><span class="km">បរាជ័យ</span><span class="en">Failed</span>';
+  } finally {
+    document.body.removeChild(iframe);
+    setTimeout(() => { btn.innerHTML = origHtml; btn.disabled = false; }, 2500);
+  }
 }
 </script>
 {% endblock %}

@@ -1,4 +1,17 @@
 <ul class="nav flex-column sidebar-nav pt-2">
+
+  <li class="sidebar-lang-switch">
+    <a href="{{ url_for('set_lang', code='km') }}"
+       class="lang-flag-btn {{ 'active' if lang == 'km' }}" title="ខ្មែរ">
+      <span class="flag">🇰🇭</span><span class="flag-label">ខ្មែរ</span>
+    </a>
+    <a href="{{ url_for('set_lang', code='en') }}"
+       class="lang-flag-btn {{ 'active' if lang == 'en' }}" title="English">
+      <span class="flag">🇬🇧</span><span class="flag-label">EN</span>
+    </a>
+  </li>
+
+  <li class="nav-section-label"><span class="km">ទូទៅ</span><span class="en">Main</span></li>
   <li class="nav-item">
     <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
        href="{{ url_for('dashboard.index') }}">
@@ -20,11 +33,20 @@
       <span><span class="km">បន្ទប់</span><span class="en">Rooms</span></span>
     </a>
   </li>
+
+  <li class="nav-section-label"><span class="km">ហិរញ្ញវត្ថុ</span><span class="en">Finance</span></li>
   <li class="nav-item">
     <a class="nav-link {% if 'utilities' in (request.endpoint or '') %}active{% endif %}"
        href="{{ url_for('utilities.index') }}">
       <i class="bi bi-lightning-charge"></i>
       <span><span class="km">ប្រើប្រាស់</span><span class="en">Utilities</span></span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if 'utility_usage' in (request.endpoint or '') %}active{% endif %}"
+       href="{{ url_for('utility_usage.setup') }}">
+      <i class="bi bi-speedometer2"></i>
+      <span><span class="km">កត់ទឹកភ្លើង</span><span class="en">Utility Usage</span></span>
     </a>
   </li>
   <li class="nav-item">
@@ -34,6 +56,8 @@
       <span><span class="km">វិក័យប័ត្រ</span><span class="en">Receipts</span></span>
     </a>
   </li>
+
+  <li class="nav-section-label"><span class="km">របាយការណ៍</span><span class="en">Reports</span></li>
   <li class="nav-item">
     <a class="nav-link {% if request.endpoint == 'reports.summary' %}active{% endif %}"
        href="{{ url_for('reports.summary') }}">
@@ -55,11 +79,20 @@
       <span><span class="km">របាយការណ៍</span><span class="en">Reports</span></span>
     </a>
   </li>
+
+  <li class="nav-section-label"><span class="km">ប្រព័ន្ធ</span><span class="en">System</span></li>
   <li class="nav-item">
     <a class="nav-link {% if 'settings' in (request.endpoint or '') %}active{% endif %}"
        href="{{ url_for('settings.index') }}">
       <i class="bi bi-gear"></i>
       <span><span class="km">ការកំណត់</span><span class="en">Settings</span></span>
+    </a>
+  </li>
+  <li class="nav-divider"></li>
+  <li class="nav-item">
+    <a class="nav-link nav-link-logout" href="{{ url_for('auth.logout') }}">
+      <i class="bi bi-box-arrow-right"></i>
+      <span><span class="km">ចេញ</span><span class="en">Logout</span></span>
     </a>
   </li>
 </ul>

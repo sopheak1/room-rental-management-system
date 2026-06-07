@@ -88,6 +88,13 @@
 
 {% block content %}
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var active = document.querySelector('.month-scroller .month-chip.active');
+  if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
+});
+</script>
+
 <!-- ── Header with month selector ── -->
 <div class="summary-header">
   <div class="summary-month-label">

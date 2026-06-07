@@ -50,6 +50,13 @@
 
 {% block content %}
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var active = document.querySelector('.month-scroller .month-chip.active');
+  if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
+});
+</script>
+
 <!-- Header -->
 <div class="breakdown-header">
   <div style="font-size:.85rem;opacity:.75;margin-bottom:4px;">
@@ -154,9 +161,15 @@
       {{ data.credit_balance|khr }}
     </span>
   </div>
+  {% if data.deferred_previous > 0 %}
+  <div class="bd-row">
+    <span class="bd-lbl"><span class="km">ពន្យារពីខែ{{ KM_MONTHS[prev_month-1] }}</span><span class="en">Deferred from {{ MONTH_NAMES[prev_month-1] }}</span></span>
+    <span class="bd-val text-secondary">{{ data.deferred_previous|khr }}</span>
+  </div>
+  {% endif %}
   {% if data.deferred > 0 %}
   <div class="bd-row">
-    <span class="bd-lbl"><span class="km">ពន្យារខែក្រោយ (Deferred)</span><span class="en">Deferred to Next Month</span></span>
+    <span class="bd-lbl"><span class="km">ពន្យារទៅខែ{{ KM_MONTHS[next_month-1] }}</span><span class="en">Deferred to {{ MONTH_NAMES[next_month-1] }}</span></span>
     <span class="bd-val text-secondary">{{ data.deferred|khr }}</span>
   </div>
   {% endif %}

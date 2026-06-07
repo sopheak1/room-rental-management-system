@@ -100,6 +100,28 @@ class UtilityPrice(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class UtilityUsage(db.Model):
+    """Staging table for batch-collected meter readings, before a receipt is generated."""
+    __tablename__ = 'utility_usage'
+    __table_args__ = (
+        db.UniqueConstraint('room_id', 'billing_month', 'billing_year', name='uq_utility_usage_room_month'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('rooms.id'), nullable=False)
+    billing_month = db.Column(db.Integer, nullable=False)
+    billing_year = db.Column(db.Integer, nullable=False)
+    electricity_from = db.Column(db.Float, nullable=True)
+    electricity_to = db.Column(db.Float, nullable=True)
+    electricity_amount = db.Column(db.Float, nullable=True)   # used when room bills electricity directly (no meter)
+    water_from = db.Column(db.Float, nullable=True)
+    water_to = db.Column(db.Float, nullable=True)
+    water_amount = db.Column(db.Float, nullable=True)         # used when room bills water directly (no meter)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    room = db.relationship('Room')
+
+
 class Receipt(db.Model):
     __tablename__ = 'receipts'
     id = db.Column(db.Integer, primary_key=True)

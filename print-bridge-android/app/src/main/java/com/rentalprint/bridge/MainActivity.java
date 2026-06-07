@@ -395,8 +395,9 @@ public class MainActivity extends AppCompatActivity {
     private void showEnvSwitcher() {
         JSONArray envs  = getSavedEnvs();
         String current  = prefs.getString(PREF_URL, DEFAULT_URL);
-        List<String> labels = new ArrayList<>();
-        List<String> urls   = new ArrayList<>();
+        List<String> labels    = new ArrayList<>();
+        List<String> urls      = new ArrayList<>();
+        List<String> rawLabels = new ArrayList<>();
 
         try {
             for (int i = 0; i < envs.length(); i++) {
@@ -406,6 +407,7 @@ public class MainActivity extends AppCompatActivity {
                 String mark  = url.equals(current) ? " ✅" : "";
                 labels.add(label + mark + "\n" + url);
                 urls.add(url);
+                rawLabels.add(label);
             }
         } catch (Exception ignored) {}
 
@@ -418,8 +420,7 @@ public class MainActivity extends AppCompatActivity {
                 if (which == urls.size() - 1) {
                     showAddEnvDialog();
                 } else {
-                    String selected = urls.get(which);
-                    showEnvOptions(selected, which);
+                    showEnvOptions(rawLabels.get(which), urls.get(which), which);
                 }
             })
             .setNeutralButton("⚙️ More", (d, w) -> showMoreSettings())
@@ -427,13 +428,15 @@ public class MainActivity extends AppCompatActivity {
             .show();
     }
 
-    private void showEnvOptions(String url, int index) {
+    private void showEnvOptions(String label, String url, int index) {
         new AlertDialog.Builder(this)
-            .setTitle(url)
-            .setItems(new String[]{"✅ Switch to this", "🗑️ Delete"}, (d, which) -> {
+            .setTitle(label + "\n" + url)
+            .setItems(new String[]{"✅ Switch to this", "✏️ Edit", "🗑️ Delete"}, (d, which) -> {
                 if (which == 0) {
                     switchToUrl(url);
                     Toast.makeText(this, "Switched — please log in", Toast.LENGTH_SHORT).show();
+                } else if (which == 1) {
+                    showEditEnvDialog(label, url, index);
                 } else {
                     JSONArray envs = getSavedEnvs();
                     JSONArray newEnvs = new JSONArray();
@@ -484,6 +487,54 @@ public class MainActivity extends AppCompatActivity {
                     envs.put(e);
                     saveEnvs(envs);
                     Toast.makeText(this, "Added: " + label, Toast.LENGTH_SHORT).show();
+                    showEnvSwitcher();
+                } catch (Exception ex) {
+                    Toast.makeText(this, "Error: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showEditEnvDialog(String currentLabel, String currentUrl, int index) {
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 16, 48, 0);
+
+        EditText etLabel = new EditText(this);
+        etLabel.setHint("Label (e.g. Production)");
+        etLabel.setText(currentLabel);
+        layout.addView(etLabel);
+
+        EditText etUrl = new EditText(this);
+        etUrl.setHint("URL (e.g. https://...)");
+        etUrl.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        etUrl.setText(currentUrl);
+        layout.addView(etUrl);
+
+        new AlertDialog.Builder(this)
+            .setTitle("✏️ Edit Environment")
+            .setView(layout)
+            .setPositiveButton("Save", (d, w) -> {
+                String label = etLabel.getText().toString().trim();
+                String url   = etUrl.getText().toString().trim();
+                if (url.endsWith("/")) url = url.substring(0, url.length() - 1);
+                if (TextUtils.isEmpty(label) || TextUtils.isEmpty(url)) {
+                    Toast.makeText(this, "Label and URL are required", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                try {
+                    JSONArray envs = getSavedEnvs();
+                    JSONObject e = new JSONObject();
+                    e.put("label", label);
+                    e.put("url", url);
+                    envs.put(index, e);
+                    saveEnvs(envs);
+                    // If the edited entry was the active one, switch to its (possibly new) URL
+                    if (currentUrl.equals(prefs.getString(PREF_URL, DEFAULT_URL)) && !url.equals(currentUrl)) {
+                        switchToUrl(url);
+                    }
+                    Toast.makeText(this, "Updated: " + label, Toast.LENGTH_SHORT).show();
                     showEnvSwitcher();
                 } catch (Exception ex) {
                     Toast.makeText(this, "Error: " + ex.getMessage(), Toast.LENGTH_SHORT).show();

@@ -1,0 +1,221 @@
+APP COMPONENTS — FIELDS & LABELS (English)
+==========================================
+Generated: 2026-06-06
+
+
+LOGIN
+-----
+- Username (text input)
+- Password (password input)
+- Login (button)
+
+
+DASHBOARD (read-only)
+---------------------
+- Stats: Overdue count
+- Stats: Upcoming count
+- Stats: Paid count
+- Tab filter: Overdue / Upcoming / Paid
+- Filter chip: Day filter (by due day)
+- Button: Generate Receipt
+
+
+BUILDINGS — ADD / EDIT
+-----------------------
+- Building Name * (text input)
+- Address (textarea)
+
+
+ROOMS — ADD / EDIT
+------------------
+- Building * (select)
+- Room Number * (text input)
+- Floor (number input)
+- Type: Single / Double / Studio (select)
+- Status: Available / Occupied / Maintenance (select) [edit only]
+- Price/month (money input) *
+- Deposit (money input)
+
+
+TENANTS — ADD / EDIT
+---------------------
+[Personal Info section]
+- Full Name * (text input)
+- Gender: Male / Female / Other (select)
+- Roommates (number input)
+- NID (text input)
+- Phone (tel input)
+
+[Emergency Contact section — collapsed]
+- Name (text input)
+- Phone (tel input)
+
+[Contract & Deposit section]
+- Move-in Date (date input)
+- Duration: Monthly / 6 Months / 1 Year (select)
+- Deposit Paid (money input)
+
+
+TENANTS — CHECK OUT
+--------------------
+- Outstanding Balances (info display)
+- Final Receipt current month (info display)
+- Move-out Date * (date input)
+- Deposit Refunded (money input)
+- Move-out Reason (textarea)
+- Write Off All (button)
+- Confirm Check Out (button)
+
+
+UTILITIES
+----------
+[Update Price form]
+- Type: Electricity / Water / Service Fee * (select)
+- Price per Unit * (money input)
+- Effective Date * (date input)
+
+[Display — read-only]
+- Current Electricity price/kWh (info card)
+- Current Water price/m3 (info card)
+- Current Service Fee on Direct Input (info card)
+- Price History: Electricity + Water (history list)
+
+
+RECEIPTS — GENERATE
+--------------------
+[Section 1: Room & Month]
+- Room * (select)
+- Month * (select)
+- Year * (text input, readonly)
+
+[Section 2: Room Info — collapsed, read-only]
+- Tenant (info row)
+- Room Price (info row)
+- Prev. Electricity reading (info row)
+- Prev. Water reading (info row)
+- Due Balance (info row)
+
+[Section 3: Electricity]
+- Direct toggle switch
+- Electricity Amount — direct mode (money input)
+- From — meter mode (number input)
+- To — meter mode (number input)
+- Units — meter mode (readonly)
+- Price/Unit — meter mode (readonly)
+- Subtotal (display)
+
+[Section 4: Water]
+- Direct toggle switch
+- Water Amount — direct mode (money input)
+- From — meter mode (number input)
+- To — meter mode (number input)
+- Units (m3) — meter mode (readonly)
+- Price/Unit — meter mode (readonly)
+- Subtotal (display)
+
+[Section 5: Due Balance]
+- Amount (money input)
+
+[Section 6: Late Fee & Discount — collapsed, optional]
+- Late Fee (money input)
+- Discount (money input)
+- Notes (textarea)
+
+[Sticky bar]
+- Total (display)
+- Generate (button)
+
+
+RECEIPTS — EDIT
+----------------
+[Electricity section]
+- Amount / Direct Input — if direct mode (money input)
+- From / To — if meter mode (number input)
+- Price/kWh (money input)
+- Subtotal (display)
+
+[Water section]
+- Amount / Direct Input — if direct mode (money input)
+- From / To — if meter mode (number input)
+- Price/m3 (money input)
+- Subtotal (display)
+
+[Adjustments section]
+- Room Price (money input)
+- Due Balance (money input)
+- Service Fee (money input)
+- Late Fee (money input)
+- Discount (money input)
+- Notes (textarea)
+
+[Sticky bar]
+- New Total (display)
+- Paid (display)
+- Save (button)
+
+
+RECEIPTS — LIST
+----------------
+- Month (filter select)
+- Year (number input)
+- Status filter: Unpaid / Partial / Paid (filter chips)
+- Receipt cards: Receipt Number, Room, Building, Tenant, Amount, Status
+
+
+RECEIPTS — DETAIL (read-only)
+------------------------------
+- Receipt Number
+- Billing Month/Year
+- Room / Building
+- Tenant / Phone
+- Electricity total
+- Water total
+- Room Price
+- Service Fee
+- Late Fee
+- Discount
+- Due Balance
+- Grand Total
+- Payment Status
+- Paid Amount
+- Remaining Balance
+- Payment History
+- Record Payment (money input)
+- Edit (button)
+- Print Receipt (button)
+
+
+REPORTS — SUMMARY (read-only)
+------------------------------
+- Month / Year (filter)
+- Table: Room, Tenant, Electricity, Water, Room Price, Total, Status, Remaining
+- Footer: Total revenue summary
+
+
+REPORTS — BREAKDOWN (read-only)
+---------------------------------
+- Month / Year (filter)
+- Table: Detailed per-item breakdown
+
+
+REPORTS — OVERDUE (read-only)
+------------------------------
+- List: Room, Tenant, Overdue since, Balance
+
+
+SETTINGS
+---------
+[Database Backup]
+- Download Database (button)
+
+[Database Restore]
+- DB File (.db) (file input)
+- Restore (button)
+
+[Google Drive]
+- OAuth Client JSON (file input)
+- Google Drive Folder ID (text input)
+- Connect Google Drive (button)
+- Backup Now (button)
+- Test Connection (button)
+- Disconnect (button)

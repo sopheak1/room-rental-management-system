@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  {% if bridge %}
+  <meta name="viewport" content="width=220, initial-scale=1.0">
+  {% else %}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% endif %}
+  <title>{{ month_names[month-1] }} {{ year }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: 58mm auto; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    ::-webkit-scrollbar { display: none; }
+    html, body { overflow: hidden; }
+
+    body {
+      font-family: 'Noto Sans Khmer', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #000;
+      background: #fff;
+      width: 58mm;
+      padding: 1mm 1mm;
+    }
+    @media print {
+      html, body { width: 58mm; }
+      .no-print { display: none !important; }
+    }
+    {% if bridge %}* { font-weight: 700 !important; }{% endif %}
+
+    .title { text-align:center; font-size:15px; font-weight:700; margin-bottom:1px; }
+    .period { text-align:center; font-size:11px; margin-bottom:2px; }
+
+    hr.thick { border:none; border-top:2px solid #000; margin:2px 0; }
+    hr.thin  { border:none; border-top:1px dashed #555; margin:2px 0; }
+
+    .building-name { font-size:13px; font-weight:700; margin:3px 0 1px; }
+    .room-row { display:flex; justify-content:space-between; align-items:baseline; padding:1px 0; }
+    .room-num { font-weight:700; font-size:13px; flex-shrink:0; margin-right:4px; }
+    .vals { text-align:right; font-size:11px; white-space:nowrap; }
+    .vals .u { display:inline-block; margin-left:6px; }
+
+    .empty { text-align:center; font-size:11px; padding:6px 0; color:#444; }
+
+    .no-print {
+      display:flex; gap:8px; justify-content:center;
+      padding:10px; background:#1e293b; margin-bottom:10px;
+      font-family:system-ui,sans-serif;
+    }
+    .no-print button {
+      padding:7px 16px; font-size:13px; cursor:pointer;
+      border:none; border-radius:6px; background:#3b82f6; color:#fff;
+    }
+  </style>
+</head>
+<body>
+
+{% if not bridge %}
+<div class="no-print">
+  <button onclick="window.print()">🖨 Print</button>
+</div>
+{% endif %}
+
+<div class="title">កត់ទឹកភ្លើង</div>
+<div class="period">{{ month_names[month-1] }} {{ year }}</div>
+<hr class="thick">
+
+{% if not groups %}
+<div class="empty">— No saved readings for this period —</div>
+{% endif %}
+
+{% for building_name, usages in groups.items() %}
+<div class="building-name">{{ building_name }}</div>
+{% for u in usages %}
+<div class="room-row">
+  <span class="room-num">{{ u.room.room_number }}</span>
+  <span class="vals">
+    {% if u.electricity_amount is not none %}
+      <span class="u">⚡︎ {{ u.electricity_amount|int }}</span>
+    {% elif u.electricity_from is not none or u.electricity_to is not none %}
+      <span class="u">⚡︎ {{ u.electricity_from|int if u.electricity_from is not none else '—' }}→{{ u.electricity_to|int if u.electricity_to is not none else '—' }}</span>
+    {% endif %}
+    {% if u.water_amount is not none %}
+      <span class="u">💧︎ {{ u.water_amount|int }}</span>
+    {% elif u.water_from is not none or u.water_to is not none %}
+      <span class="u">💧︎ {{ u.water_from|int if u.water_from is not none else '—' }}→{{ u.water_to|int if u.water_to is not none else '—' }}</span>
+    {% endif %}
+  </span>
+</div>
+{% endfor %}
+<hr class="thin">
+{% endfor %}
+
+</body>
+</html>

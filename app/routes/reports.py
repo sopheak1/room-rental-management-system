@@ -23,6 +23,9 @@ def breakdown():
     month = request.args.get('month', type=int, default=now.month)
     year  = request.args.get('year',  type=int, default=now.year)
 
+    prev_month = 12 if month == 1 else month - 1
+    next_month = 1 if month == 12 else month + 1
+
     receipts = Receipt.query.filter_by(billing_month=month, billing_year=year).all()
 
     data = {
@@ -34,6 +37,7 @@ def breakdown():
         'service_fee':       sum((r.fee or 0)               for r in receipts),
         'credit':            sum(r.paid_amount              for r in receipts),
         'credit_balance':    sum(r.remaining_balance        for r in receipts if r.payment_status != 'deferred'),
+        'deferred_previous': sum(r.previous_balance         for r in receipts if r.previous_balance),
         'deferred':          sum(r.remaining_balance        for r in receipts if r.payment_status == 'deferred'),
         'total_expected':    sum(r.total_amount             for r in receipts),
         'count':             len(receipts),
@@ -44,6 +48,7 @@ def breakdown():
 
     return render_template('reports/breakdown.html',
         data=data, month=month, year=year,
+        prev_month=prev_month, next_month=next_month,
         KM_MONTHS=KM_MONTHS, MONTH_NAMES=MONTH_NAMES, now=now
     )
 

@@ -63,9 +63,32 @@
     <div class="m-card-title">{{ r.receipt_number }}</div>
     <div class="m-card-sub">
       <span class="km">បន្ទប់</span><span class="en">Room</span>
-      {{ r.room.room_number }} · {{ r.room.building.name }}
+      {{ r.room.building.name }} · {{ r.room.room_number }}
     </div>
     <div class="m-card-meta">{{ r.tenant.name if r.tenant else '—' }}</div>
+
+    <div class="m-card-breakdown">
+      <div class="m-card-bd-row">
+        <span><span class="km">ថ្លៃបន្ទប់</span><span class="en">Room Price</span></span>
+        <strong>{{ r.room_price|khr }}</strong>
+      </div>
+      <div class="m-card-bd-row">
+        <span><span class="km">សរុបប្រើប្រាស់</span><span class="en">Total Utility</span></span>
+        <strong>{{ (r.electricity_total + r.water_total)|khr }}</strong>
+      </div>
+      <div class="m-card-bd-sub">
+        <span>⚡ <span class="km">អគ្គិសនី</span><span class="en">Electricity</span>{% if r.electricity_units is not none %} · {{ '%.0f'|format(r.electricity_units) }} kWh{% endif %}</span>
+        <span class="m-card-bd-val">{{ r.electricity_total|khr }}</span>
+      </div>
+      <div class="m-card-bd-sub">
+        <span>💧 <span class="km">ទឹក</span><span class="en">Water</span>{% if r.water_units is not none %} · {{ '%.0f'|format(r.water_units) }} m³{% endif %}</span>
+        <span class="m-card-bd-val">{{ r.water_total|khr }}</span>
+      </div>
+      <div class="m-card-bd-row {{ 'm-card-bd-due' if r.previous_balance and r.previous_balance > 0 }}">
+        <span><span class="km">ជំពាក់ចាស់</span><span class="en">Due Balance (prev.)</span></span>
+        <strong>{{ (r.previous_balance or 0)|khr }}</strong>
+      </div>
+    </div>
   </div>
   <div class="m-card-right">
     <div class="m-card-amount {{ 'text-danger' if r.remaining_balance > 0 else 'text-success' }}">

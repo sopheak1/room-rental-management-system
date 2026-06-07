@@ -47,6 +47,7 @@ def create_app():  # noqa: C901
     from app.routes.rooms import rooms_bp
     from app.routes.tenants import tenants_bp
     from app.routes.utilities import utilities_bp
+    from app.routes.utility_usage import utility_usage_bp
     from app.routes.receipts import receipts_bp
     from app.routes.reports import reports_bp
     from app.routes.settings import settings_bp
@@ -57,6 +58,7 @@ def create_app():  # noqa: C901
     app.register_blueprint(rooms_bp)
     app.register_blueprint(tenants_bp)
     app.register_blueprint(utilities_bp)
+    app.register_blueprint(utility_usage_bp)
     app.register_blueprint(receipts_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(settings_bp)
