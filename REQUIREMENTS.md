@@ -3,7 +3,7 @@
 **Project:** room-rental-management-system  
 **GitHub:** https://github.com/sopheak1/room-rental-management-system  
 **Created:** 2026-05-28  
-**Last Updated:** 2026-05-31  
+**Last Updated:** 2026-06-07  
 **Owner:** Sopheak  
 **Stack:** Python 3.9 · Flask · SQLite · Bootstrap 5 · SQLAlchemy · Flask-Login
 
@@ -62,7 +62,7 @@ A mobile-first web-based room rental management system designed to be used prima
 - **3 tabs**: ⚠️ Overdue · 🕐 Upcoming · ✅ Paid
 - Only shows rooms **with receipts** for current month (no receipt = excluded)
 - Gradient header with month name + collection stats
-- Each card: Room # · Building · Tenant · Amount — tap → receipt detail
+- Each card: **Building · Room #** (single line) · Tenant · Amount — tap → receipt detail
 - Big "Generate Receipt" button always at top
 
 ### 3. Building Management
@@ -117,8 +117,11 @@ A mobile-first web-based room rental management system designed to be used prima
 
 #### 7.3 Receipt Detail (Mobile)
 - Big amount display at top
+- Header shows `billing_label · Building · Room #`; icon-only Edit button (top-right, hidden when locked)
 - Collapsible sections: Tenant Info · Line Items · Payment Panel · Payment Log
 - Bluetooth print button in header → calls Android bridge or localhost:9100
+- Print / Save-as-Image buttons rendered at equal width (`flex: 1 1 0`)
+- **Smart back navigation**: captures `document.referrer` in `sessionStorage` per receipt so the back button returns to wherever the user came from (dashboard, list, generate screen) instead of looping back to the same detail page after a payment redirect or self-refresh
 
 #### 7.4 Payment Features
 - Status: Unpaid / Partial / Paid / **Deferred**
@@ -126,6 +129,7 @@ A mobile-first web-based room rental management system designed to be used prima
 - **Payment Log**: per-receipt history of all payments made
 - **Defer to next month**: hides from overdue report, balance still carries over
 - Remaining balance auto-carries as "Due Balance" on next month's receipt
+- Deferred receipts still display `paid_amount` on the printed table (not just `paid`/`partial`)
 
 #### 7.5 Receipt Number Format
 - `RCP-YYYYMM-XXXX` (e.g. `RCP-202605-0001`)
@@ -143,10 +147,18 @@ A mobile-first web-based room rental management system designed to be used prima
 
 #### 8.1 Monthly Summary Report (Mobile)
 - Filter by any month/year via scrollable chips + year prev/next
+- Active month chip auto-scrolls into view on load (so e.g. "Nov" near the end of the strip is visible)
 - Collection rate progress bar
 - Stat chips: Total · Paid · Pending · Deferred
 - Receipts grouped: Unpaid/Partial first → Paid → Deferred
 - Each card links to receipt detail
+
+#### 8.1.5 Breakdown Report (`/reports/breakdown`)
+- Filter by month/year via scrollable month chips (auto-scrolls active chip into view) + year prev/next
+- Aggregate stats for the period: Total Expected, Room Fee, Electricity (units + fee), Water (units + fee), Service Fee, Credit Collected, Credit Balance
+- **"Deferred from {month}"**: sum of `previous_balance` carried in from the prior period (only shown if > 0)
+- **"Deferred to {month}"**: sum of `remaining_balance` for receipts deferred to the next period (only shown if > 0)
+- `{month}` is computed dynamically (prev/next month name with year rollover — Jan ↔ Dec) in both Khmer and English
 
 #### 8.2 Revenue Report
 - Annual view, filter by year
@@ -161,7 +173,29 @@ A mobile-first web-based room rental management system designed to be used prima
 #### 8.4 Occupancy Report
 - Per-building: Total · Occupied · Vacant · Maintenance · Rate
 
-### 9. Android Print Bridge App
+### 9. Utility Usage Recording & Print
+
+#### 9.1 Setup Screen (`/utility-usage`)
+- Choose billing period (month/year — re-queries the room list on change so already-filled ⚡/💧 icons stay correct)
+- Choose what to record: Electricity only / Water only / Both
+- **Select Rooms**: checkboxes per occupied room, "Select / Clear All" toggle; already-filled rooms show ⚡/💧 indicators
+- The same room checkboxes also control which rooms are included when printing — no separate picker UI
+
+#### 9.2 Batch Input Screen
+- Mobile list to punch in meter readings (`from`/`to`) or a direct override amount per room
+- Auto-fills `from` reading from the previous month's `to` reading
+- Detects meter vs. direct-input mode per room from its most recent receipt history
+
+#### 9.3 Print Sheet (Thermal, 58mm)
+- Minimalist sheet of saved readings, grouped by building
+- Optional `?room_ids=1,2,3` filter — prints only the rooms selected on the setup screen
+- ⚡/💧 icons rendered with Unicode variation selector `U+FE0E` (text presentation) so they survive 1-bit thermal bitmap conversion without disappearing (color emoji thresholds to white/invisible at the 180 grayscale cutoff)
+
+#### 9.4 ESC/POS Pipeline
+- Same Playwright → PIL grayscale → 1-bit threshold (180) → ESC/POS bitmap pipeline as receipts
+- `PRINTER_DOTS = 384` (48mm print area at 203 DPI)
+
+### 10. Android Print Bridge App
 
 #### Architecture
 ```
@@ -222,6 +256,11 @@ receipts
 
 payment_logs
   id, receipt_id, amount, payment_method, payment_date, created_at
+
+utility_usage
+  id, room_id, billing_month, billing_year,
+  electricity_from, electricity_to, electricity_amount,
+  water_from, water_to, water_amount, created_at
 ```
 
 ---
@@ -247,6 +286,11 @@ payment_logs
 | 15 | Configurable server URL in APK | No rebuild needed when moving from Mac to VPS |
 | 16 | Mobile-first redesign | Primary user (mother) uses phone, not desktop |
 | 17 | Language toggle (km/en) | CSS class on body + span pairs; no i18n library needed at this scale |
+| 18 | Utility usage staging table | Decouples meter-reading collection from receipt generation; supports batch print sheets before receipts exist |
+| 19 | `U+FE0E` variation selector on print emoji | Forces monochrome glyph rendering so ⚡/💧 survive 1-bit thermal bitmap conversion (color emoji thresholds to invisible) |
+| 20 | Reuse room checkboxes for print selection | Avoids building a separate room-picker UI on the utility usage screen |
+| 21 | `sessionStorage`-cached referrer for receipt back button | Browser history alone loops back to the same detail page after a payment POST→redirect; capturing the original referrer per receipt ID gives correct "smart back" behavior |
+| 22 | Dynamic `{month}` in deferred labels | Static "(Pre.)/(Next)" suffixes were ambiguous; showing the actual month name ("Deferred from May" / "Deferred to Jul") is unambiguous at a glance |
 
 ---
 
