@@ -56,6 +56,13 @@
       <span><span class="km">វិក័យប័ត្រ</span><span class="en">Receipts</span></span>
     </a>
   </li>
+  <li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'receipts.verify' %}active{% endif %}"
+       href="{{ url_for('receipts.verify') }}">
+      <i class="bi bi-patch-check"></i>
+      <span><span class="km">ផ្ទៀងផ្ទាត់ការទូទាត់</span><span class="en">Verify Payment</span></span>
+    </a>
+  </li>
 
   <li class="nav-section-label"><span class="km">របាយការណ៍</span><span class="en">Reports</span></li>
   <li class="nav-item">

@@ -306,6 +306,13 @@ select {
 .m-detail-row:last-child { border-bottom: none; }
 .m-detail-row .m-dl { color: #64748b; flex-shrink: 0; margin-right: 12px; }
 .m-detail-row .m-dv { font-weight: 600; text-align: right; }
+.m-detail-row.highlight {
+  background: #fff3cd;
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  margin: 0 -8px;
+}
 
 /* List cards (receipts, rooms, buildings…) */
 .m-card {

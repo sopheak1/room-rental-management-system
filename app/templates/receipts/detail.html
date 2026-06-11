@@ -268,34 +268,98 @@
   </div>
   <div class="m-section-body collapsed">
     {% set ns = namespace(running=receipt.total_amount) %}
-    {% set last_log_id = receipt.payment_logs[-1].id if receipt.payment_logs else none %}
+    {% set active_logs = receipt.payment_logs | rejectattr('deleted_at') | list %}
+    {% set last_log_id = active_logs[-1].id if active_logs else none %}
     {% for log in receipt.payment_logs %}
+    {% if not log.deleted_at %}
     {% set ns.running = ns.running - log.amount %}
-    <div class="m-detail-row">
+    {% endif %}
+    <div class="m-detail-row" id="payment-log-{{ log.id }}"
+         {% if request.args.get('highlight', type=int) == log.id %}data-highlight="1"{% endif %}>
       <span class="m-dl">
-        {{ log.payment_date.strftime('%d/%m/%Y') }}
-        <div class="small">{{ {'cash':'Cash','bank_transfer':'Bank','qr':'QR'}.get(log.payment_method,'—') }}</div>
+        <span class="{{ 'text-decoration-line-through text-muted' if log.deleted_at }}">{{ log.payment_date.strftime('%d/%m/%Y') }}</span>
+        <div class="small{{ ' text-danger' if log.deleted_at }}">
+          {{ {'cash':'Cash','bank_transfer':'Bank','qr':'QR'}.get(log.payment_method,'—') }}
+          {% if log.deleted_at %}
+          · <span class="km">បានលុប</span><span class="en">Deleted</span>: {{ log.delete_reason|delete_reason_label }}
+          {% endif %}
+        </div>
+        {% if log.verification_hash and not log.deleted_at %}
+        <div class="small text-muted" style="font-family:monospace;">
+          <span class="km">លេខផ្ទៀងផ្ទាត់</span><span class="en">Verify</span>: {{ log.verification_hash }}
+        </div>
+        {% endif %}
       </span>
       <span class="m-dv d-flex align-items-center gap-2">
         <span>
-          <span class="text-success">+{{ log.amount|khr }}</span>
+          <span class="{{ 'text-decoration-line-through text-muted' if log.deleted_at else 'text-success' }}">+{{ log.amount|khr }}</span>
+          {% if not log.deleted_at %}
           <div class="small {{ 'text-danger' if ns.running > 0 else 'text-success' }}">{{ ns.running|khr }}</div>
+          {% endif %}
         </span>
         {% if log.id == last_log_id and not locked %}
-        <form method="POST"
-              action="{{ url_for('receipts.delete_payment_log', id=receipt.id, log_id=log.id) }}"
-              {% set del_msg = 'លុបការទូទាត់នេះ?' if lang=='km' else 'Delete this payment?' %}
-              onsubmit="return confirm('{{ del_msg }}')">
-          <button class="btn btn-sm btn-outline-danger py-0 px-2">
-            <i class="bi bi-trash"></i>
-          </button>
-        </form>
+        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2"
+                data-bs-toggle="modal" data-bs-target="#deletePaymentModal">
+          <i class="bi bi-trash"></i>
+        </button>
         {% endif %}
       </span>
     </div>
     {% endfor %}
   </div>
 </div>
+
+{% if last_log_id and not locked %}
+<!-- Delete Payment Modal -->
+<div class="modal fade" id="deletePaymentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4">
+      <form method="POST" action="{{ url_for('receipts.delete_payment_log', id=receipt.id, log_id=last_log_id) }}">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold">
+            <span class="km">លុបការទូទាត់</span><span class="en">Delete Payment</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="m-label"><span class="km">មូលហេតុលុប</span><span class="en">Reason for Deletion</span> *</label>
+          <select name="delete_reason_code" id="deleteReasonSelect" class="m-input mb-2" required onchange="toggleDeleteReasonOther(this)">
+            <option value="" disabled selected></option>
+            <option value="wrong_amount">{{ 'បញ្ចូលទឹកលុយខុស' if lang == 'km' else 'Wrong amount entered' }}</option>
+            <option value="wrong_room">{{ 'បញ្ចូលខុសបន្ទប់' if lang == 'km' else 'Wrong room entered' }}</option>
+            <option value="other">{{ 'ផ្សេងទៀត' if lang == 'km' else 'Other' }}</option>
+          </select>
+          <textarea name="delete_reason_other" id="deleteReasonOther" class="m-input" rows="2"
+                    style="display:none;font-weight:400;resize:none;"
+                    placeholder="{{ 'បញ្ជាក់មូលហេតុ...' if lang == 'km' else 'Specify reason...' }}"></textarea>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <span class="km">បោះបង់</span><span class="en">Cancel</span>
+          </button>
+          <button type="submit" class="btn btn-danger fw-bold">
+            <i class="bi bi-trash me-1"></i>
+            <span class="km">បញ្ជាក់លុប</span><span class="en">Confirm Delete</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function toggleDeleteReasonOther(sel) {
+  var other = document.getElementById('deleteReasonOther');
+  if (sel.value === 'other') {
+    other.style.display = '';
+    other.required = true;
+  } else {
+    other.style.display = 'none';
+    other.required = false;
+    other.value = '';
+  }
+}
+</script>
+{% endif %}
 {% endif %}
 
 {% endblock %}
@@ -448,5 +512,19 @@ async function downloadReceiptImage(btn) {
     setTimeout(() => { btn.innerHTML = origHtml; btn.disabled = false; }, 2500);
   }
 }
+
+// Came here from the verification search — expand the payment log and
+// scroll to / highlight the matching entry.
+(function() {
+  var row = document.querySelector('[data-highlight="1"]');
+  if (!row) return;
+  var body = row.closest('.m-section-body');
+  if (body && body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    if (body.previousElementSibling) body.previousElementSibling.classList.remove('collapsed');
+  }
+  row.classList.add('highlight');
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+})();
 </script>
 {% endblock %}

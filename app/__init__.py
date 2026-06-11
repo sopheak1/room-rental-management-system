@@ -22,6 +22,20 @@ def _migrate(db):
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE receipts ADD COLUMN fee REAL DEFAULT 0'))
                 conn.commit()
+    if 'payment_logs' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('payment_logs')]
+        if 'deleted_at' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE payment_logs ADD COLUMN deleted_at DATETIME'))
+                conn.commit()
+        if 'delete_reason' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE payment_logs ADD COLUMN delete_reason TEXT'))
+                conn.commit()
+        if 'verification_hash' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE payment_logs ADD COLUMN verification_hash VARCHAR(20)'))
+                conn.commit()
 
 
 def create_app():  # noqa: C901
@@ -118,6 +132,19 @@ def create_app():  # noqa: C901
         lang = session.get('lang', 'km')
         entry = _STATUS_LABELS.get(value, {})
         return entry.get(lang, value.title() if value else '')
+
+    _DELETE_REASON_LABELS = {
+        'wrong_amount': {'km': 'បញ្ចូលទឹកលុយខុស', 'en': 'Wrong amount entered'},
+        'wrong_room':   {'km': 'បញ្ចូលខុសបន្ទប់',  'en': 'Wrong room entered'},
+    }
+
+    @app.template_filter('delete_reason_label')
+    def delete_reason_label_filter(value):
+        if not value:
+            return ''
+        lang = session.get('lang', 'km')
+        entry = _DELETE_REASON_LABELS.get(value)
+        return entry.get(lang, value) if entry else value
 
     @app.route('/lang/<code>')
     def set_lang(code):

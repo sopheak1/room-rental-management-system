@@ -5,6 +5,7 @@ from app import db
 from app.utils.timezone import now as _now, today as _today
 from datetime import date, datetime
 from app.utils.google_drive import backup_to_drive
+from app.utils.verification import generate_payment_hash
 
 receipts_bp = Blueprint('receipts', __name__)
 
@@ -80,6 +81,24 @@ def list():
         selected_status=status, selected_building=building_id,
         month_names=MONTH_NAMES
     )
+
+
+@receipts_bp.route('/receipts/verify')
+@login_required
+def verify():
+    raw = (request.args.get('code') or '').strip().upper().replace(' ', '')
+    code = raw
+    if code and '-' not in code and len(code) == 8:
+        code = f"{code[:4]}-{code[4:]}"
+
+    if code:
+        log = PaymentLog.query.filter_by(verification_hash=code).first()
+        if log:
+            return redirect(url_for('receipts.detail', id=log.receipt_id, highlight=log.id))
+        _flash_lang('No payment found for this verification code.',
+                    'រកមិនឃើញការទូទាត់សម្រាប់លេខកូដនេះទេ។', 'warning')
+
+    return render_template('receipts/verify.html', code=raw)
 
 
 @receipts_bp.route('/receipts/generate', methods=['GET', 'POST'])
@@ -274,7 +293,10 @@ def pay(id):
         receipt_id=receipt.id,
         amount=new_payment,
         payment_method=payment_method,
-        payment_date=payment_date
+        payment_date=payment_date,
+        verification_hash=generate_payment_hash(
+            receipt.receipt_number, receipt.remaining_balance, new_payment, payment_date, payment_method
+        )
     )
     db.session.add(log)
     db.session.commit()
@@ -294,11 +316,23 @@ def delete_payment_log(id, log_id):
                     'មិនអាចលុប — វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ។', 'danger')
         return redirect(url_for('receipts.detail', id=id))
 
-    # Safety: only allow deleting the LAST payment log entry
-    last_log = PaymentLog.query.filter_by(receipt_id=id)\
+    # Safety: only allow deleting the LAST active (non-deleted) payment log entry
+    last_log = PaymentLog.query.filter_by(receipt_id=id, deleted_at=None)\
                                .order_by(PaymentLog.created_at.desc()).first()
     if not last_log or last_log.id != log_id:
         flash('Only the last payment can be deleted.', 'danger')
+        return redirect(url_for('receipts.detail', id=id))
+
+    reason_code  = (request.form.get('delete_reason_code') or '').strip()
+    reason_other = (request.form.get('delete_reason_other') or '').strip()
+    if reason_code == 'other':
+        delete_reason = reason_other
+    else:
+        delete_reason = reason_code
+
+    if not delete_reason:
+        _flash_lang('Please select a reason for deleting this payment.',
+                    'សូមជ្រើសរើសមូលហេតុនៃការលុប។', 'danger')
         return redirect(url_for('receipts.detail', id=id))
 
     # Recalculate paid amount and balance
@@ -313,7 +347,8 @@ def delete_payment_log(id, log_id):
         receipt.payment_status = 'paid'
         receipt.remaining_balance = 0.0
 
-    db.session.delete(log)
+    log.deleted_at    = _now()
+    log.delete_reason = delete_reason
     db.session.commit()
     backup_to_drive()
     _flash_lang('Payment deleted and balance updated.', 'ការទូទាត់ត្រូវបានលុប។', 'success')

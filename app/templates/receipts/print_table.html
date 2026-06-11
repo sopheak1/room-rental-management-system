@@ -222,11 +222,13 @@ if (new URLSearchParams(window.location.search).get('bridge') === '1') {
   {% endif %}
 </div>
 
-{% if receipt.payment_logs %}
+{% set active_logs = receipt.payment_logs | rejectattr('deleted_at') | list %}
+{% set latest_hash = active_logs[-1].verification_hash if active_logs else none %}
+{% if active_logs %}
 <hr class="thin">
 <div style="font-size:11px;font-weight:700;">ប្រវត្តិការទូទាត់</div>
 {% set ns = namespace(running=receipt.total_amount) %}
-{% for log in receipt.payment_logs %}
+{% for log in active_logs %}
 {% set ns.running = ns.running - log.amount %}
 <div class="item-row" style="font-size:10px;">
   <span>{{ log.payment_date.strftime('%d/%m/%Y') }}
@@ -240,7 +242,7 @@ if (new URLSearchParams(window.location.search).get('bridge') === '1') {
 {% endif %}
 
 <hr class="thin">
-<div class="note">អ្នកជួលត្រូវរក្សាទុកវិក័យប័ត្រនេះ។</div>
+<div class="note">អ្នកជួលត្រូវរក្សាទុកវិក័យប័ត្រនេះ។{% if latest_hash %} · {{ latest_hash }}{% endif %}</div>
 
 <div class="sigs">
   <div class="sig">

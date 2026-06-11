@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang=='km'%}ផ្ទៀងផ្ទាត់ការទូទាត់{% else %}Verify Payment{% endif %}{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="m-page-title mb-0">
+    <span class="km">ផ្ទៀងផ្ទាត់ការទូទាត់</span><span class="en">Verify Payment</span>
+  </h5>
+</div>
+
+<div class="m-section">
+  <div class="m-section-body">
+    <form method="GET" action="{{ url_for('receipts.verify') }}">
+      <label class="m-label">
+        <span class="km">លេខកូដផ្ទៀងផ្ទាត់</span><span class="en">Verification Code</span>
+      </label>
+      <div class="d-flex gap-2">
+        <input type="text" name="code" class="m-input" style="font-family:monospace;text-transform:uppercase;"
+               placeholder="XXXX-XXXX" value="{{ code or '' }}" autofocus>
+        <button type="submit" class="btn btn-primary fw-bold">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
