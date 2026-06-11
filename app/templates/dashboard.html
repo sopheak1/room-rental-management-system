@@ -47,20 +47,6 @@
   <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
 </a>
 
-<!-- ── Building filter ─────────────────── -->
-{% if buildings|length > 1 %}
-<div class="dash-day-filter mb-2">
-  <button class="dash-building-chip dash-day-chip active" data-building="0" onclick="filterBuilding(0, this)">
-    <span class="km">អគារទាំងអស់</span><span class="en">All Buildings</span>
-  </button>
-  {% for b in buildings %}
-  <button class="dash-building-chip dash-day-chip" data-building="{{ b.id }}" onclick="filterBuilding({{ b.id }}, this)">
-    {{ b.name }}
-  </button>
-  {% endfor %}
-</div>
-{% endif %}
-
 <!-- ── 3-Tab selector ─────────────────── -->
 <div class="dash-tab-bar">
   <button class="dash-tab-btn active-overdue" data-tab="overdue" onclick="switchTab('overdue', this)">
@@ -76,6 +62,18 @@
     <span class="dash-tab-count">{{ tab_paid|length }}</span>
   </button>
 </div>
+
+<!-- ── Building filter ─────────────────── -->
+{% if buildings|length > 1 %}
+<div class="mb-2 text-end">
+  <select id="buildingFilter" class="dash-building-select" onchange="filterBuilding(parseInt(this.value, 10))">
+    <option value="0">{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</option>
+    {% for b in buildings %}
+    <option value="{{ b.id }}">{{ b.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endif %}
 
 <!-- ── Overdue tab ────────────────────── -->
 <div id="tab-overdue" class="tab-panel active">
@@ -232,10 +230,8 @@ function switchTab(name, btn) {
   applyFilters();
 }
 
-function filterBuilding(buildingId, btn) {
+function filterBuilding(buildingId) {
   activeBuildingId = buildingId;
-  document.querySelectorAll('.dash-building-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
   applyFilters();
 }
 
