@@ -3,14 +3,22 @@
 
 {% block content %}
 
-<div class="mb-3">
-  <a href="javascript:history.back()" class="text-decoration-none text-muted small">
-    <i class="bi bi-arrow-left me-1"></i>
-    <span class="km">ត្រឡប់</span><span class="en">Back</span>
-  </a>
-  <h5 class="fw-bold mt-1 mb-0">
-    <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
-  </h5>
+<div class="mb-3 d-flex align-items-start justify-content-between gap-2">
+  <div>
+    <a href="javascript:history.back()" class="text-decoration-none text-muted small">
+      <i class="bi bi-arrow-left me-1"></i>
+      <span class="km">ត្រឡប់</span><span class="en">Back</span>
+    </a>
+    <h5 class="fw-bold mt-1 mb-0">
+      <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
+    </h5>
+  </div>
+  {% if selected_room %}
+  <button type="button" class="btn btn-sm btn-outline-primary flex-shrink-0 mt-1" onclick="recallUsage()">
+    <i class="bi bi-arrow-repeat me-1"></i>
+    <span class="km">កំណត់ឡើងវិញ</span><span class="en">Reset</span>
+  </button>
+  {% endif %}
 </div>
 
 {% if existing_receipt %}
@@ -141,8 +149,9 @@
 {% set usage_water_to = usage.water_to if usage else None %}
 {% set usage_water_meter = usage_water_from is not none or usage_water_to is not none %}
 
-{% if usage %}
-<div class="alert alert-info py-2 px-3 mb-3" style="font-size:0.85rem;">
+{% if selected_room %}
+<div class="alert alert-info py-2 px-3 mb-3" id="usage_info_box"
+     style="font-size:0.85rem;{% if not usage %}display:none;{% endif %}">
   <i class="bi bi-info-circle me-1"></i>
   <span class="km">បំពេញស្វ័យប្រវត្តិពីការអានមីទ័រដែលបានកត់ត្រាទុក។ អ្នកអាចកែបាន — វានឹងមិនប៉ះពាល់ទិន្នន័យដើមទេ។</span>
   <span class="en">Pre-filled from your saved meter reading. You can edit these — it won't change the saved reading.</span>
@@ -468,6 +477,66 @@ function setOverrideMode(type, isDirect) {
   toggleOverride(type);
 }
 
+// ── Recall from Utility Usage ───────────
+function recallUsage() {
+  const roomId = document.getElementById('room_id').value;
+  const month  = document.querySelector('select[name="billing_month"]').value;
+  const year   = document.querySelector('input[name="billing_year"]').value;
+  const box    = document.getElementById('usage_info_box');
+
+  if (!roomId) {
+    alert('{% if lang=="km" %}សូមជ្រើសរើសបន្ទប់ជាមុន។{% else %}Please select a room first.{% endif %}');
+    return;
+  }
+
+  fetch(`/utility-usage/api/lookup?room_id=${roomId}&month=${month}&year=${year}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.found) {
+        box.className = 'alert alert-warning py-2 px-3 mb-3';
+        box.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' +
+          '<span class="km">មិនមានការអានមីទ័រសម្រាប់បន្ទប់/ខែនេះទេ។</span>' +
+          '<span class="en">No staged reading found for this room/month.</span>';
+        box.style.display = '';
+        return;
+      }
+
+      if (data.electricity_amount !== null) {
+        setOverrideMode('electricity', true);
+        const amt = Math.round(data.electricity_amount);
+        document.getElementById('electricity_override_display').value = amt.toLocaleString('en-US');
+        document.getElementById('electricity_total_override').value = amt;
+      } else if (data.electricity_from !== null || data.electricity_to !== null) {
+        setOverrideMode('electricity', false);
+        if (data.electricity_from !== null) document.getElementById('electricity_from').value = data.electricity_from;
+        if (data.electricity_to !== null) document.getElementById('electricity_to').value = data.electricity_to;
+      }
+
+      if (data.water_amount !== null) {
+        setOverrideMode('water', true);
+        const amt = Math.round(data.water_amount);
+        document.getElementById('water_override_display').value = amt.toLocaleString('en-US');
+        document.getElementById('water_total_override').value = amt;
+      } else if (data.water_from !== null || data.water_to !== null) {
+        setOverrideMode('water', false);
+        if (data.water_from !== null) document.getElementById('water_from').value = data.water_from;
+        if (data.water_to !== null) document.getElementById('water_to').value = data.water_to;
+      }
+
+      calcElectricity();
+      calcWater();
+
+      box.className = 'alert alert-info py-2 px-3 mb-3';
+      box.innerHTML = '<i class="bi bi-check-circle me-1"></i>' +
+        '<span class="km">បានទាញយកការអានចុងក្រោយបំផុតពីការកត់ត្រាទុក។</span>' +
+        '<span class="en">Refreshed with the latest saved meter reading.</span>';
+      box.style.display = '';
+    })
+    .catch(() => {
+      alert('{% if lang=="km" %}មានបញ្ហាក្នុងការទាញយកទិន្នន័យ។{% else %}Failed to fetch usage data.{% endif %}');
+    });
+}
+
 function calcAutoFee() {
   const elecOv  = document.getElementById('electricity_override').checked;
   const waterOv = document.getElementById('water_override').checked;
@@ -541,8 +610,13 @@ function calcTotal() {
   const disc    = parseFloat(document.getElementById('discount').value) || 0;
   const total   = room + elec + water + balance + fee + late - disc;
   document.getElementById('s_total').textContent = formatKhr(total);
-  document.getElementById('electricity_total_display').textContent = formatKhr(elec);
-  document.getElementById('water_total_display').textContent = formatKhr(water);
+
+  // Subtotal display includes the service fee for direct-mode utilities,
+  // matching the elec_line/water_line totals shown on detail.html and print_table.html
+  const elecOv  = document.getElementById('electricity_override').checked;
+  const waterOv = document.getElementById('water_override').checked;
+  document.getElementById('electricity_total_display').textContent = formatKhr(elec + (elecOv ? DEFAULT_FEE : 0));
+  document.getElementById('water_total_display').textContent = formatKhr(water + (waterOv ? DEFAULT_FEE : 0));
 }
 
 // ── Init ────────────────────────────────

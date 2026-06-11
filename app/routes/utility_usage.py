@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from flask import Blueprint, render_template, redirect, url_for, flash, request, Response
+from flask import Blueprint, render_template, redirect, url_for, flash, request, Response, jsonify
 from flask_login import login_required
 from app.models import Room, Building, UtilityUsage
 from app.routes.receipts import _get_previous_receipt
@@ -171,6 +171,30 @@ def save():
     db.session.commit()
     flash(f'បានរក្សាទុកការអានមីទ័រសម្រាប់ {saved_count} បន្ទប់។ / Saved readings for {saved_count} room(s).', 'success')
     return redirect(url_for('utility_usage.batch_input', month=month, year=year, utility=utility, room_ids=room_ids))
+
+
+@utility_usage_bp.route('/utility-usage/api/lookup')
+@login_required
+def api_lookup():
+    """Return the staged UtilityUsage readings for a room/period, used by the
+    'Recall from Utility Usage' button on the receipt generate form."""
+    room_id = request.args.get('room_id', type=int)
+    month = request.args.get('month', type=int)
+    year = request.args.get('year', type=int)
+
+    usage = UtilityUsage.query.filter_by(room_id=room_id, billing_month=month, billing_year=year).first()
+    if not usage:
+        return jsonify(found=False)
+
+    return jsonify(
+        found=True,
+        electricity_amount=usage.electricity_amount,
+        electricity_from=usage.electricity_from,
+        electricity_to=usage.electricity_to,
+        water_amount=usage.water_amount,
+        water_from=usage.water_from,
+        water_to=usage.water_to,
+    )
 
 
 def _usage_groups(month, year, room_ids=None):
