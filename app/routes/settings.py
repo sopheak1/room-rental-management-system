@@ -7,6 +7,7 @@ from app.utils.timezone import now as _now, today as _today
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session, send_file
 from flask_login import login_required
+from app import db
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -270,6 +271,12 @@ def upload_db():
 
         # Replace database
         shutil.move(tmp_path, db_path)
+
+        # Drop pooled connections so subsequent requests open fresh
+        # connections against the restored file (old fds keep pointing
+        # at the renamed-away inode otherwise)
+        db.engine.dispose()
+
         flash('✅ Database restored successfully! The previous DB was saved as rental.db.prev', 'success')
 
     except sqlite3.DatabaseError:
