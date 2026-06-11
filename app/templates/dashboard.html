@@ -63,31 +63,40 @@
   </button>
 </div>
 
-<!-- ── Building filter ─────────────────── -->
-{% if buildings|length > 1 %}
-<div class="mb-2 text-end">
+<!-- ── Filters row (building + day) ────── -->
+{% if buildings|length > 1 or tab_overdue or tab_upcoming %}
+<div class="dash-filter-row mb-2">
+  {% if buildings|length > 1 %}
   <select id="buildingFilter" class="dash-building-select" onchange="applyFilters()">
     <option value="0">{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</option>
     {% for b in buildings %}
     <option value="{{ b.id }}">{{ b.name }}</option>
     {% endfor %}
   </select>
+  {% endif %}
+  {% if tab_overdue %}
+  {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
+  <select class="dash-building-select dash-day-select" data-tab="overdue" onchange="applyFilters()">
+    <option value="0">{% if lang=='km' %}ថ្ងៃទាំងអស់{% else %}All Days{% endif %}</option>
+    {% for day in overdue_days %}
+    <option value="{{ day }}">{% if lang=='km' %}ថ្ងៃ {{ day }}{% else %}Day {{ day }}{% endif %}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+  {% if tab_upcoming %}
+  {% set upcoming_days = tab_upcoming | map(attribute='start_day') | list | unique | sort %}
+  <select class="dash-building-select dash-day-select" data-tab="upcoming" style="display:none;" onchange="applyFilters()">
+    <option value="0">{% if lang=='km' %}ថ្ងៃទាំងអស់{% else %}All Days{% endif %}</option>
+    {% for day in upcoming_days %}
+    <option value="{{ day }}">{% if lang=='km' %}ថ្ងៃ {{ day }}{% else %}Day {{ day }}{% endif %}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
 </div>
 {% endif %}
 
 <!-- ── Overdue tab ────────────────────── -->
 <div id="tab-overdue" class="tab-panel active">
-  {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
-  {% if tab_overdue %}
-  <div class="mb-2 text-end">
-    <select class="dash-building-select dash-day-select" onchange="applyFilters()">
-      <option value="0">{% if lang=='km' %}ថ្ងៃទាំងអស់{% else %}All Days{% endif %}</option>
-      {% for day in overdue_days %}
-      <option value="{{ day }}">{% if lang=='km' %}ថ្ងៃ {{ day }}{% else %}Day {{ day }}{% endif %}</option>
-      {% endfor %}
-    </select>
-  </div>
-  {% endif %}
   {% for e in tab_overdue | sort(attribute='start_day') %}
   <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
      class="dash-room-card" data-day="{{ e.start_day }}" data-building="{{ e.room.building_id }}">
@@ -128,17 +137,6 @@
 
 <!-- ── Upcoming tab ───────────────────── -->
 <div id="tab-upcoming" class="tab-panel">
-  {% set upcoming_days = tab_upcoming | map(attribute='start_day') | list | unique | sort %}
-  {% if tab_upcoming %}
-  <div class="mb-2 text-end">
-    <select class="dash-building-select dash-day-select" onchange="applyFilters()">
-      <option value="0">{% if lang=='km' %}ថ្ងៃទាំងអស់{% else %}All Days{% endif %}</option>
-      {% for day in upcoming_days %}
-      <option value="{{ day }}">{% if lang=='km' %}ថ្ងៃ {{ day }}{% else %}Day {{ day }}{% endif %}</option>
-      {% endfor %}
-    </select>
-  </div>
-  {% endif %}
   {% for e in tab_upcoming | sort(attribute='start_day') %}
   <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
      class="dash-room-card" data-day="{{ e.start_day }}" data-building="{{ e.room.building_id }}">
@@ -214,18 +212,26 @@ function switchTab(name, btn) {
   document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active-overdue', 'active-upcoming', 'active-paid'));
   document.getElementById('tab-' + name).classList.add('active');
   if (btn) btn.classList.add('active-' + name);
-  // Reset this tab's day filter when switching into it
-  const daySelect = document.querySelector('#tab-' + name + ' .dash-day-select');
-  if (daySelect) daySelect.value = '0';
+  // Show only the day filter for this tab (if any), and reset it
+  document.querySelectorAll('.dash-day-select').forEach(sel => {
+    if (sel.dataset.tab === name) {
+      sel.style.display = '';
+      sel.value = '0';
+    } else {
+      sel.style.display = 'none';
+    }
+  });
   applyFilters();
 }
 
 function applyFilters() {
   const buildingSelect = document.getElementById('buildingFilter');
   const buildingId = buildingSelect ? parseInt(buildingSelect.value, 10) : 0;
+  let day = 0;
+  document.querySelectorAll('.dash-day-select').forEach(sel => {
+    if (sel.style.display !== 'none') day = parseInt(sel.value, 10);
+  });
   document.querySelectorAll('.tab-panel').forEach(tab => {
-    const daySelect = tab.querySelector('.dash-day-select');
-    const day = daySelect ? parseInt(daySelect.value, 10) : 0;
     tab.querySelectorAll('.dash-room-card').forEach(card => {
       const buildingOk = buildingId === 0 || parseInt(card.dataset.building, 10) === buildingId;
       const dayOk = day === 0 || parseInt(card.dataset.day, 10) === day;

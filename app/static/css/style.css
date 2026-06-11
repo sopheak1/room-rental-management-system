@@ -662,9 +662,17 @@ select {
 .dash-room-arrow { color: var(--app-border); font-size: 0.85rem; flex-shrink: 0; }
 
 /* Building & day filter dropdowns */
+.dash-filter-row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
 .dash-building-select {
   width: auto;
-  min-width: 140px;
+  min-width: 110px;
+  flex: 1 1 110px;
+  max-width: 160px;
   padding: 6px 12px;
   border-radius: 10px;
   border: 1.5px solid var(--app-border);
