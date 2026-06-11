@@ -1159,6 +1159,7 @@ select {
 }
 .u-input:focus { outline: none; border-color: var(--app-primary, #3b82f6); background: #fff; }
 .u-input-new { border-color: var(--app-primary, #93c5fd); background: #eff6ff; }
+.u-meter-row { display: flex; gap: 0.5rem; }
 
 .m-save-bar {
   position: sticky; bottom: 0; left: 0; right: 0;

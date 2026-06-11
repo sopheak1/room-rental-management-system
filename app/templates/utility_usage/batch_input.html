@@ -55,7 +55,7 @@
                placeholder="0">
       </div>
 
-      <div id="electricity_meter_{{ rid }}" class="d-flex gap-2" {% if e.electricity_mode != 'meter' %}style="display:none;"{% endif %}>
+      <div id="electricity_meter_{{ rid }}" class="u-meter-row" {% if e.electricity_mode != 'meter' %}style="display:none;"{% endif %}>
         <div class="flex-fill">
           <label class="u-flabel"><span class="km">លេខចាស់</span><span class="en">From</span></label>
           <input type="text" inputmode="decimal" class="u-input" name="electricity_from_{{ rid }}"
@@ -96,7 +96,7 @@
                placeholder="0">
       </div>
 
-      <div id="water_meter_{{ rid }}" class="d-flex gap-2" {% if e.water_mode != 'meter' %}style="display:none;"{% endif %}>
+      <div id="water_meter_{{ rid }}" class="u-meter-row" {% if e.water_mode != 'meter' %}style="display:none;"{% endif %}>
         <div class="flex-fill">
           <label class="u-flabel"><span class="km">លេខចាស់</span><span class="en">From</span></label>
           <input type="text" inputmode="decimal" class="u-input" name="water_from_{{ rid }}"
