@@ -66,7 +66,7 @@
 <!-- ── Building filter ─────────────────── -->
 {% if buildings|length > 1 %}
 <div class="mb-2 text-end">
-  <select id="buildingFilter" class="dash-building-select" onchange="filterBuilding(parseInt(this.value, 10))">
+  <select id="buildingFilter" class="dash-building-select" onchange="applyFilters()">
     <option value="0">{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</option>
     {% for b in buildings %}
     <option value="{{ b.id }}">{{ b.name }}</option>
@@ -79,15 +79,13 @@
 <div id="tab-overdue" class="tab-panel active">
   {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
   {% if tab_overdue %}
-  <div class="dash-day-filter mb-2">
-    <button class="dash-day-chip active" data-day="0" onclick="filterDay('overdue', this)">
-      <span class="km">ទាំងអស់</span><span class="en">All</span>
-    </button>
-    {% for day in overdue_days %}
-    <button class="dash-day-chip" data-day="{{ day }}" onclick="filterDay('overdue', this)">
-      <span class="km">ថ្ងៃ {{ day }}</span><span class="en">Day {{ day }}</span>
-    </button>
-    {% endfor %}
+  <div class="mb-2 text-end">
+    <select class="dash-building-select dash-day-select" onchange="applyFilters()">
+      <option value="0">{% if lang=='km' %}ថ្ងៃទាំងអស់{% else %}All Days{% endif %}</option>
+      {% for day in overdue_days %}
+      <option value="{{ day }}">{% if lang=='km' %}ថ្ងៃ {{ day }}{% else %}Day {{ day }}{% endif %}</option>
+      {% endfor %}
+    </select>
   </div>
   {% endif %}
   {% for e in tab_overdue | sort(attribute='start_day') %}
@@ -132,15 +130,13 @@
 <div id="tab-upcoming" class="tab-panel">
   {% set upcoming_days = tab_upcoming | map(attribute='start_day') | list | unique | sort %}
   {% if tab_upcoming %}
-  <div class="dash-day-filter mb-2">
-    <button class="dash-day-chip active" data-day="0" onclick="filterDay('upcoming', this)">
-      <span class="km">ទាំងអស់</span><span class="en">All</span>
-    </button>
-    {% for day in upcoming_days %}
-    <button class="dash-day-chip" data-day="{{ day }}" onclick="filterDay('upcoming', this)">
-      <span class="km">ថ្ងៃ {{ day }}</span><span class="en">Day {{ day }}</span>
-    </button>
-    {% endfor %}
+  <div class="mb-2 text-end">
+    <select class="dash-building-select dash-day-select" onchange="applyFilters()">
+      <option value="0">{% if lang=='km' %}ថ្ងៃទាំងអស់{% else %}All Days{% endif %}</option>
+      {% for day in upcoming_days %}
+      <option value="{{ day }}">{% if lang=='km' %}ថ្ងៃ {{ day }}{% else %}Day {{ day }}{% endif %}</option>
+      {% endfor %}
+    </select>
   </div>
   {% endif %}
   {% for e in tab_upcoming | sort(attribute='start_day') %}
@@ -213,42 +209,25 @@
 
 {% block scripts %}
 <script>
-let activeBuildingId = 0;
-
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active-overdue', 'active-upcoming', 'active-paid'));
   document.getElementById('tab-' + name).classList.add('active');
   if (btn) btn.classList.add('active-' + name);
-  // Reset day filter when switching tabs
-  const tab = document.getElementById('tab-' + name);
-  const firstChip = tab.querySelector('.dash-day-chip');
-  if (firstChip) {
-    tab.querySelectorAll('.dash-day-chip').forEach(b => b.classList.remove('active'));
-    firstChip.classList.add('active');
-  }
-  applyFilters();
-}
-
-function filterBuilding(buildingId) {
-  activeBuildingId = buildingId;
-  applyFilters();
-}
-
-function filterDay(tabName, btn) {
-  // Update chip active state within this tab only
-  const tab = document.getElementById('tab-' + tabName);
-  tab.querySelectorAll('.dash-day-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  // Reset this tab's day filter when switching into it
+  const daySelect = document.querySelector('#tab-' + name + ' .dash-day-select');
+  if (daySelect) daySelect.value = '0';
   applyFilters();
 }
 
 function applyFilters() {
+  const buildingSelect = document.getElementById('buildingFilter');
+  const buildingId = buildingSelect ? parseInt(buildingSelect.value, 10) : 0;
   document.querySelectorAll('.tab-panel').forEach(tab => {
-    const activeDayChip = tab.querySelector('.dash-day-chip.active');
-    const day = activeDayChip ? parseInt(activeDayChip.dataset.day, 10) : 0;
+    const daySelect = tab.querySelector('.dash-day-select');
+    const day = daySelect ? parseInt(daySelect.value, 10) : 0;
     tab.querySelectorAll('.dash-room-card').forEach(card => {
-      const buildingOk = activeBuildingId === 0 || parseInt(card.dataset.building, 10) === activeBuildingId;
+      const buildingOk = buildingId === 0 || parseInt(card.dataset.building, 10) === buildingId;
       const dayOk = day === 0 || parseInt(card.dataset.day, 10) === day;
       card.style.display = (buildingOk && dayOk) ? '' : 'none';
     });
