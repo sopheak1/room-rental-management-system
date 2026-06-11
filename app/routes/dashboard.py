@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
 from flask_login import login_required
-from app.models import Room, Receipt
+from app.models import Room, Building, Receipt
 from app import db
 from app.utils.timezone import now as _now, today as _today
 from datetime import datetime
@@ -41,7 +41,8 @@ def index():
     ).order_by(Receipt.payment_date.desc()).limit(8).all()
 
     # This month payment status per room
-    occupied_rooms = Room.query.filter_by(status='occupied').order_by(Room.room_number).all()
+    occupied_rooms = Room.query.join(Building).filter(Room.status == 'occupied') \
+        .order_by(Building.name, Room.room_number).all()
     month_status = []
     for room in occupied_rooms:
         tenant = room.active_tenant
