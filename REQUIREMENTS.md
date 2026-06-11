@@ -3,7 +3,7 @@
 **Project:** room-rental-management-system  
 **GitHub:** https://github.com/sopheak1/room-rental-management-system  
 **Created:** 2026-05-28  
-**Last Updated:** 2026-06-07  
+**Last Updated:** 2026-06-12  
 **Owner:** Sopheak  
 **Stack:** Python 3.9 · Flask · SQLite · Bootstrap 5 · SQLAlchemy · Flask-Login
 
@@ -192,7 +192,9 @@ A mobile-first web-based room rental management system designed to be used prima
 #### 9.2 Batch Input Screen
 - Mobile list to punch in meter readings (`from`/`to`) or a direct override amount per room
 - Auto-fills `from` reading from the previous month's `to` reading
-- Detects meter vs. direct-input mode per room from its most recent receipt history
+- Detects meter vs. direct-input mode per room from its most recent receipt history (defaults to Direct when no history)
+- **Direct/Meter toggle per utility**: each utility block (⚡/💧) has its own Direct/Meter toggle button; switching to Direct shows the Amount field only and hides From/To, and vice versa
+- On save, Direct mode persists `*_amount` and clears `*_from`/`*_to`; Meter mode persists `*_from`/`*_to` and clears `*_amount`
 
 #### 9.3 Print Sheet (Thermal, 58mm)
 - Minimalist sheet of saved readings, grouped by building
@@ -227,6 +229,20 @@ Android App (WebView + Bluetooth)
 - **Paper**: 58mm, 48mm print area, 203 DPI (384 dots wide)
 - **Protocol**: Bluetooth Classic SPP (UUID: 00001101-...)
 - **Language**: Khmer via image mode (not text mode)
+
+### 11. Settings (`/settings`)
+
+#### 11.1 Database Backup & Restore
+- **Download**: streams a SQLite-API backup copy of `instance/rental.db` as `rental_backup_<timestamp>.db`
+- **Restore**: upload a `.db` file → validated as a real SQLite DB (`SELECT name FROM sqlite_master`) → current DB saved as `rental.db.prev` → uploaded file replaces `instance/rental.db`
+- Confirmation dialog before restore (data-loss warning, KM/EN)
+- Invalid (non-SQLite) uploads are rejected with an error flash; current DB is left untouched
+- After replacing the file, the SQLAlchemy connection pool is disposed (`db.engine.dispose()`) so subsequent requests open fresh connections against the restored file instead of stale fds pointing at the renamed-away old database
+
+#### 11.2 Google Drive Backup
+- 3-step setup: (1) upload OAuth Client JSON, (2) enter target Drive Folder ID, (3) connect Google account (OAuth flow)
+- Once connected: shows status badge, masked Folder ID, and "Backup Now" / "Test Connection" / "Disconnect" actions
+- **Automatic backup** triggered after key data-changing actions — receipt generation/payment/edit (`receipts.py`) and tenant create/checkout (`tenants.py`)
 
 ---
 
@@ -302,6 +318,8 @@ utility_usage
 | 22 | Dynamic `{month}` in deferred labels | Static "(Pre.)/(Next)" suffixes were ambiguous; showing the actual month name ("Deferred from May" / "Deferred to Jul") is unambiguous at a glance |
 | 23 | Soft-delete payment logs with required reason | Preserves an audit trail — admins can see what was deleted, when, and why instead of silent removal |
 | 24 | Per-payment verification hash, recomputed each payment (not stored once at "paid") | Each payment keeps its own permanent code tied to the remaining balance at that moment, so older receipts never show a "stale" mismatch after later payments are recorded |
+| 25 | Custom `.u-meter-row` class instead of Bootstrap `d-flex` for the utility input meter row | Bootstrap's `.d-flex` is `display:flex !important`, which silently overrode the inline `display:none` toggle, so the From/To fields never actually hid in Direct mode |
+| 26 | `db.engine.dispose()` after DB restore | SQLAlchemy's `QueuePool` keeps open file descriptors to the old (renamed-away) SQLite file after `shutil.move`; without disposing the pool, the app kept reading/writing the orphaned old database and the restore appeared to do nothing |
 
 ---
 
