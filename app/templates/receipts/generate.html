@@ -1,164 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{% if lang=='km'%}បង្កើតវិក័យប័ត្រ{% else %}Generate Receipt{% endif %}{% endblock %}
 
-{% block head %}
-<style>
-/* ── Mobile generate form ──────────── */
-.gen-section {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-.gen-section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  cursor: pointer;
-  user-select: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-.gen-section-header .chevron {
-  transition: transform 0.2s;
-  color: #94a3b8;
-}
-.gen-section-header.collapsed .chevron { transform: rotate(-90deg); }
-.gen-section-body { padding: 0 16px 16px; }
-.gen-section-body.collapsed { display: none; }
-
-.gen-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 5px;
-  margin-top: 12px;
-  display: block;
-}
-.gen-input {
-  width: 100%;
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding: 12px 14px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  background: #f8fafc;
-  transition: border-color 0.15s;
-}
-.gen-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background: #fff;
-}
-.gen-input.khr::before { content: ''; }
-.gen-input-group {
-  display: flex;
-  align-items: center;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  background: #f8fafc;
-  overflow: hidden;
-  transition: border-color 0.15s;
-}
-.gen-input-group:focus-within { border-color: #3b82f6; background: #fff; }
-.gen-input-group .prefix {
-  padding: 0 12px;
-  font-weight: 700;
-  color: #64748b;
-  font-size: 1rem;
-  background: transparent;
-  white-space: nowrap;
-}
-.gen-input-group input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding: 12px 14px 12px 0;
-}
-.gen-input-group input:focus { outline: none; }
-
-.gen-row { display: flex; gap: 10px; }
-.gen-row > div { flex: 1; }
-
-.gen-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: #64748b;
-}
-
-/* ── Totals sticky bar ──────────────── */
-.totals-bar {
-  position: sticky;
-  bottom: 0;
-  background: #1e293b;
-  color: #fff;
-  padding: 12px 16px;
-  margin: 0 -12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 100;
-}
-.totals-bar .total-label {
-  font-size: 0.8rem;
-  color: #94a3b8;
-}
-.totals-bar .total-amount {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #fff;
-}
-.totals-bar .btn-generate {
-  padding: 10px 20px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  border-radius: 10px;
-  white-space: nowrap;
-}
-
-/* Info box */
-.info-box {
-  background: #f0f9ff;
-  border-left: 3px solid #0ea5e9;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.82rem;
-  color: #0369a1;
-  margin-bottom: 4px;
-}
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 2px;
-}
-.warn-msg {
-  font-size: 0.75rem;
-  color: #d97706;
-  margin-top: 4px;
-  display: none;
-}
-.warn-msg.show { display: block; }
-
-/* Subtotal row */
-.subtotal-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.82rem;
-  color: #64748b;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed #e2e8f0;
-}
-.subtotal-row strong { color: #1e293b; }
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="mb-3">
@@ -314,16 +156,18 @@
       <span class="km">អគ្គិសនី</span><span class="en">Electricity</span>
     </span>
     <div class="d-flex align-items-center gap-3">
-      <div class="gen-toggle">
-        <span style="font-size:0.75rem;font-weight:400;">
+      <div class="u-mode-toggle" id="electricity_toggle">
+        <button type="button" class="u-mode-btn {{ '' if usage_elec_meter else 'active' }}"
+                data-mode="direct" onclick="setOverrideMode('electricity', true)">
           <span class="km">បញ្ចូលផ្ទាល់</span><span class="en">Direct</span>
-        </span>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="electricity_override"
-                 name="electricity_override" {{ '' if usage_elec_meter else 'checked' }}
-                 onchange="toggleOverride('electricity')">
-        </div>
+        </button>
+        <button type="button" class="u-mode-btn {{ 'active' if usage_elec_meter else '' }}"
+                data-mode="meter" onclick="setOverrideMode('electricity', false)">
+          <span class="km">មីទ័រ</span><span class="en">Meter</span>
+        </button>
       </div>
+      <input type="checkbox" id="electricity_override" name="electricity_override" class="d-none"
+             {{ '' if usage_elec_meter else 'checked' }}>
     </div>
   </div>
   <div class="gen-section-body">
@@ -402,16 +246,18 @@
       <span class="km">ទឹក</span><span class="en">Water</span>
     </span>
     <div class="d-flex align-items-center gap-3">
-      <div class="gen-toggle">
-        <span style="font-size:0.75rem;font-weight:400;">
+      <div class="u-mode-toggle" id="water_toggle">
+        <button type="button" class="u-mode-btn {{ 'active' if usage_water_amount is not none else '' }}"
+                data-mode="direct" onclick="setOverrideMode('water', true)">
           <span class="km">បញ្ចូលផ្ទាល់</span><span class="en">Direct</span>
-        </span>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="water_override"
-                 name="water_override" {{ 'checked' if usage_water_amount is not none else '' }}
-                 onchange="toggleOverride('water')">
-        </div>
+        </button>
+        <button type="button" class="u-mode-btn {{ '' if usage_water_amount is not none else 'active' }}"
+                data-mode="meter" onclick="setOverrideMode('water', false)">
+          <span class="km">មីទ័រ</span><span class="en">Meter</span>
+        </button>
       </div>
+      <input type="checkbox" id="water_override" name="water_override" class="d-none"
+             {{ 'checked' if usage_water_amount is not none else '' }}>
     </div>
   </div>
   <div class="gen-section-body">
@@ -612,6 +458,14 @@ function toggleOverride(type) {
   document.getElementById(type + '_meter_fields').style.display = ov ? 'none' : 'block';
   document.getElementById(type + '_override_field').style.display = ov ? 'block' : 'none';
   calcTotal();
+}
+
+function setOverrideMode(type, isDirect) {
+  document.getElementById(type + '_override').checked = isDirect;
+  document.querySelectorAll(`#${type}_toggle .u-mode-btn`).forEach(btn => {
+    btn.classList.toggle('active', (btn.dataset.mode === 'direct') === isDirect);
+  });
+  toggleOverride(type);
 }
 
 function calcAutoFee() {

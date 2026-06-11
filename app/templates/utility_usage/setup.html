@@ -101,20 +101,6 @@
   </button>
 </form>
 
-<style>
-.m-radio-card, .m-room-check {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 14px; border-radius: 12px;
-  background: #f8fafc; border: 1px solid #e2e8f0;
-  cursor: pointer; font-size: 0.95rem;
-  transition: background .15s, border-color .15s;
-}
-.m-radio-card:has(input:checked), .m-room-check:has(input:checked) {
-  background: #eff6ff; border-color: var(--app-primary, #3b82f6);
-}
-.m-radio-card input, .m-room-check input { width: 18px; height: 18px; flex-shrink: 0; }
-</style>
-
 <script>
 function reloadForPeriod() {
   const month = document.querySelector('select[name="month"]').value;

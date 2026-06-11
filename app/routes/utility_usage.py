@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from flask import Blueprint, render_template, redirect, url_for, flash, request, Response
 from flask_login import login_required
-from app.models import Room, UtilityUsage
+from app.models import Room, Building, UtilityUsage
 from app.routes.receipts import _get_previous_receipt
 from app import db
 from app.utils.timezone import now as _now
@@ -14,10 +14,10 @@ MONTH_NAMES = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេស�
 
 def _room_meter_mode(room_id, year, month):
     """Detect whether a room bills electricity/water by meter reading or a flat direct amount,
-    based on its most recent receipt. Defaults to meter-based when there's no history."""
+    based on its most recent receipt. Defaults to direct-input when there's no history."""
     prev = _get_previous_receipt(room_id, year, month)
     if not prev:
-        return {'electricity': 'meter', 'water': 'meter', 'prev': None}
+        return {'electricity': 'direct', 'water': 'direct', 'prev': None}
     return {
         'electricity': 'direct' if prev.electricity_units is None else 'meter',
         'water': 'direct' if prev.water_units is None else 'meter',
@@ -29,7 +29,8 @@ def _room_meter_mode(room_id, year, month):
 @login_required
 def setup():
     """Step 1 — choose billing period, which utility to record, and which rooms."""
-    rooms = Room.query.filter_by(status='occupied').order_by(Room.room_number).all()
+    rooms = Room.query.join(Building).filter(Room.status == 'occupied') \
+        .order_by(Building.name, Room.room_number).all()
     now = _now()
     month = request.args.get('month', type=int) or now.month
     year = request.args.get('year', type=int) or now.year
@@ -66,13 +67,15 @@ def batch_input():
         return redirect(url_for('utility_usage.setup'))
 
     if room_ids == 'all':
-        rooms = Room.query.filter_by(status='occupied').order_by(Room.room_number).all()
+        rooms = Room.query.join(Building).filter(Room.status == 'occupied') \
+            .order_by(Building.name, Room.room_number).all()
     else:
         try:
             ids = [int(x) for x in room_ids.split(',') if x.strip()]
         except ValueError:
             ids = []
-        rooms = Room.query.filter(Room.id.in_(ids)).order_by(Room.room_number).all() if ids else []
+        rooms = Room.query.join(Building).filter(Room.id.in_(ids)) \
+            .order_by(Building.name, Room.room_number).all() if ids else []
 
     if not rooms:
         flash('មិនមានបន្ទប់ត្រូវបានជ្រើសរើសទេ។ / No rooms selected.', 'warning')

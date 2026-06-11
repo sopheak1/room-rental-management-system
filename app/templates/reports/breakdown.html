@@ -1,53 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{% if lang=='km'%}របាយការណ៍លម្អិត{% else %}Breakdown Report{% endif %}{% endblock %}
 
-{% block head %}
-<style>
-.breakdown-header {
-  background: linear-gradient(135deg, #1e3a5f, #1d4ed8);
-  color: #fff;
-  padding: 16px;
-  margin: -12px -12px 0;
-}
-.month-scroller {
-  display: flex; gap: 6px; overflow-x: auto;
-  padding-bottom: 4px; margin-bottom: 8px;
-  -webkit-overflow-scrolling: touch; scrollbar-width: none;
-}
-.month-scroller::-webkit-scrollbar { display: none; }
-.month-chip {
-  flex-shrink: 0; padding: 5px 12px; border-radius: 20px;
-  font-size: 0.8rem; font-weight: 600;
-  background: rgba(255,255,255,.15); color: #fff;
-  text-decoration: none; white-space: nowrap;
-}
-.month-chip.active { background: #fff; color: #1d4ed8; }
-
-.bd-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; border-bottom: 1px solid #f1f5f9;
-  font-size: 0.95rem;
-}
-.bd-row:last-child { border-bottom: none; }
-.bd-row .bd-lbl { color: #475569; }
-.bd-row .bd-val { font-weight: 700; font-size: 1rem; }
-.bd-row .bd-unit { font-size: 0.75rem; color: #94a3b8; margin-left: 4px; }
-
-.bd-section-title {
-  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: #94a3b8;
-  padding: 10px 16px 4px; background: #f8fafc;
-}
-.bd-total {
-  background: #1e293b; color: #fff;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 16px; border-radius: 12px; margin: 12px 0;
-}
-.bd-total .lbl { font-size: 0.85rem; color: #94a3b8; }
-.bd-total .val { font-size: 1.4rem; font-weight: 800; }
-</style>
-{% endblock %}
-
 {% block content %}
 
 <script>

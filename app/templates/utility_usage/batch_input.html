@@ -22,69 +22,94 @@
 
   {% for e in entries %}
   {% set rid = e.room.id %}
-  <div class="m-card-static mb-3">
+  <div class="m-card-static mb-3" id="card_{{ rid }}">
     <input type="hidden" name="room_id" value="{{ rid }}">
     <div class="d-flex align-items-center justify-content-between mb-2">
       <div>
-        <strong>{{ e.room.room_number }}</strong>
-        <span class="text-muted small ms-1">{{ e.room.building.name }}</span>
+        <strong>{{ e.room.building.name }}</strong>
+        <strong class="ms-1">{{ e.room.room_number }}</strong>
       </div>
-      <span class="text-muted small">{{ e.tenant.name if e.tenant else '—' }}</span>
     </div>
 
     {% if utility in ('electricity', 'both') %}
     <div class="u-block">
-      <div class="u-block-title">⚡ <span class="km">អគ្គិសនី</span><span class="en">Electricity</span></div>
-      <input type="hidden" name="electricity_mode_{{ rid }}" value="{{ e.electricity_mode }}">
-      {% if e.electricity_mode == 'direct' %}
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="u-block-title mb-0">⚡ <span class="km">អគ្គិសនី</span><span class="en">Electricity</span></div>
+        <div class="u-mode-toggle">
+          <button type="button" class="u-mode-btn {{ 'active' if e.electricity_mode == 'direct' }}"
+                  data-util="electricity" data-mode="direct" onclick="setUtilMode({{ rid }}, 'electricity', 'direct')">
+            <span class="km">បញ្ចូលផ្ទាល់</span><span class="en">Direct</span>
+          </button>
+          <button type="button" class="u-mode-btn {{ 'active' if e.electricity_mode == 'meter' }}"
+                  data-util="electricity" data-mode="meter" onclick="setUtilMode({{ rid }}, 'electricity', 'meter')">
+            <span class="km">មីទ័រ</span><span class="en">Meter</span>
+          </button>
+        </div>
+      </div>
+      <input type="hidden" id="electricity_mode_{{ rid }}" name="electricity_mode_{{ rid }}" value="{{ e.electricity_mode }}">
+
+      <div id="electricity_direct_{{ rid }}" {% if e.electricity_mode != 'direct' %}style="display:none;"{% endif %}>
         <label class="u-flabel"><span class="km">ចំនួនទឹកប្រាក់ (៛)</span><span class="en">Amount (៛)</span></label>
         <input type="text" inputmode="numeric" class="u-input" name="electricity_amount_{{ rid }}"
                value="{{ e.electricity_amount|int if e.electricity_amount is not none else '' }}"
                placeholder="0">
-      {% else %}
-        <div class="d-flex gap-2">
-          <div class="flex-fill">
-            <label class="u-flabel"><span class="km">លេខចាស់</span><span class="en">From</span></label>
-            <input type="text" inputmode="decimal" class="u-input" name="electricity_from_{{ rid }}"
-                   value="{{ e.electricity_from|int if e.electricity_from is not none else '' }}"
-                   placeholder="—">
-          </div>
-          <div class="flex-fill">
-            <label class="u-flabel"><span class="km">លេខថ្មី</span><span class="en">To</span></label>
-            <input type="text" inputmode="decimal" class="u-input u-input-new" name="electricity_to_{{ rid }}"
-                   value="{{ e.electricity_to|int if e.electricity_to is not none else '' }}"
-                   placeholder="">
-          </div>
+      </div>
+
+      <div id="electricity_meter_{{ rid }}" class="d-flex gap-2" {% if e.electricity_mode != 'meter' %}style="display:none;"{% endif %}>
+        <div class="flex-fill">
+          <label class="u-flabel"><span class="km">លេខចាស់</span><span class="en">From</span></label>
+          <input type="text" inputmode="decimal" class="u-input" name="electricity_from_{{ rid }}"
+                 value="{{ e.electricity_from|int if e.electricity_from is not none else '' }}"
+                 placeholder="—">
         </div>
-      {% endif %}
+        <div class="flex-fill">
+          <label class="u-flabel"><span class="km">លេខថ្មី</span><span class="en">To</span></label>
+          <input type="text" inputmode="decimal" class="u-input u-input-new" name="electricity_to_{{ rid }}"
+                 value="{{ e.electricity_to|int if e.electricity_to is not none else '' }}"
+                 placeholder="">
+        </div>
+      </div>
     </div>
     {% endif %}
 
     {% if utility in ('water', 'both') %}
     <div class="u-block">
-      <div class="u-block-title">💧 <span class="km">ទឹក</span><span class="en">Water</span></div>
-      <input type="hidden" name="water_mode_{{ rid }}" value="{{ e.water_mode }}">
-      {% if e.water_mode == 'direct' %}
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="u-block-title mb-0">💧 <span class="km">ទឹក</span><span class="en">Water</span></div>
+        <div class="u-mode-toggle">
+          <button type="button" class="u-mode-btn {{ 'active' if e.water_mode == 'direct' }}"
+                  data-util="water" data-mode="direct" onclick="setUtilMode({{ rid }}, 'water', 'direct')">
+            <span class="km">បញ្ចូលផ្ទាល់</span><span class="en">Direct</span>
+          </button>
+          <button type="button" class="u-mode-btn {{ 'active' if e.water_mode == 'meter' }}"
+                  data-util="water" data-mode="meter" onclick="setUtilMode({{ rid }}, 'water', 'meter')">
+            <span class="km">មីទ័រ</span><span class="en">Meter</span>
+          </button>
+        </div>
+      </div>
+      <input type="hidden" id="water_mode_{{ rid }}" name="water_mode_{{ rid }}" value="{{ e.water_mode }}">
+
+      <div id="water_direct_{{ rid }}" {% if e.water_mode != 'direct' %}style="display:none;"{% endif %}>
         <label class="u-flabel"><span class="km">ចំនួនទឹកប្រាក់ (៛)</span><span class="en">Amount (៛)</span></label>
         <input type="text" inputmode="numeric" class="u-input" name="water_amount_{{ rid }}"
                value="{{ e.water_amount|int if e.water_amount is not none else '' }}"
                placeholder="0">
-      {% else %}
-        <div class="d-flex gap-2">
-          <div class="flex-fill">
-            <label class="u-flabel"><span class="km">លេខចាស់</span><span class="en">From</span></label>
-            <input type="text" inputmode="decimal" class="u-input" name="water_from_{{ rid }}"
-                   value="{{ e.water_from|int if e.water_from is not none else '' }}"
-                   placeholder="—">
-          </div>
-          <div class="flex-fill">
-            <label class="u-flabel"><span class="km">លេខថ្មី</span><span class="en">To</span></label>
-            <input type="text" inputmode="decimal" class="u-input u-input-new" name="water_to_{{ rid }}"
-                   value="{{ e.water_to|int if e.water_to is not none else '' }}"
-                   placeholder="">
-          </div>
+      </div>
+
+      <div id="water_meter_{{ rid }}" class="d-flex gap-2" {% if e.water_mode != 'meter' %}style="display:none;"{% endif %}>
+        <div class="flex-fill">
+          <label class="u-flabel"><span class="km">លេខចាស់</span><span class="en">From</span></label>
+          <input type="text" inputmode="decimal" class="u-input" name="water_from_{{ rid }}"
+                 value="{{ e.water_from|int if e.water_from is not none else '' }}"
+                 placeholder="—">
         </div>
-      {% endif %}
+        <div class="flex-fill">
+          <label class="u-flabel"><span class="km">លេខថ្មី</span><span class="en">To</span></label>
+          <input type="text" inputmode="decimal" class="u-input u-input-new" name="water_to_{{ rid }}"
+                 value="{{ e.water_to|int if e.water_to is not none else '' }}"
+                 placeholder="">
+        </div>
+      </div>
     </div>
     {% endif %}
   </div>
@@ -98,29 +123,15 @@
   </div>
 </form>
 
-<style>
-.m-card-static {
-  background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
-  padding: 14px 16px;
+<script>
+function setUtilMode(rid, util, mode) {
+  document.getElementById(`${util}_mode_${rid}`).value = mode;
+  document.getElementById(`${util}_direct_${rid}`).style.display = mode === 'direct' ? '' : 'none';
+  document.getElementById(`${util}_meter_${rid}`).style.display = mode === 'meter' ? '' : 'none';
+  document.querySelectorAll(`#card_${rid} .u-mode-btn[data-util="${util}"]`).forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
 }
-.u-block { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; }
-.u-block:first-of-type { margin-top: 6px; }
-.u-block-title { font-size: 0.85rem; font-weight: 600; color: var(--app-text-3, #64748b); margin-bottom: 6px; }
-.u-flabel { display:block; font-size: 0.72rem; color: var(--app-text-3, #64748b); margin-bottom: 3px; }
-.u-input {
-  width: 100%; font-size: 1.1rem; font-weight: 600; text-align: center;
-  padding: 12px 8px; border-radius: 10px; border: 1.5px solid #e2e8f0;
-  background: #f8fafc;
-}
-.u-input:focus { outline: none; border-color: var(--app-primary, #3b82f6); background: #fff; }
-.u-input-new { border-color: var(--app-primary, #93c5fd); background: #eff6ff; }
-
-.m-save-bar {
-  position: sticky; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(to top, #fff 60%, transparent);
-  padding: 14px 0 6px;
-  margin-top: 6px;
-}
-</style>
+</script>
 
 {% endblock %}
