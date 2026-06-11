@@ -275,7 +275,7 @@
     {% set ns.running = ns.running - log.amount %}
     {% endif %}
     <div class="m-detail-row" id="payment-log-{{ log.id }}"
-         {% if request.args.get('highlight', type=int) == log.id %}data-highlight="1"{% endif %}>
+         {% if (request.args.get('highlight') | int(-1)) == log.id %}data-highlight="1"{% endif %}>
       <span class="m-dl">
         <span class="{{ 'text-decoration-line-through text-muted' if log.deleted_at }}">{{ log.payment_date.strftime('%d/%m/%Y') }}</span>
         <div class="small{{ ' text-danger' if log.deleted_at }}">
@@ -284,7 +284,7 @@
           · <span class="km">បានលុប</span><span class="en">Deleted</span>: {{ log.delete_reason|delete_reason_label }}
           {% endif %}
         </div>
-        {% if log.verification_hash and not log.deleted_at %}
+        {% if log.verification_hash %}
         <div class="small text-muted" style="font-family:monospace;">
           <span class="km">លេខផ្ទៀងផ្ទាត់</span><span class="en">Verify</span>: {{ log.verification_hash }}
         </div>
