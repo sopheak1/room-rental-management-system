@@ -40,6 +40,8 @@ def index():
         Receipt.payment_date.isnot(None)
     ).order_by(Receipt.payment_date.desc()).limit(8).all()
 
+    buildings = Building.query.order_by(Building.name).all()
+
     # This month payment status per room
     occupied_rooms = Room.query.join(Building).filter(Room.status == 'occupied') \
         .order_by(Building.name, Room.room_number).all()
@@ -86,6 +88,7 @@ def index():
         tab_overdue=tab_overdue,
         tab_upcoming=tab_upcoming,
         tab_paid=tab_paid,
+        buildings=buildings,
         current_month=current_month,
         current_year=current_year,
         KM_MONTHS=KM_MONTHS,

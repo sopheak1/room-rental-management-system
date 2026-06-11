@@ -47,6 +47,20 @@
   <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
 </a>
 
+<!-- ── Building filter ─────────────────── -->
+{% if buildings|length > 1 %}
+<div class="dash-day-filter mb-2">
+  <button class="dash-building-chip dash-day-chip active" data-building="0" onclick="filterBuilding(0, this)">
+    <span class="km">អគារទាំងអស់</span><span class="en">All Buildings</span>
+  </button>
+  {% for b in buildings %}
+  <button class="dash-building-chip dash-day-chip" data-building="{{ b.id }}" onclick="filterBuilding({{ b.id }}, this)">
+    {{ b.name }}
+  </button>
+  {% endfor %}
+</div>
+{% endif %}
+
 <!-- ── 3-Tab selector ─────────────────── -->
 <div class="dash-tab-bar">
   <button class="dash-tab-btn active-overdue" data-tab="overdue" onclick="switchTab('overdue', this)">
@@ -68,11 +82,11 @@
   {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
   {% if tab_overdue %}
   <div class="dash-day-filter mb-2">
-    <button class="dash-day-chip active" onclick="filterDay('overdue', 0, this)">
+    <button class="dash-day-chip active" data-day="0" onclick="filterDay('overdue', this)">
       <span class="km">ទាំងអស់</span><span class="en">All</span>
     </button>
     {% for day in overdue_days %}
-    <button class="dash-day-chip" onclick="filterDay('overdue', {{ day }}, this)">
+    <button class="dash-day-chip" data-day="{{ day }}" onclick="filterDay('overdue', this)">
       <span class="km">ថ្ងៃ {{ day }}</span><span class="en">Day {{ day }}</span>
     </button>
     {% endfor %}
@@ -80,7 +94,7 @@
   {% endif %}
   {% for e in tab_overdue | sort(attribute='start_day') %}
   <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
-     class="dash-room-card" data-day="{{ e.start_day }}">
+     class="dash-room-card" data-day="{{ e.start_day }}" data-building="{{ e.room.building_id }}">
     <span class="dash-room-avatar red">{{ e.room.room_number[:2] }}</span>
     <div class="dash-room-info">
       <div class="dash-room-number">
@@ -121,11 +135,11 @@
   {% set upcoming_days = tab_upcoming | map(attribute='start_day') | list | unique | sort %}
   {% if tab_upcoming %}
   <div class="dash-day-filter mb-2">
-    <button class="dash-day-chip active" onclick="filterDay('upcoming', 0, this)">
+    <button class="dash-day-chip active" data-day="0" onclick="filterDay('upcoming', this)">
       <span class="km">ទាំងអស់</span><span class="en">All</span>
     </button>
     {% for day in upcoming_days %}
-    <button class="dash-day-chip" onclick="filterDay('upcoming', {{ day }}, this)">
+    <button class="dash-day-chip" data-day="{{ day }}" onclick="filterDay('upcoming', this)">
       <span class="km">ថ្ងៃ {{ day }}</span><span class="en">Day {{ day }}</span>
     </button>
     {% endfor %}
@@ -133,7 +147,7 @@
   {% endif %}
   {% for e in tab_upcoming | sort(attribute='start_day') %}
   <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
-     class="dash-room-card" data-day="{{ e.start_day }}">
+     class="dash-room-card" data-day="{{ e.start_day }}" data-building="{{ e.room.building_id }}">
     <span class="dash-room-avatar indigo">{{ e.room.room_number[:2] }}</span>
     <div class="dash-room-info">
       <div class="dash-room-number">
@@ -172,7 +186,7 @@
 <!-- ── Paid tab ───────────────────────── -->
 <div id="tab-paid" class="tab-panel">
   {% for e in tab_paid %}
-  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="dash-room-card">
+  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="dash-room-card" data-building="{{ e.room.building_id }}">
     <span class="dash-room-avatar green">{{ e.room.room_number[:2] }}</span>
     <div class="dash-room-info">
       <div class="dash-room-number">
@@ -201,24 +215,47 @@
 
 {% block scripts %}
 <script>
+let activeBuildingId = 0;
+
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active-overdue', 'active-upcoming', 'active-paid'));
   document.getElementById('tab-' + name).classList.add('active');
   if (btn) btn.classList.add('active-' + name);
   // Reset day filter when switching tabs
-  const firstChip = document.querySelector('#tab-' + name + ' .dash-day-chip');
-  if (firstChip) filterDay(name, 0, firstChip);
+  const tab = document.getElementById('tab-' + name);
+  const firstChip = tab.querySelector('.dash-day-chip');
+  if (firstChip) {
+    tab.querySelectorAll('.dash-day-chip').forEach(b => b.classList.remove('active'));
+    firstChip.classList.add('active');
+  }
+  applyFilters();
 }
 
-function filterDay(tabName, day, btn) {
+function filterBuilding(buildingId, btn) {
+  activeBuildingId = buildingId;
+  document.querySelectorAll('.dash-building-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterDay(tabName, btn) {
   // Update chip active state within this tab only
   const tab = document.getElementById('tab-' + tabName);
   tab.querySelectorAll('.dash-day-chip').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  // Filter cards
-  tab.querySelectorAll('.dash-room-card').forEach(card => {
-    card.style.display = (day === 0 || parseInt(card.dataset.day) === day) ? '' : 'none';
+  applyFilters();
+}
+
+function applyFilters() {
+  document.querySelectorAll('.tab-panel').forEach(tab => {
+    const activeDayChip = tab.querySelector('.dash-day-chip.active');
+    const day = activeDayChip ? parseInt(activeDayChip.dataset.day, 10) : 0;
+    tab.querySelectorAll('.dash-room-card').forEach(card => {
+      const buildingOk = activeBuildingId === 0 || parseInt(card.dataset.building, 10) === activeBuildingId;
+      const dayOk = day === 0 || parseInt(card.dataset.day, 10) === day;
+      card.style.display = (buildingOk && dayOk) ? '' : 'none';
+    });
   });
 }
 </script>
