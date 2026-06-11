@@ -65,9 +65,9 @@
 
 <!-- ── Filters row (building + day) ────── -->
 {% if buildings|length > 1 or tab_overdue or tab_upcoming %}
-<div class="dash-filter-row mb-2">
+<div class="filter-row filter-row-end mb-2">
   {% if buildings|length > 1 %}
-  <select id="buildingFilter" class="dash-building-select" onchange="applyFilters()">
+  <select id="buildingFilter" class="filter-select" onchange="applyFilters()">
     <option value="0">{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</option>
     {% for b in buildings %}
     <option value="{{ b.id }}">{{ b.name }}</option>
@@ -76,7 +76,7 @@
   {% endif %}
   {% if tab_overdue %}
   {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
-  <select class="dash-building-select dash-day-select" data-tab="overdue" onchange="applyFilters()">
+  <select class="filter-select dash-day-select" data-tab="overdue" onchange="applyFilters()">
     <option value="0">{% if lang=='km' %}ថ្ងៃទាំងអស់{% else %}All Days{% endif %}</option>
     {% for day in overdue_days %}
     <option value="{{ day }}">{% if lang=='km' %}ថ្ងៃ {{ day }}{% else %}Day {{ day }}{% endif %}</option>
@@ -85,7 +85,7 @@
   {% endif %}
   {% if tab_upcoming %}
   {% set upcoming_days = tab_upcoming | map(attribute='start_day') | list | unique | sort %}
-  <select class="dash-building-select dash-day-select" data-tab="upcoming" style="display:none;" onchange="applyFilters()">
+  <select class="filter-select dash-day-select" data-tab="upcoming" style="display:none;" onchange="applyFilters()">
     <option value="0">{% if lang=='km' %}ថ្ងៃទាំងអស់{% else %}All Days{% endif %}</option>
     {% for day in upcoming_days %}
     <option value="{{ day }}">{% if lang=='km' %}ថ្ងៃ {{ day }}{% else %}Day {{ day }}{% endif %}</option>

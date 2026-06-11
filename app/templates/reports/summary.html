@@ -3,13 +3,6 @@
 
 {% block content %}
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var active = document.querySelector('.month-scroller .month-chip.active');
-  if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
-});
-</script>
-
 <!-- ── Header with month selector ── -->
 <div class="summary-header">
   <div class="summary-month-label">
@@ -20,14 +13,15 @@ document.addEventListener('DOMContentLoaded', function() {
     <span class="en">{{ MONTH_NAMES[month-1] }} {{ year }}</span>
   </div>
 
-  <!-- Month chips -->
-  <div class="month-scroller">
-    {% for i in range(1,13) %}
-    <a href="{{ url_for('reports.summary', month=i, year=year) }}"
-       class="month-chip {{ 'active' if month==i }}">
-      {{ MONTH_NAMES[i-1] }}
-    </a>
-    {% endfor %}
+  <!-- Month filter -->
+  <div class="filter-row mb-2">
+    <select class="filter-select filter-select-light" style="max-width:none; flex:1;" onchange="window.location.href=this.value">
+      {% for i in range(1,13) %}
+      <option value="{{ url_for('reports.summary', month=i, year=year) }}" {{ 'selected' if month==i }}>
+        {% if lang=='km' %}{{ KM_MONTHS[i-1] }}{% else %}{{ MONTH_NAMES[i-1] }}{% endif %}
+      </option>
+      {% endfor %}
+    </select>
   </div>
 
   <!-- Year prev/next -->

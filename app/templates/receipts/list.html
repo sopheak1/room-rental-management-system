@@ -12,31 +12,21 @@
   </a>
 </div>
 
-<!-- Scrollable filter chips -->
+<!-- Filters -->
 <form method="GET" id="filterForm">
-<div class="m-filter-bar">
-  <select name="month" class="m-filter-chip" onchange="this.form.submit()" style="padding:7px 10px;">
+<div class="filter-row mb-3">
+  <select name="month" class="filter-select" onchange="this.form.submit()">
     {% for i in range(1, 13) %}
     <option value="{{ i }}" {{ 'selected' if month == i }}>{{ month_names[i-1] }}</option>
     {% endfor %}
   </select>
-  <input type="number" name="year" class="m-filter-chip" value="{{ year }}"
-         style="width:70px;text-align:center;" onchange="this.form.submit()">
-  <a href="{{ url_for('receipts.list', status='unpaid',  month=month, year=year) }}"
-     class="m-filter-chip {{ 'active' if selected_status=='unpaid' }}">
-    <span class="km">មិនទាន់</span><span class="en">Unpaid</span>
-  </a>
-  <a href="{{ url_for('receipts.list', status='partial', month=month, year=year) }}"
-     class="m-filter-chip {{ 'active' if selected_status=='partial' }}">
-    <span class="km">មួយផ្នែក</span><span class="en">Partial</span>
-  </a>
-  <a href="{{ url_for('receipts.list', status='paid',    month=month, year=year) }}"
-     class="m-filter-chip {{ 'active' if selected_status=='paid' }}">
-    <span class="km">បានបង់</span><span class="en">Paid</span>
-  </a>
-  {% if selected_status %}
-  <a href="{{ url_for('receipts.list', month=month, year=year) }}" class="m-filter-chip">✕</a>
-  {% endif %}
+  <input type="number" name="year" class="filter-select filter-select-sm" value="{{ year }}" onchange="this.form.submit()">
+  <select name="status" class="filter-select" onchange="this.form.submit()">
+    <option value="" {{ 'selected' if not selected_status }}>{% if lang=='km' %}ទាំងអស់{% else %}All{% endif %}</option>
+    <option value="unpaid" {{ 'selected' if selected_status=='unpaid' }}>{% if lang=='km' %}មិនទាន់{% else %}Unpaid{% endif %}</option>
+    <option value="partial" {{ 'selected' if selected_status=='partial' }}>{% if lang=='km' %}មួយផ្នែក{% else %}Partial{% endif %}</option>
+    <option value="paid" {{ 'selected' if selected_status=='paid' }}>{% if lang=='km' %}បានបង់{% else %}Paid{% endif %}</option>
+  </select>
 </div>
 </form>
 

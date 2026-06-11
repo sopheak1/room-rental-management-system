@@ -13,24 +13,19 @@
 </div>
 
 <form method="GET">
-<div class="m-filter-bar mb-3">
-  <a href="{{ url_for('rooms.list') }}" class="m-filter-chip {{ 'active' if not selected_status and not selected_building }}">
-    <span class="km">ទាំងអស់</span><span class="en">All</span>
-  </a>
-  <a href="{{ url_for('rooms.list', status='occupied') }}" class="m-filter-chip {{ 'active' if selected_status=='occupied' }}">
-    <span class="km">មានអ្នករស់</span><span class="en">Occupied</span>
-  </a>
-  <a href="{{ url_for('rooms.list', status='available') }}" class="m-filter-chip {{ 'active' if selected_status=='available' }}">
-    <span class="km">ទំនេរ</span><span class="en">Available</span>
-  </a>
-  <a href="{{ url_for('rooms.list', status='maintenance') }}" class="m-filter-chip {{ 'active' if selected_status=='maintenance' }}">
-    <span class="km">ជួសជុល</span><span class="en">Maintenance</span>
-  </a>
-  {% for b in buildings %}
-  <a href="{{ url_for('rooms.list', building_id=b.id) }}" class="m-filter-chip {{ 'active' if selected_building==b.id }}">
-    {{ b.name }}
-  </a>
-  {% endfor %}
+<div class="filter-row mb-3">
+  <select name="status" class="filter-select" onchange="this.form.submit()">
+    <option value="" {{ 'selected' if not selected_status }}>{% if lang=='km' %}ទាំងអស់{% else %}All{% endif %}</option>
+    <option value="occupied" {{ 'selected' if selected_status=='occupied' }}>{% if lang=='km' %}មានអ្នករស់{% else %}Occupied{% endif %}</option>
+    <option value="available" {{ 'selected' if selected_status=='available' }}>{% if lang=='km' %}ទំនេរ{% else %}Available{% endif %}</option>
+    <option value="maintenance" {{ 'selected' if selected_status=='maintenance' }}>{% if lang=='km' %}ជួសជុល{% else %}Maintenance{% endif %}</option>
+  </select>
+  <select name="building_id" class="filter-select" onchange="this.form.submit()">
+    <option value="" {{ 'selected' if not selected_building }}>{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</option>
+    {% for b in buildings %}
+    <option value="{{ b.id }}" {{ 'selected' if selected_building==b.id }}>{{ b.name }}</option>
+    {% endfor %}
+  </select>
 </div>
 </form>
 
