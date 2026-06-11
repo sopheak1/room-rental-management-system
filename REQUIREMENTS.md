@@ -121,7 +121,7 @@ A mobile-first web-based room rental management system designed to be used prima
 - Collapsible sections: Tenant Info · Line Items · Payment Panel · Payment Log
 - Bluetooth print button in header → calls Android bridge or localhost:9100
 - Print / Save-as-Image buttons rendered at equal width (`flex: 1 1 0`)
-- **Smart back navigation**: captures `document.referrer` in `sessionStorage` per receipt so the back button returns to wherever the user came from (dashboard, list, generate screen) instead of looping back to the same detail page after a payment redirect or self-refresh
+- **Smart back navigation**: captures `document.referrer` in `sessionStorage` per receipt so the back button returns to wherever the flow *started* (dashboard, receipts list, room detail, overdue report, etc.) — skipping over the intermediate Generate/Edit forms — instead of looping back to the same detail page after a payment redirect, or bouncing back into the Generate/Edit form
 
 #### 7.4 Payment Features
 - Status: Unpaid / Partial / Paid / **Deferred**
@@ -320,6 +320,7 @@ utility_usage
 | 24 | Per-payment verification hash, recomputed each payment (not stored once at "paid") | Each payment keeps its own permanent code tied to the remaining balance at that moment, so older receipts never show a "stale" mismatch after later payments are recorded |
 | 25 | Custom `.u-meter-row` class instead of Bootstrap `d-flex` for the utility input meter row | Bootstrap's `.d-flex` is `display:flex !important`, which silently overrode the inline `display:none` toggle, so the From/To fields never actually hid in Direct mode |
 | 26 | `db.engine.dispose()` after DB restore | SQLAlchemy's `QueuePool` keeps open file descriptors to the old (renamed-away) SQLite file after `shutil.move`; without disposing the pool, the app kept reading/writing the orphaned old database and the restore appeared to do nothing |
+| 27 | Receipt back button skips Generate/Edit forms via a stashed `receipt_flow_origin` | After a Generate→redirect, `document.referrer` on Receipt Detail points at the Generate form (not the page before it), so the old smart-back sent users back into the form instead of to Dashboard/Receipts/etc. Generate now stashes its own referrer before submit; Receipt Detail consumes it when arriving via Generate, and ignores Edit's referrer entirely so the stored origin survives an edit round-trip |
 
 ---
 

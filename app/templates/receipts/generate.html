@@ -421,6 +421,11 @@
 
 {% block scripts %}
 <script>
+// Stash where we arrived from (Dashboard, Receipts list, Room detail, etc.)
+// so that after generating, the Receipt Detail back button can skip over
+// this form and return here directly instead of bouncing back to it.
+sessionStorage.setItem('receipt_flow_origin', document.referrer || '');
+
 const roomPrices = {
   {% for r in rooms %}"{{ r.id }}": {{ r.price }},{% endfor %}
 };
