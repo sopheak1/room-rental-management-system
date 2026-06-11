@@ -127,6 +127,7 @@ A mobile-first web-based room rental management system designed to be used prima
 - Status: Unpaid / Partial / Paid / **Deferred**
 - **Partial payment**: cumulative — each payment adds to `paid_amount`
 - **Payment Log**: per-receipt history of all payments made
+- **Delete payment**: only the most recent (non-deleted) payment can be removed; deletion is a **soft delete** — the entry stays visible struck-through with a reason, instead of being erased. Reason is required, chosen from a dropdown: wrong amount entered / wrong room entered / other (free text)
 - **Defer to next month**: hides from overdue report, balance still carries over
 - Remaining balance auto-carries as "Due Balance" on next month's receipt
 - Deferred receipts still display `paid_amount` on the printed table (not just `paid`/`partial`)
@@ -142,6 +143,13 @@ A mobile-first web-based room rental management system designed to be used prima
 - **Khmer-only labels** on receipt
 - ៛ primary · `≈ $xx.xx` secondary for grand total
 - Font: Noto Sans Khmer 400 weight, 16px base
+
+#### 7.7 Payment Verification
+- Each payment generates a short verification code: `HMAC-SHA256(receipt_number + remaining_balance + amount + date + method)`, truncated to 8 hex chars, formatted `XXXX-XXXX`
+- Code is permanent per payment — derived from that payment's own remaining-balance snapshot, so it never goes stale if the receipt is reprinted after later payments
+- Shown next to each active payment in the Payment Log (detail page)
+- Printed receipt's footer note shows only the **latest** payment's code (e.g. `អ្នកជួលត្រូវរក្សាទុកវិក័យប័ត្រនេះ។ · A3F9-1C2D`)
+- `/receipts/verify?code=XXXX-XXXX` looks up the code and redirects to the matching receipt, with that payment entry auto-expanded and highlighted
 
 ### 8. Reports
 
@@ -255,7 +263,8 @@ receipts
   notes, created_at
 
 payment_logs
-  id, receipt_id, amount, payment_method, payment_date, created_at
+  id, receipt_id, amount, payment_method, payment_date, created_at,
+  deleted_at, delete_reason, verification_hash
 
 utility_usage
   id, room_id, billing_month, billing_year,
@@ -291,6 +300,8 @@ utility_usage
 | 20 | Reuse room checkboxes for print selection | Avoids building a separate room-picker UI on the utility usage screen |
 | 21 | `sessionStorage`-cached referrer for receipt back button | Browser history alone loops back to the same detail page after a payment POST→redirect; capturing the original referrer per receipt ID gives correct "smart back" behavior |
 | 22 | Dynamic `{month}` in deferred labels | Static "(Pre.)/(Next)" suffixes were ambiguous; showing the actual month name ("Deferred from May" / "Deferred to Jul") is unambiguous at a glance |
+| 23 | Soft-delete payment logs with required reason | Preserves an audit trail — admins can see what was deleted, when, and why instead of silent removal |
+| 24 | Per-payment verification hash, recomputed each payment (not stored once at "paid") | Each payment keeps its own permanent code tied to the remaining balance at that moment, so older receipts never show a "stale" mismatch after later payments are recorded |
 
 ---
 
