@@ -36,7 +36,7 @@
       · {{ existing_receipt.total_amount|khr }}
     </div>
     <a href="{{ url_for('receipts.detail', id=existing_receipt.id) }}"
-       class="btn btn-sm btn-outline-danger mt-2 py-0">
+       class="btn btn-sm btn-outline-danger mt-2 py-0" hx-boost="true">
       <i class="bi bi-receipt me-1"></i>
       <span class="km">មើលវិក័យប័ត្រ</span><span class="en">View Receipt</span>
     </a>
@@ -44,7 +44,7 @@
 </div>
 {% endif %}
 
-<form method="POST" id="receiptForm" onsubmit="return confirmGenerate()">
+<form method="POST" id="receiptForm" onsubmit="return confirmGenerate()" hx-boost="true">
 
 <!-- ── 1. Room & Month ─────────────────── -->
 <div class="gen-section">
@@ -410,7 +410,8 @@
     <div class="total-label"><span class="km">សរុប</span><span class="en">TOTAL</span></div>
     <div class="total-amount" id="s_total">0 ៛</div>
   </div>
-  <button type="submit" class="btn btn-primary btn-generate">
+  <button type="submit" class="btn btn-primary btn-generate"
+          data-loading-text="{% if lang=='km' %}កំពុងបង្កើត...{% else %}Generating...{% endif %}">
     <i class="bi bi-receipt me-1"></i>
     <span class="km">បង្កើត</span><span class="en">Generate</span>
   </button>
