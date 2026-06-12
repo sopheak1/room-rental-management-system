@@ -8,6 +8,7 @@ __pycache__/
 *.db
 *.sqlite
 .DS_Store
+.superpowers/
 print-bridge-android/app/build/
 print-bridge-android/.gradle/
 print-bridge-android/local.properties
