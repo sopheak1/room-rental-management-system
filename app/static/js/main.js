@@ -59,7 +59,13 @@ document.addEventListener('DOMContentLoaded', function () {
   var bar = document.getElementById('htmx-progress-bar');
   if (!bar) return;
 
+  var doneTimeout = null;
+
   document.body.addEventListener('htmx:beforeRequest', function () {
+    if (doneTimeout) {
+      clearTimeout(doneTimeout);
+      doneTimeout = null;
+    }
     bar.classList.remove('htmx-done');
     bar.classList.add('htmx-loading');
   });
@@ -67,8 +73,9 @@ document.addEventListener('DOMContentLoaded', function () {
   document.body.addEventListener('htmx:afterRequest', function () {
     bar.classList.remove('htmx-loading');
     bar.classList.add('htmx-done');
-    setTimeout(function () {
+    doneTimeout = setTimeout(function () {
       bar.classList.remove('htmx-done');
+      doneTimeout = null;
     }, 400);
   });
 })();
