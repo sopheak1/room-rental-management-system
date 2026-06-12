@@ -53,3 +53,81 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }, 5000);
 });
+
+// ── htmx navigation progress bar ────────────────────────────────
+(function () {
+  var bar = document.getElementById('htmx-progress-bar');
+  if (!bar) return;
+
+  document.body.addEventListener('htmx:beforeRequest', function () {
+    bar.classList.remove('htmx-done');
+    bar.classList.add('htmx-loading');
+  });
+
+  document.body.addEventListener('htmx:afterRequest', function () {
+    bar.classList.remove('htmx-loading');
+    bar.classList.add('htmx-done');
+    setTimeout(function () {
+      bar.classList.remove('htmx-done');
+    }, 400);
+  });
+})();
+
+// ── htmx button spinner (data-loading-text) ─────────────────────
+(function () {
+  function loadingTarget(el) {
+    if (!el) return null;
+    if (el.matches && el.matches('[data-loading-text]')) return el;
+    if (el.querySelector) return el.querySelector('[data-loading-text]');
+    return null;
+  }
+
+  document.body.addEventListener('htmx:beforeRequest', function (evt) {
+    var btn = loadingTarget(evt.target);
+    if (!btn) return;
+    btn.dataset.originalHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>' + btn.dataset.loadingText;
+    btn.disabled = true;
+  });
+
+  document.body.addEventListener('htmx:afterRequest', function (evt) {
+    var btn = loadingTarget(evt.target);
+    if (!btn || btn.dataset.originalHtml === undefined) return;
+    btn.innerHTML = btn.dataset.originalHtml;
+    btn.disabled = false;
+    delete btn.dataset.originalHtml;
+  });
+})();
+
+// ── htmx active sidebar highlight ────────────────────────────────
+(function () {
+  var rules = [
+    { prefix: '/',                  exact: true,  href: '/' },
+    { prefix: '/reports/summary',   exact: true,  href: '/reports/summary' },
+    { prefix: '/reports/breakdown', exact: true,  href: '/reports/breakdown' },
+    { prefix: '/reports',           exact: false, href: '/reports',
+      skip: ['/reports/summary', '/reports/breakdown'] },
+    { prefix: '/buildings',       exact: false, href: '/buildings' },
+    { prefix: '/rooms',           exact: false, href: '/rooms' },
+    { prefix: '/receipts/verify', exact: true,  href: '/receipts/verify' },
+    { prefix: '/receipts',        exact: false, href: '/receipts' },
+    { prefix: '/utility-usage',   exact: false, href: '/utility-usage' },
+    { prefix: '/utilities',       exact: false, href: '/utilities' },
+    { prefix: '/settings',        exact: false, href: '/settings' }
+  ];
+
+  function updateActiveNav() {
+    var path = window.location.pathname;
+    var activeHrefs = rules.filter(function (r) {
+      if (r.skip && r.skip.indexOf(path) !== -1) return false;
+      return r.exact ? path === r.prefix : path.indexOf(r.prefix) === 0;
+    }).map(function (r) { return r.href; });
+
+    document.querySelectorAll('.sidebar-nav .nav-link').forEach(function (link) {
+      var linkPath = new URL(link.href, window.location.origin).pathname;
+      link.classList.toggle('active', activeHrefs.indexOf(linkPath) !== -1);
+    });
+  }
+
+  document.body.addEventListener('htmx:afterSettle', updateActiveNav);
+})();

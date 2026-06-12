@@ -86,6 +86,36 @@ body {
   .main-content { margin-left: var(--app-sidebar-w); }
 }
 
+/* ─── htmx navigation progress bar ──────────────────────── */
+#htmx-progress-bar {
+  position: fixed;
+  top: var(--navbar-h, 60px);
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 1041;
+  pointer-events: none;
+}
+
+#htmx-progress-bar .bar {
+  height: 100%;
+  width: 0;
+  opacity: 0;
+  background: linear-gradient(90deg, #22d3ee, var(--app-primary));
+}
+
+#htmx-progress-bar.htmx-loading .bar {
+  width: 70%;
+  opacity: 1;
+  transition: width 8s cubic-bezier(0.1, 0.6, 0.2, 1), opacity 0.2s ease;
+}
+
+#htmx-progress-bar.htmx-done .bar {
+  width: 100%;
+  opacity: 0;
+  transition: width 0.2s ease, opacity 0.4s ease 0.2s;
+}
+
 /* ─── Stat Cards ─────────────────────────────────────────── */
 .stat-icon {
   width: 48px;
