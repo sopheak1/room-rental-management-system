@@ -193,8 +193,9 @@
         <span class="en">will carry over to next month's receipt.</span>
       </div>
     </div>
-    <form method="POST" action="{{ url_for('receipts.undefer_receipt', id=receipt.id) }}" class="mt-3">
-      <button type="submit" class="btn btn-outline-secondary w-100">
+    <form method="POST" action="{{ url_for('receipts.undefer_receipt', id=receipt.id) }}" class="mt-3" hx-boost="true">
+      <button type="submit" class="btn btn-outline-secondary w-100"
+              data-loading-text="{% if lang=='km' %}កំពុងស្ដារ...{% else %}Restoring...{% endif %}">
         <i class="bi bi-arrow-counterclockwise me-1"></i>
         <span class="km">ស្ដារជាស្ថានភាពធម្មតា</span><span class="en">Restore to Active</span>
       </button>
@@ -217,7 +218,7 @@
     {% endif %}
 
     <hr class="my-3">
-    <form method="POST" action="{{ url_for('receipts.pay', id=receipt.id) }}">
+    <form method="POST" action="{{ url_for('receipts.pay', id=receipt.id) }}" hx-boost="true">
       <label class="m-label"><span class="km">ស្ថានភាព</span><span class="en">Payment Status</span></label>
       <select name="payment_status" id="detail_payment_status" class="m-input mb-3"
               required style="font-size:1rem;" onchange="onStatusChange(this)">
@@ -239,15 +240,17 @@
       <label class="m-label"><span class="km">ថ្ងៃទូទាត់</span><span class="en">Payment Date</span></label>
       <input type="date" name="payment_date" class="m-input mb-3"
              value="{{ today.strftime('%Y-%m-%d') }}">
-      <button type="submit" class="btn btn-success w-100 fw-bold py-3 fs-5">
+      <button type="submit" class="btn btn-success w-100 fw-bold py-3 fs-5"
+              data-loading-text="{% if lang=='km' %}កំពុងរក្សាទុក...{% else %}Saving...{% endif %}">
         <i class="bi bi-check-lg me-2"></i>
         <span class="km">កត់ត្រាការទូទាត់</span><span class="en">Record Payment</span>
       </button>
     </form>
 
-    <form method="POST" action="{{ url_for('receipts.defer_receipt', id=receipt.id) }}" class="mt-3"
+    <form method="POST" action="{{ url_for('receipts.defer_receipt', id=receipt.id) }}" class="mt-3" hx-boost="true"
           onsubmit="return confirm('តើអ្នកចង់ពន្យារសមតុល្យនេះទៅខែក្រោយទេ?\nវានឹងត្រូវបានដោះស្រាយដោយស្វ័យប្រវត្តិ ហើយនឹងមិនបង្ហាញក្នុងរបាយការណ៍ហួសកំណត់ឡើយ។')">
-      <button type="submit" class="btn btn-outline-secondary w-100">
+      <button type="submit" class="btn btn-outline-secondary w-100"
+              data-loading-text="{% if lang=='km' %}កំពុងពន្យារ...{% else %}Deferring...{% endif %}">
         <i class="bi bi-calendar-arrow-down me-1"></i>
         <span class="km">ពន្យារខែក្រោយ</span><span class="en">Defer to Next Month</span>
       </button>
