@@ -42,7 +42,7 @@
 </div>
 
 <!-- ── Generate button ────────────────── -->
-<a href="{{ url_for('receipts.generate') }}" class="btn-dash-generate">
+<a href="{{ url_for('receipts.generate') }}" class="btn-dash-generate" hx-boost="true">
   <i class="bi bi-plus-circle-fill"></i>
   <span class="km">បង្កើតវិក័យប័ត្រ</span><span class="en">Generate Receipt</span>
 </a>
@@ -99,7 +99,7 @@
 <div id="tab-overdue" class="tab-panel active">
   {% for e in tab_overdue | sort(attribute='start_day') %}
   <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
-     class="dash-room-card" data-day="{{ e.start_day }}" data-building="{{ e.room.building_id }}">
+     class="dash-room-card" data-day="{{ e.start_day }}" data-building="{{ e.room.building_id }}" hx-boost="true">
     <span class="dash-room-avatar red">{{ e.room.room_number[:2] }}</span>
     <div class="dash-room-info">
       <div class="dash-room-number">
@@ -139,7 +139,7 @@
 <div id="tab-upcoming" class="tab-panel">
   {% for e in tab_upcoming | sort(attribute='start_day') %}
   <a href="{{ url_for('receipts.detail', id=e.receipt.id) if e.receipt else url_for('receipts.generate') + '?room_id=' + e.room.id|string }}"
-     class="dash-room-card" data-day="{{ e.start_day }}" data-building="{{ e.room.building_id }}">
+     class="dash-room-card" data-day="{{ e.start_day }}" data-building="{{ e.room.building_id }}" hx-boost="true">
     <span class="dash-room-avatar indigo">{{ e.room.room_number[:2] }}</span>
     <div class="dash-room-info">
       <div class="dash-room-number">
@@ -178,7 +178,7 @@
 <!-- ── Paid tab ───────────────────────── -->
 <div id="tab-paid" class="tab-panel">
   {% for e in tab_paid %}
-  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="dash-room-card" data-building="{{ e.room.building_id }}">
+  <a href="{{ url_for('receipts.detail', id=e.receipt.id) }}" class="dash-room-card" data-building="{{ e.room.building_id }}" hx-boost="true">
     <span class="dash-room-avatar green">{{ e.room.room_number[:2] }}</span>
     <div class="dash-room-info">
       <div class="dash-room-number">

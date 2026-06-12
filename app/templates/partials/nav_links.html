@@ -14,7 +14,7 @@
   <li class="nav-section-label"><span class="km">ទូទៅ</span><span class="en">Main</span></li>
   <li class="nav-item">
     <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
-       href="{{ url_for('dashboard.index') }}">
+       href="{{ url_for('dashboard.index') }}" hx-boost="true">
       <i class="bi bi-speedometer2"></i>
       <span><span class="km">ផ្ទាំងគ្រប់គ្រង</span><span class="en">Dashboard</span></span>
     </a>
