@@ -4,7 +4,7 @@
 
 <!-- Header -->
 <div class="m-page-header">
-  <a href="javascript:void(0)" hx-boost="false" class="m-back" id="receiptBackBtn"><i class="bi bi-arrow-left"></i></a>
+  <a href="{{ url_for('dashboard.index') }}" class="m-back"><i class="bi bi-arrow-left"></i></a>
   <div class="flex-1">
     <div class="m-page-title">{{ receipt.receipt_number }}</div>
     <div class="small text-muted">{{ receipt.billing_label }} · {{ receipt.room.building.name }} · {{ receipt.room.room_number }}</div>
@@ -370,47 +370,6 @@ function toggleDeleteReasonOther(sel) {
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-// Remember the page we actually arrived from, so the back button returns to
-// the start of the flow (Dashboard, Receipts list, Room detail, etc.) instead
-// of stepping back through intermediate Generate/Edit forms or looping on a
-// payment-redirect back to this same detail page.
-(function() {
-  var key = 'receipt_origin_{{ receipt.id }}';
-  var current = window.location.href;
-  var ref = {{ (nav_ref or '')|tojson }};
-  var origin = sessionStorage.getItem(key);
-  var isGeneratePage = ref.indexOf('/receipts/generate') !== -1;
-  var isEditPage = ref.indexOf('/receipts/{{ receipt.id }}/edit') !== -1;
-
-  if (isGeneratePage) {
-    // Came from generating this receipt — use the page open *before*
-    // Generate was opened (stashed there), not the Generate form itself.
-    var preGenOrigin = sessionStorage.getItem('receipt_flow_origin');
-    sessionStorage.removeItem('receipt_flow_origin');
-    origin = preGenOrigin || origin || ref;
-  } else if (isEditPage) {
-    // Came back from editing this receipt — keep the previously stored
-    // origin rather than letting the edit form become the back target.
-    origin = origin || ref;
-  } else if (ref && ref !== current) {
-    // Fresh arrival from a different page — always refresh, so a stale origin
-    // captured on a much earlier visit doesn't keep overriding where we
-    // actually came from this time.
-    origin = ref;
-  }
-  // else: referrer is this same detail page (e.g. the redirect after recording
-  // a payment) — keep whatever origin was already stored.
-  if (origin) sessionStorage.setItem(key, origin);
-
-  document.getElementById('receiptBackBtn').addEventListener('click', function() {
-    if (origin) {
-      window.location.href = origin;
-    } else {
-      history.back();
-    }
-  });
-})();
-
 function onStatusChange(sel) {
   const paidInput = document.getElementById('detail_paid_amount');
   if (!paidInput) return;
