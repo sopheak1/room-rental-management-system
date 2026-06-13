@@ -193,7 +193,7 @@
         <span class="en">will carry over to next month's receipt.</span>
       </div>
     </div>
-    <form method="POST" action="{{ url_for('receipts.undefer_receipt', id=receipt.id) }}" class="mt-3" hx-boost="true">
+    <form method="POST" action="{{ url_for('receipts.undefer_receipt', id=receipt.id) }}" class="mt-3" hx-boost="true" data-full-overlay="true">
       <button type="submit" class="btn btn-outline-secondary w-100"
               data-loading-text="{% if lang=='km' %}កំពុងស្ដារ...{% else %}Restoring...{% endif %}">
         <i class="bi bi-arrow-counterclockwise me-1"></i>
@@ -218,7 +218,7 @@
     {% endif %}
 
     <hr class="my-3">
-    <form method="POST" action="{{ url_for('receipts.pay', id=receipt.id) }}" hx-boost="true">
+    <form method="POST" action="{{ url_for('receipts.pay', id=receipt.id) }}" hx-boost="true" data-full-overlay="true">
       <label class="m-label"><span class="km">ស្ថានភាព</span><span class="en">Payment Status</span></label>
       <select name="payment_status" id="detail_payment_status" class="m-input mb-3"
               required style="font-size:1rem;" onchange="onStatusChange(this)">
@@ -247,7 +247,7 @@
       </button>
     </form>
 
-    <form method="POST" action="{{ url_for('receipts.defer_receipt', id=receipt.id) }}" class="mt-3" hx-boost="true"
+    <form method="POST" action="{{ url_for('receipts.defer_receipt', id=receipt.id) }}" class="mt-3" hx-boost="true" data-full-overlay="true"
           onsubmit="return confirm('តើអ្នកចង់ពន្យារសមតុល្យនេះទៅខែក្រោយទេ?\nវានឹងត្រូវបានដោះស្រាយដោយស្វ័យប្រវត្តិ ហើយនឹងមិនបង្ហាញក្នុងរបាយការណ៍ហួសកំណត់ឡើយ។')">
       <button type="submit" class="btn btn-outline-secondary w-100"
               data-loading-text="{% if lang=='km' %}កំពុងពន្យារ...{% else %}Deferring...{% endif %}">
@@ -317,7 +317,7 @@
 <div class="modal fade" id="deletePaymentModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 rounded-4">
-      <form method="POST" action="{{ url_for('receipts.delete_payment_log', id=receipt.id, log_id=last_log_id) }}">
+      <form method="POST" action="{{ url_for('receipts.delete_payment_log', id=receipt.id, log_id=last_log_id) }}" hx-boost="true" data-full-overlay="true">
         <div class="modal-header border-0 pb-0">
           <h5 class="modal-title fw-bold">
             <span class="km">លុបការទូទាត់</span><span class="en">Delete Payment</span>
@@ -340,7 +340,8 @@
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
             <span class="km">បោះបង់</span><span class="en">Cancel</span>
           </button>
-          <button type="submit" class="btn btn-danger fw-bold">
+          <button type="submit" class="btn btn-danger fw-bold"
+                  data-loading-text="{% if lang=='km' %}កំពុងលុប...{% else %}Deleting...{% endif %}">
             <i class="bi bi-trash me-1"></i>
             <span class="km">បញ្ជាក់លុប</span><span class="en">Confirm Delete</span>
           </button>

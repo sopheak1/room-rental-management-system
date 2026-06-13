@@ -20,32 +20,37 @@ function toggleMSection(header) {
 
 // ── Global money input formatter ──────────────────────────────
 // Add class="money-input" to any input that should format as #,###
-document.addEventListener('DOMContentLoaded', function () {
-  // Format existing values on load — use parseFloat first so "1500.0" → 1500, not 15000
+function formatMoneyInputs() {
+  // Format existing values — use parseFloat first so "1500.0" → 1500, not 15000
   document.querySelectorAll('input.money-input').forEach(function (el) {
     const num = parseInt(parseFloat(el.value) || 0);
     if (num) {
       el.value = num.toLocaleString('en-US');
     }
   });
+}
+// Re-run after every boosted swap too — DOMContentLoaded only fires once,
+// but htmx:afterSettle fires after each #main-content swap and would
+// otherwise leave freshly-rendered values (e.g. Paid Amount) unformatted.
+document.addEventListener('DOMContentLoaded', formatMoneyInputs);
+document.body.addEventListener('htmx:afterSettle', formatMoneyInputs);
 
-  // Format as user types
-  document.addEventListener('input', function (e) {
-    if (!e.target.classList.contains('money-input')) return;
-    const raw = e.target.value.replace(/[^0-9]/g, '');
-    e.target.value = raw ? parseInt(raw).toLocaleString('en-US') : '';
-  });
-
-  // Strip commas before any form submits.
-  // Capture phase is required: htmx's hx-boost submit handler also listens on
-  // document (bubble phase) and was firing first, serializing the form with
-  // commas still in the value before this listener could strip them.
-  document.addEventListener('submit', function (e) {
-    e.target.querySelectorAll('input.money-input').forEach(function (el) {
-      el.value = el.value.replace(/,/g, '');
-    });
-  }, true);
+// Format as user types
+document.addEventListener('input', function (e) {
+  if (!e.target.classList.contains('money-input')) return;
+  const raw = e.target.value.replace(/[^0-9]/g, '');
+  e.target.value = raw ? parseInt(raw).toLocaleString('en-US') : '';
 });
+
+// Strip commas before any form submits.
+// Capture phase is required: htmx's hx-boost submit handler also listens on
+// document (bubble phase) and was firing first, serializing the form with
+// commas still in the value before this listener could strip them.
+document.addEventListener('submit', function (e) {
+  e.target.querySelectorAll('input.money-input').forEach(function (el) {
+    el.value = el.value.replace(/,/g, '');
+  });
+}, true);
 
 // Auto-dismiss flash alerts after 5 seconds
 document.addEventListener('DOMContentLoaded', function () {
@@ -59,15 +64,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // ── htmx full-page loading overlay (link navigation only) ────────
 // Form submits keep their own button spinner (data-loading-text) and
-// don't get this overlay.
+// don't get this overlay, unless the form opts in with
+// data-full-overlay="true" (used on high-traffic mobile screens).
 (function () {
   var overlay = document.getElementById('htmx-page-loading');
   if (!overlay) return;
 
   var showTimeout = null;
 
+  function skipOverlay(elt) {
+    return elt.tagName === 'FORM' && !elt.hasAttribute('data-full-overlay');
+  }
+
   document.body.addEventListener('htmx:beforeRequest', function (evt) {
-    if (evt.detail.elt.tagName === 'FORM') return;
+    if (skipOverlay(evt.detail.elt)) return;
     showTimeout = setTimeout(function () {
       overlay.classList.add('htmx-page-loading-visible');
       showTimeout = null;
@@ -75,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.body.addEventListener('htmx:afterRequest', function (evt) {
-    if (evt.detail.elt.tagName === 'FORM') return;
+    if (skipOverlay(evt.detail.elt)) return;
     if (showTimeout) {
       clearTimeout(showTimeout);
       showTimeout = null;
