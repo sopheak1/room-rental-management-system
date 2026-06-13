@@ -74,7 +74,8 @@
       <input type="date" name="effective_date" class="m-input" required
              value="{{ today.strftime('%Y-%m-%d') }}">
 
-      <button type="submit" class="btn btn-primary w-100 mt-3 py-3 fw-bold">
+      <button type="submit" class="btn btn-primary w-100 mt-3 py-3 fw-bold"
+              data-loading-text="{% if lang=='km' %}កំពុងធ្វើបច្ចុប្បន្នភាព...{% else %}Updating...{% endif %}">
         <i class="bi bi-check-lg me-1"></i>
         <span class="km">ធ្វើបច្ចុប្បន្នភាព</span><span class="en">Update Price</span>
       </button>

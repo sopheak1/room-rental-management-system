@@ -142,3 +142,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.body.addEventListener('htmx:afterSettle', updateActiveNav);
 })();
+
+// ── Close open Bootstrap modal before a boosted swap ─────────────
+(function () {
+  document.body.addEventListener('htmx:beforeRequest', function (evt) {
+    var modalEl = evt.detail.elt.closest('.modal.show');
+    if (!modalEl) return;
+    var modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+  });
+})();

@@ -116,7 +116,8 @@
   {% endfor %}
 
   <div class="m-save-bar">
-    <button type="submit" class="btn btn-success w-100 fw-bold py-3 fs-5">
+    <button type="submit" class="btn btn-success w-100 fw-bold py-3 fs-5"
+            data-loading-text="{% if lang=='km' %}កំពុងរក្សាទុក...{% else %}Saving...{% endif %}">
       <i class="bi bi-check-circle me-2"></i>
       <span class="km">រក្សាទុកទាំងអស់</span><span class="en">Save All</span>
     </button>

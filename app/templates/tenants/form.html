@@ -105,7 +105,8 @@
   <a href="{{ url_for('rooms.detail', id=room.id) }}" class="btn btn-outline-secondary">
     <span class="km">បោះបង់</span><span class="en">Cancel</span>
   </a>
-  <button type="submit" class="btn btn-primary">
+  <button type="submit" class="btn btn-primary"
+          data-loading-text="{% if tenant %}{% if lang=='km' %}កំពុងរក្សាទុក...{% else %}Updating...{% endif %}{% else %}{% if lang=='km' %}កំពុងបន្ថែម...{% else %}Adding...{% endif %}{% endif %}">
     <i class="bi bi-check-lg me-1"></i>
     <span class="km">{{ 'រក្សាទុក' if tenant else 'បន្ថែម' }}</span>
     <span class="en">{{ 'Update' if tenant else 'Add Tenant' }}</span>

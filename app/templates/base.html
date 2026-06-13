@@ -10,7 +10,7 @@
   <link href="{{ url_for('static', filename='css/style.css') }}?v=16" rel="stylesheet">
   {% block head %}{% endblock %}
 </head>
-<body class="lang-{{ lang }}" hx-target="#main-content" hx-select="#main-content">
+<body class="lang-{{ lang }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML" hx-boost="true">
 
 {% if current_user.is_authenticated %}
 

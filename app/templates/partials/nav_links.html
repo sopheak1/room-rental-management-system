@@ -1,11 +1,11 @@
 <ul class="nav flex-column sidebar-nav pt-2">
 
   <li class="sidebar-lang-switch">
-    <a href="{{ url_for('set_lang', code='km') }}"
+    <a href="{{ url_for('set_lang', code='km') }}" hx-boost="false"
        class="lang-flag-btn {{ 'active' if lang == 'km' }}" title="ខ្មែរ">
       <span class="flag">🇰🇭</span><span class="flag-label">ខ្មែរ</span>
     </a>
-    <a href="{{ url_for('set_lang', code='en') }}"
+    <a href="{{ url_for('set_lang', code='en') }}" hx-boost="false"
        class="lang-flag-btn {{ 'active' if lang == 'en' }}" title="English">
       <span class="flag">🇬🇧</span><span class="flag-label">EN</span>
     </a>
@@ -97,7 +97,7 @@
   </li>
   <li class="nav-divider"></li>
   <li class="nav-item">
-    <a class="nav-link nav-link-logout" href="{{ url_for('auth.logout') }}">
+    <a class="nav-link nav-link-logout" href="{{ url_for('auth.logout') }}" hx-boost="false">
       <i class="bi bi-box-arrow-right"></i>
       <span><span class="km">ចេញ</span><span class="en">Logout</span></span>
     </a>

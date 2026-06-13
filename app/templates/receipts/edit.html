@@ -181,7 +181,8 @@
       {{ receipt.paid_amount|khr }}
     </div>
   </div>
-  <button type="submit" class="btn btn-warning btn-generate fw-bold">
+  <button type="submit" class="btn btn-warning btn-generate fw-bold"
+          data-loading-text="{% if lang=='km' %}កំពុងរក្សាទុក...{% else %}Saving...{% endif %}">
     <i class="bi bi-pencil-square me-1"></i>
     <span class="km">រក្សាទុក</span><span class="en">Save</span>
   </button>

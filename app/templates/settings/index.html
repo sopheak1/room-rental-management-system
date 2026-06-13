@@ -22,7 +22,7 @@
     </p>
 
     <!-- Download -->
-    <a href="{{ url_for('settings.download_db') }}" class="btn btn-outline-primary w-100 fw-bold mb-3">
+    <a href="{{ url_for('settings.download_db') }}" class="btn btn-outline-primary w-100 fw-bold mb-3" hx-boost="false">
       <i class="bi bi-download me-2"></i>
       <span class="km">ទាញយក Database (rental.db)</span>
       <span class="en">Download Database (rental.db)</span>
@@ -43,7 +43,8 @@
           onsubmit="return confirm('{{ restore_msg }}')">
       <div class="d-flex gap-2">
         <input type="file" name="db_file" accept=".db" class="m-input" required>
-        <button class="btn btn-danger fw-bold" style="white-space:nowrap;">
+        <button class="btn btn-danger fw-bold" style="white-space:nowrap;"
+                data-loading-text="{% if lang=='km' %}កំពុងស្ដារ...{% else %}Restoring...{% endif %}">
           <i class="bi bi-upload me-1"></i>
           <span class="km">ស្ដារ</span><span class="en">Restore</span>
         </button>
@@ -85,13 +86,15 @@
 
     <div class="d-flex gap-2 mt-3 flex-wrap">
       <form method="POST" action="{{ url_for('settings.backup_now') }}" class="flex-fill">
-        <button class="btn btn-primary w-100 fw-bold">
+        <button class="btn btn-primary w-100 fw-bold"
+                data-loading-text="{% if lang=='km' %}កំពុងបម្រុងទុក...{% else %}Backing up...{% endif %}">
           <i class="bi bi-cloud-upload me-1"></i>
           <span class="km">បម្រុងទុកឥឡូវ</span><span class="en">Backup Now</span>
         </button>
       </form>
       <form method="POST" action="{{ url_for('settings.test_connection') }}" class="flex-fill">
-        <button class="btn btn-outline-info w-100 fw-bold">
+        <button class="btn btn-outline-info w-100 fw-bold"
+                data-loading-text="{% if lang=='km' %}កំពុងសាកល្បង...{% else %}Testing...{% endif %}">
           <i class="bi bi-wifi me-1"></i>
           <span class="km">សាកល្បង</span><span class="en">Test</span>
         </button>
@@ -99,7 +102,8 @@
       {% set confirm_msg = 'ផ្តាច់ Google Drive?' if lang=='km' else 'Disconnect Google Drive?' %}
       <form method="POST" action="{{ url_for('settings.disconnect') }}"
             onsubmit="return confirm('{{ confirm_msg }}')">
-        <button class="btn btn-outline-danger">
+        <button class="btn btn-outline-danger"
+                data-loading-text="{% if lang=='km' %}កំពុងផ្តាច់...{% else %}Disconnecting...{% endif %}">
           <i class="bi bi-x-circle"></i>
         </button>
       </form>
@@ -121,7 +125,8 @@
       <form method="POST" action="{{ url_for('settings.upload_client') }}" enctype="multipart/form-data">
         <div class="d-flex gap-2">
           <input type="file" name="client_file" accept=".json" class="m-input" required>
-          <button class="btn btn-primary" style="white-space:nowrap;">
+          <button class="btn btn-primary" style="white-space:nowrap;"
+                  data-loading-text="{% if lang=='km' %}កំពុងបង្ហោះ...{% else %}Uploading...{% endif %}">
             <span class="km">បង្ហោះ</span><span class="en">Upload</span>
           </button>
         </div>
@@ -144,7 +149,8 @@
         <div class="d-flex gap-2">
           <input type="text" name="folder_id" class="m-input"
                  value="{{ folder_id }}" placeholder="1aBcDeFgHiJkLmNoPqRsTuVw" required>
-          <button class="btn btn-primary" style="white-space:nowrap;">
+          <button class="btn btn-primary" style="white-space:nowrap;"
+                  data-loading-text="{% if lang=='km' %}កំពុងរក្សាទុក...{% else %}Saving...{% endif %}">
             <span class="km">រក្សាទុក</span><span class="en">Save</span>
           </button>
         </div>
@@ -159,7 +165,7 @@
         <span class="en">Connect Google Account</span>
       </div>
       {% if has_client and folder_id %}
-      <a href="{{ url_for('settings.auth_google') }}" class="btn btn-success w-100 fw-bold py-3">
+      <a href="{{ url_for('settings.auth_google') }}" class="btn btn-success w-100 fw-bold py-3" hx-boost="false">
         <i class="bi bi-google me-2"></i>
         <span class="km">ភ្ជាប់ Google Drive</span>
         <span class="en">Connect Google Drive</span>
