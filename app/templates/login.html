@@ -68,4 +68,14 @@
     </div>
   </div>
 </div>
+<script>
+  // hx-boost="false" on this form means it's a normal full-page submit,
+  // so the global data-loading-text/htmx spinner system doesn't apply here.
+  document.querySelector('form').addEventListener('submit', function () {
+    var btn = this.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>'
+      + '<span class="km">កំពុងចូល...</span><span class="en">Logging in...</span>';
+  });
+</script>
 {% endblock %}
