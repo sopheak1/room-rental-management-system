@@ -4,7 +4,7 @@
 
 <!-- Header -->
 <div class="m-page-header">
-  <a href="javascript:void(0)" class="m-back" id="receiptBackBtn"><i class="bi bi-arrow-left"></i></a>
+  <a href="javascript:void(0)" hx-boost="false" class="m-back" id="receiptBackBtn"><i class="bi bi-arrow-left"></i></a>
   <div class="flex-1">
     <div class="m-page-title">{{ receipt.receipt_number }}</div>
     <div class="small text-muted">{{ receipt.billing_label }} · {{ receipt.room.building.name }} · {{ receipt.room.room_number }}</div>
@@ -377,7 +377,7 @@ function toggleDeleteReasonOther(sel) {
 (function() {
   var key = 'receipt_origin_{{ receipt.id }}';
   var current = window.location.href;
-  var ref = document.referrer;
+  var ref = {{ (nav_ref or '')|tojson }};
   var origin = sessionStorage.getItem(key);
   var isGeneratePage = ref.indexOf('/receipts/generate') !== -1;
   var isEditPage = ref.indexOf('/receipts/{{ receipt.id }}/edit') !== -1;

@@ -10,6 +10,8 @@ from app.utils.verification import generate_payment_hash
 receipts_bp = Blueprint('receipts', __name__)
 
 MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+KM_MONTHS = ['មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា',
+             'កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ']
 
 
 def _flash_lang(en, km, category='info'):
@@ -255,7 +257,9 @@ def generate():
         now=now,
         billing_month=billing_month,
         billing_year=billing_year,
-        month_names=MONTH_NAMES
+        month_names=MONTH_NAMES,
+        KM_MONTHS=KM_MONTHS,
+        nav_ref=request.referrer
     )
 
 
@@ -264,7 +268,8 @@ def generate():
 def detail(id):
     receipt = Receipt.query.get_or_404(id)
     return render_template('receipts/detail.html', receipt=receipt,
-                           today=_today(), locked=_has_next_receipt(receipt))
+                           today=_today(), locked=_has_next_receipt(receipt),
+                           nav_ref=request.referrer)
 
 
 @receipts_bp.route('/receipts/<int:id>/pay', methods=['POST'])

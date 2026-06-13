@@ -5,7 +5,7 @@
 
 <div class="mb-3 d-flex align-items-start justify-content-between gap-2">
   <div>
-    <a href="javascript:history.back()" class="text-decoration-none text-muted small">
+    <a href="javascript:history.back()" hx-boost="false" class="text-decoration-none text-muted small">
       <i class="bi bi-arrow-left me-1"></i>
       <span class="km">ត្រឡប់</span><span class="en">Back</span>
     </a>
@@ -73,7 +73,7 @@
         <select name="billing_month" class="gen-input" required style="font-size:1rem;">
           {% for i in range(1,13) %}
           <option value="{{ i }}" {{ 'selected' if billing_month == i }}>
-            {{ ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i-1] }}
+            {{ KM_MONTHS[i-1] if lang == 'km' else month_names[i-1] }}
           </option>
           {% endfor %}
         </select>
@@ -425,7 +425,7 @@
 // Stash where we arrived from (Dashboard, Receipts list, Room detail, etc.)
 // so that after generating, the Receipt Detail back button can skip over
 // this form and return here directly instead of bouncing back to it.
-sessionStorage.setItem('receipt_flow_origin', document.referrer || '');
+sessionStorage.setItem('receipt_flow_origin', {{ (nav_ref or '')|tojson }});
 
 const roomPrices = {
   {% for r in rooms %}"{{ r.id }}": {{ r.price }},{% endfor %}
