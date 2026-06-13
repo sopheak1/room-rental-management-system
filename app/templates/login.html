@@ -7,9 +7,9 @@
 
       <!-- Lang toggle on login page -->
       <div class="text-end mb-3">
-        <a href="{{ url_for('set_lang', code='km') }}"
+        <a href="{{ url_for('set_lang', code='km') }}" hx-boost="false"
            class="btn btn-sm {{ 'btn-primary' if lang == 'km' else 'btn-outline-secondary' }}">ខ្មែរ</a>
-        <a href="{{ url_for('set_lang', code='en') }}"
+        <a href="{{ url_for('set_lang', code='en') }}" hx-boost="false"
            class="btn btn-sm {{ 'btn-primary' if lang == 'en' else 'btn-outline-secondary' }}">EN</a>
       </div>
 
@@ -36,7 +36,7 @@
       {% endif %}
       {% endwith %}
 
-      <form method="POST">
+      <form method="POST" hx-boost="false">
         <div class="mb-3">
           <label class="form-label fw-medium">
             <span class="km">ឈ្មោះអ្នកប្រើ</span>
