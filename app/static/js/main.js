@@ -36,12 +36,15 @@ document.addEventListener('DOMContentLoaded', function () {
     e.target.value = raw ? parseInt(raw).toLocaleString('en-US') : '';
   });
 
-  // Strip commas before any form submits
+  // Strip commas before any form submits.
+  // Capture phase is required: htmx's hx-boost submit handler also listens on
+  // document (bubble phase) and was firing first, serializing the form with
+  // commas still in the value before this listener could strip them.
   document.addEventListener('submit', function (e) {
     e.target.querySelectorAll('input.money-input').forEach(function (el) {
       el.value = el.value.replace(/,/g, '');
     });
-  });
+  }, true);
 });
 
 // Auto-dismiss flash alerts after 5 seconds
