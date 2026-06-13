@@ -208,7 +208,7 @@
             <span class="km">ចាប់ពី (មុន)</span><span class="en">From</span>
           </span>
           <input type="number" name="electricity_from" id="electricity_from"
-                 class="gen-input" step="0.01" min="0"
+                 class="gen-input" step="0.01" min="0" inputmode="decimal"
                  value="{{ usage_elec_from if usage_elec_from is not none else (prev_receipt.electricity_to if prev_receipt and prev_receipt.electricity_to is not none else '') }}"
                  data-original="{{ prev_receipt.electricity_to if prev_receipt and prev_receipt.electricity_to is not none else '' }}"
                  oninput="calcElectricity(); warnIfChanged(this,'w_elec_from')">
@@ -219,7 +219,7 @@
             <span class="km">ដល់ (ថ្មី)</span><span class="en">To</span>
           </span>
           <input type="number" name="electricity_to" id="electricity_to"
-                 class="gen-input" step="0.01" min="0"
+                 class="gen-input" step="0.01" min="0" inputmode="decimal"
                  value="{{ usage_elec_to if usage_elec_to is not none else '' }}"
                  oninput="calcElectricity()">
         </div>
@@ -298,7 +298,7 @@
             <span class="km">ចាប់ពី (មុន)</span><span class="en">From</span>
           </span>
           <input type="number" name="water_from" id="water_from"
-                 class="gen-input" step="0.01" min="0"
+                 class="gen-input" step="0.01" min="0" inputmode="decimal"
                  value="{{ usage_water_from if usage_water_from is not none else (prev_receipt.water_to if prev_receipt and prev_receipt.water_to is not none else '') }}"
                  data-original="{{ prev_receipt.water_to if prev_receipt and prev_receipt.water_to is not none else '' }}"
                  oninput="calcWater(); warnIfChanged(this,'w_water_from')">
@@ -309,7 +309,7 @@
             <span class="km">ដល់ (ថ្មី)</span><span class="en">To</span>
           </span>
           <input type="number" name="water_to" id="water_to"
-                 class="gen-input" step="0.01" min="0"
+                 class="gen-input" step="0.01" min="0" inputmode="decimal"
                  value="{{ usage_water_to if usage_water_to is not none else '' }}"
                  oninput="calcWater()">
         </div>
