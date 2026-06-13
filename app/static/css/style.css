@@ -86,34 +86,31 @@ body {
   .main-content { margin-left: var(--app-sidebar-w); }
 }
 
-/* ─── htmx navigation progress bar ──────────────────────── */
-#htmx-progress-bar {
+/* ─── htmx full-page loading overlay ────────────────────── */
+#htmx-page-loading {
   position: fixed;
-  top: var(--navbar-h, 60px);
-  left: 0;
-  right: 0;
-  height: 3px;
-  z-index: 1041;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 36, 58, 0.45);
+  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
+  transition: opacity 0.15s ease;
 }
 
-#htmx-progress-bar .bar {
-  height: 100%;
-  width: 0;
-  opacity: 0;
-  background: linear-gradient(90deg, #22d3ee, var(--app-primary));
-}
-
-#htmx-progress-bar.htmx-loading .bar {
-  width: 70%;
+#htmx-page-loading.htmx-page-loading-visible {
   opacity: 1;
-  transition: width 8s cubic-bezier(0.1, 0.6, 0.2, 1), opacity 0.2s ease;
+  visibility: visible;
+  pointer-events: all;
 }
 
-#htmx-progress-bar.htmx-done .bar {
-  width: 100%;
-  opacity: 0;
-  transition: width 0.2s ease, opacity 0.4s ease 0.2s;
+#htmx-page-loading .spinner-border {
+  width: 3rem;
+  height: 3rem;
+  color: var(--app-primary);
 }
 
 /* ─── Stat Cards ─────────────────────────────────────────── */

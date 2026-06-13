@@ -57,29 +57,30 @@ document.addEventListener('DOMContentLoaded', function () {
   }, 5000);
 });
 
-// ── htmx navigation progress bar ────────────────────────────────
+// ── htmx full-page loading overlay (link navigation only) ────────
+// Form submits keep their own button spinner (data-loading-text) and
+// don't get this overlay.
 (function () {
-  var bar = document.getElementById('htmx-progress-bar');
-  if (!bar) return;
+  var overlay = document.getElementById('htmx-page-loading');
+  if (!overlay) return;
 
-  var doneTimeout = null;
+  var showTimeout = null;
 
-  document.body.addEventListener('htmx:beforeRequest', function () {
-    if (doneTimeout) {
-      clearTimeout(doneTimeout);
-      doneTimeout = null;
-    }
-    bar.classList.remove('htmx-done');
-    bar.classList.add('htmx-loading');
+  document.body.addEventListener('htmx:beforeRequest', function (evt) {
+    if (evt.detail.elt.tagName === 'FORM') return;
+    showTimeout = setTimeout(function () {
+      overlay.classList.add('htmx-page-loading-visible');
+      showTimeout = null;
+    }, 150);
   });
 
-  document.body.addEventListener('htmx:afterRequest', function () {
-    bar.classList.remove('htmx-loading');
-    bar.classList.add('htmx-done');
-    doneTimeout = setTimeout(function () {
-      bar.classList.remove('htmx-done');
-      doneTimeout = null;
-    }, 400);
+  document.body.addEventListener('htmx:afterRequest', function (evt) {
+    if (evt.detail.elt.tagName === 'FORM') return;
+    if (showTimeout) {
+      clearTimeout(showTimeout);
+      showTimeout = null;
+    }
+    overlay.classList.remove('htmx-page-loading-visible');
   });
 })();
 
