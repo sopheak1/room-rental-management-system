@@ -21,3 +21,4 @@ gdrive_token.json
 *.db.bak
 *.db.download
 *.db.restore
+Pending-Task-Claude.md

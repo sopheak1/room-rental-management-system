@@ -67,12 +67,12 @@
 {% if buildings|length > 1 or tab_overdue or tab_upcoming %}
 <div class="filter-row filter-row-end mb-2">
   {% if buildings|length > 1 %}
-  <div id="buildingFilter" class="chip-filter">
-    <button type="button" class="chip-btn active" data-building-id="0" onclick="selectBuildingChip(this)">{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</button>
+  <select id="buildingFilter" class="filter-select" onchange="applyFilters()">
+    <option value="0">{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</option>
     {% for b in buildings %}
-    <button type="button" class="chip-btn" data-building-id="{{ b.id }}" onclick="selectBuildingChip(this)">{{ b.name }}</button>
+    <option value="{{ b.id }}">{{ b.name }}</option>
     {% endfor %}
-  </div>
+  </select>
   {% endif %}
   {% if tab_overdue %}
   {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
@@ -224,15 +224,9 @@ function switchTab(name, btn) {
   applyFilters();
 }
 
-function selectBuildingChip(btn) {
-  document.querySelectorAll('#buildingFilter .chip-btn').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  applyFilters();
-}
-
 function applyFilters() {
-  const activeChip = document.querySelector('#buildingFilter .chip-btn.active');
-  const buildingId = activeChip ? parseInt(activeChip.dataset.buildingId, 10) : 0;
+  const buildingSelect = document.getElementById('buildingFilter');
+  const buildingId = buildingSelect ? parseInt(buildingSelect.value, 10) : 0;
   let day = 0;
   document.querySelectorAll('.dash-day-select').forEach(sel => {
     if (sel.style.display !== 'none') day = parseInt(sel.value, 10);
@@ -244,6 +238,56 @@ function applyFilters() {
       card.style.display = (buildingOk && dayOk) ? '' : 'none';
     });
   });
+  saveFilterState();
 }
+
+function saveFilterState() {
+  const buildingSelect = document.getElementById('buildingFilter');
+  const activeTabBtn = document.querySelector('.dash-tab-btn.active-overdue, .dash-tab-btn.active-upcoming, .dash-tab-btn.active-paid');
+  const days = {};
+  document.querySelectorAll('.dash-day-select').forEach(sel => {
+    days[sel.dataset.tab] = sel.value;
+  });
+  sessionStorage.setItem('dashboardFilters', JSON.stringify({
+    buildingId: buildingSelect ? buildingSelect.value : '0',
+    tab: activeTabBtn ? activeTabBtn.dataset.tab : 'overdue',
+    days
+  }));
+}
+
+function restoreFilterState() {
+  const raw = sessionStorage.getItem('dashboardFilters');
+  if (!raw) return;
+  let state;
+  try { state = JSON.parse(raw); } catch (e) { return; }
+
+  if (state.buildingId && state.buildingId !== '0') {
+    const buildingSelect = document.getElementById('buildingFilter');
+    if (buildingSelect && [...buildingSelect.options].some(o => o.value === state.buildingId)) {
+      buildingSelect.value = state.buildingId;
+    }
+  }
+
+  if (state.tab && state.tab !== 'overdue') {
+    const tabBtn = document.querySelector(`.dash-tab-btn[data-tab="${state.tab}"]`);
+    if (tabBtn) switchTab(state.tab, tabBtn);
+  }
+
+  if (state.days) {
+    const tab = state.tab || 'overdue';
+    document.querySelectorAll('.dash-day-select').forEach(sel => {
+      if (sel.dataset.tab === tab) {
+        const saved = state.days[tab];
+        if (saved !== undefined && [...sel.options].some(o => o.value === saved)) {
+          sel.value = saved;
+        }
+      }
+    });
+  }
+
+  applyFilters();
+}
+
+restoreFilterState();
 </script>
 {% endblock %}
