@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, Response, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, Response, session, current_app
 from flask_login import login_required
 from app.models import Receipt, Room, Tenant, UtilityPrice, Building, PaymentLog, UtilityUsage
 from app import db
@@ -266,6 +266,11 @@ def generate():
 @login_required
 def detail(id):
     receipt = Receipt.query.get_or_404(id)
+    current_app.logger.info(
+        '[receipts.detail] QUERY id=%s status=%s total_amount=%s paid_amount=%s remaining_balance=%s',
+        receipt.id, receipt.payment_status, receipt.total_amount,
+        receipt.paid_amount, receipt.remaining_balance
+    )
     return render_template('receipts/detail.html', receipt=receipt,
                            today=_today(), locked=_has_next_receipt(receipt))
 
@@ -274,6 +279,15 @@ def detail(id):
 @login_required
 def pay(id):
     receipt = Receipt.query.get_or_404(id)
+    current_app.logger.info(
+        '[receipts.pay] REQUEST id=%s form=%s', receipt.id, dict(request.form)
+    )
+    current_app.logger.info(
+        '[receipts.pay] BEFORE id=%s status=%s total_amount=%s paid_amount=%s remaining_balance=%s',
+        receipt.id, receipt.payment_status, receipt.total_amount,
+        receipt.paid_amount, receipt.remaining_balance
+    )
+
     new_payment = float(request.form.get('paid_amount') or 0)
     payment_method = request.form.get('payment_method')
     date_str = request.form.get('payment_date')
@@ -304,6 +318,16 @@ def pay(id):
     db.session.add(log)
     db.session.commit()
     backup_to_drive()
+
+    current_app.logger.info(
+        '[receipts.pay] AFTER id=%s status=%s total_amount=%s paid_amount=%s remaining_balance=%s new_payment=%s',
+        receipt.id, receipt.payment_status, receipt.total_amount,
+        receipt.paid_amount, receipt.remaining_balance, new_payment
+    )
+    current_app.logger.info(
+        '[receipts.pay] RESPONSE id=%s redirect -> receipts.detail', receipt.id
+    )
+
     _flash_lang('Payment recorded.', 'ការទូទាត់ត្រូវបានកត់ត្រា។', 'success')
     return redirect(url_for('receipts.detail', id=id))
 

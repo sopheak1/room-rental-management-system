@@ -221,7 +221,8 @@
     <form method="POST" action="{{ url_for('receipts.pay', id=receipt.id) }}" hx-boost="true" data-full-overlay="true">
       <label class="m-label"><span class="km">ស្ថានភាព</span><span class="en">Payment Status</span></label>
       <select name="payment_status" id="detail_payment_status" class="m-input mb-3"
-              required style="font-size:1rem;" onchange="onStatusChange(this)">
+              required style="font-size:1rem;" onchange="onStatusChange(this)"
+              data-remaining-balance="{{ receipt.remaining_balance|int }}">
         <option value="paid" selected><span class="km">{% if lang=='km'%}បានបង់ទាំងស្រុង{% else %}Full Payment (Paid){% endif %}</span></option>
         <option value="partial"><span class="km">{% if lang=='km'%}បង់មួយផ្នែក{% else %}Partial Payment{% endif %}</span></option>
       </select>
@@ -377,8 +378,9 @@ function onStatusChange(sel) {
     paidInput.value = '';
     paidInput.focus();
   } else {
-    // Full payment — restore remaining balance
-    paidInput.value = {{ receipt.remaining_balance|int }};
+    // Full payment — restore remaining balance (read live from the DOM,
+    // since this script may not re-run on every htmx-boosted page swap)
+    paidInput.value = Number(sel.dataset.remainingBalance).toLocaleString('en-US');
   }
 }
 
