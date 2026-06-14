@@ -692,6 +692,29 @@ select {
 .filter-select-light:focus { border-color: #fff; }
 .filter-select-light option { color: #1e293b; }
 
+/* Chip-style filter (e.g. dashboard building filter) */
+.chip-filter { display: contents; }
+.chip-btn {
+  flex: 0 0 auto;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--app-border);
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--app-text-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.chip-btn:hover { border-color: var(--app-text-3); }
+.chip-btn.active {
+  background: var(--app-text);
+  border-color: var(--app-text);
+  color: #fff;
+}
+
 .dash-section-title {
   font-size: 0.88rem;
   font-weight: 700;

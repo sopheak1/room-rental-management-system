@@ -67,12 +67,12 @@
 {% if buildings|length > 1 or tab_overdue or tab_upcoming %}
 <div class="filter-row filter-row-end mb-2">
   {% if buildings|length > 1 %}
-  <select id="buildingFilter" class="filter-select" onchange="applyFilters()">
-    <option value="0">{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</option>
+  <div id="buildingFilter" class="chip-filter">
+    <button type="button" class="chip-btn active" data-building-id="0" onclick="selectBuildingChip(this)">{% if lang=='km' %}អគារទាំងអស់{% else %}All Buildings{% endif %}</button>
     {% for b in buildings %}
-    <option value="{{ b.id }}">{{ b.name }}</option>
+    <button type="button" class="chip-btn" data-building-id="{{ b.id }}" onclick="selectBuildingChip(this)">{{ b.name }}</button>
     {% endfor %}
-  </select>
+  </div>
   {% endif %}
   {% if tab_overdue %}
   {% set overdue_days = tab_overdue | map(attribute='start_day') | list | unique | sort %}
@@ -224,9 +224,15 @@ function switchTab(name, btn) {
   applyFilters();
 }
 
+function selectBuildingChip(btn) {
+  document.querySelectorAll('#buildingFilter .chip-btn').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
 function applyFilters() {
-  const buildingSelect = document.getElementById('buildingFilter');
-  const buildingId = buildingSelect ? parseInt(buildingSelect.value, 10) : 0;
+  const activeChip = document.querySelector('#buildingFilter .chip-btn.active');
+  const buildingId = activeChip ? parseInt(activeChip.dataset.buildingId, 10) : 0;
   let day = 0;
   document.querySelectorAll('.dash-day-select').forEach(sel => {
     if (sel.style.display !== 'none') day = parseInt(sel.value, 10);
