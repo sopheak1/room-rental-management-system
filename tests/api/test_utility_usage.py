@@ -31,3 +31,39 @@ def test_batch_upsert_utility_usage(client, auth_headers, app):
     })
     assert resp.status_code == 200
     assert resp.get_json()['saved'] == 1
+
+def test_batch_upsert_utility_usage_update_path(client, auth_headers, app):
+    """Test that the UPDATE path works: existing row is updated in place, not duplicated."""
+    room_id = _seed_room(app)
+    # Seed an existing UtilityUsage row for the room/month/year
+    with app.app_context():
+        existing = UtilityUsage(room_id=room_id, billing_month=8, billing_year=2026,
+                                electricity_from=100, electricity_to=120)
+        db.session.add(existing)
+        db.session.commit()
+
+    # POST with same room_id/month/year but different readings
+    resp = client.post('/api/v1/utility-usage/batch', headers=auth_headers, json={
+        'billing_month': 8, 'billing_year': 2026,
+        'readings': [{'room_id': room_id, 'electricity_from': 200, 'electricity_to': 230}]
+    })
+    assert resp.status_code == 200
+    assert resp.get_json()['saved'] == 1
+
+    # Verify there is still only ONE row for this room/month/year
+    with app.app_context():
+        rows = UtilityUsage.query.filter_by(room_id=room_id, billing_month=8, billing_year=2026).all()
+        assert len(rows) == 1
+        # Verify the values were updated
+        assert rows[0].electricity_from == 200
+        assert rows[0].electricity_to == 230
+
+def test_batch_upsert_utility_usage_empty_readings(client, auth_headers, app):
+    """Test that POST with empty readings list returns 200 with saved == 0."""
+    _seed_room(app)
+    resp = client.post('/api/v1/utility-usage/batch', headers=auth_headers, json={
+        'billing_month': 9, 'billing_year': 2026,
+        'readings': []
+    })
+    assert resp.status_code == 200
+    assert resp.get_json()['saved'] == 0

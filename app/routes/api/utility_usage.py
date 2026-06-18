@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required
+from sqlalchemy.exc import IntegrityError
 from app.routes.api import api_bp
 from app.models import UtilityUsage
 from app import db
@@ -60,5 +61,9 @@ def batch_upsert_utility_usage():
             )
             db.session.add(usage)
         saved += 1
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'error': 'Concurrent update conflict — retry'}), 409
     return jsonify({'saved': saved}), 200
