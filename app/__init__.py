@@ -37,6 +37,42 @@ def _migrate(db):
                 conn.execute(text('ALTER TABLE payment_logs ADD COLUMN verification_hash VARCHAR(20)'))
                 conn.commit()
 
+    # Add updated_at to buildings
+    if 'buildings' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('buildings')]
+        if 'updated_at' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE buildings ADD COLUMN updated_at DATETIME'))
+                conn.execute(text('UPDATE buildings SET updated_at = created_at WHERE updated_at IS NULL'))
+                conn.commit()
+
+    # Add updated_at to rooms
+    if 'rooms' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('rooms')]
+        if 'updated_at' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE rooms ADD COLUMN updated_at DATETIME'))
+                conn.execute(text('UPDATE rooms SET updated_at = created_at WHERE updated_at IS NULL'))
+                conn.commit()
+
+    # Add updated_at to tenants
+    if 'tenants' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('tenants')]
+        if 'updated_at' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE tenants ADD COLUMN updated_at DATETIME'))
+                conn.execute(text('UPDATE tenants SET updated_at = created_at WHERE updated_at IS NULL'))
+                conn.commit()
+
+    # Add updated_at to receipts
+    if 'receipts' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('receipts')]
+        if 'updated_at' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE receipts ADD COLUMN updated_at DATETIME'))
+                conn.execute(text('UPDATE receipts SET updated_at = created_at WHERE updated_at IS NULL'))
+                conn.commit()
+
 
 def create_app():  # noqa: C901
 

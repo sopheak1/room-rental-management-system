@@ -30,6 +30,7 @@ class Building(db.Model):
     name = db.Column(db.String(150), nullable=False)
     address = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     rooms = db.relationship('Room', backref='building', lazy=True, cascade='all, delete-orphan')
 
 
@@ -44,6 +45,7 @@ class Room(db.Model):
     deposit_amount = db.Column(db.Float, default=0)
     status = db.Column(db.String(20), default='available')  # available, occupied, maintenance
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     tenants = db.relationship('Tenant', backref='room', lazy=True)
     history = db.relationship('TenantHistory', backref='room', lazy=True)
@@ -70,6 +72,7 @@ class Tenant(db.Model):
     deposit_paid = db.Column(db.Float, default=0)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     receipts = db.relationship('Receipt', backref='tenant', lazy=True)
 
@@ -153,6 +156,7 @@ class Receipt(db.Model):
     payment_date = db.Column(db.Date, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     payment_logs = db.relationship('PaymentLog', backref='receipt', lazy=True,
                                    order_by='PaymentLog.created_at')
@@ -174,3 +178,15 @@ class PaymentLog(db.Model):
     deleted_at = db.Column(db.DateTime, nullable=True)
     delete_reason = db.Column(db.Text, nullable=True)
     verification_hash = db.Column(db.String(20), nullable=True)
+
+
+class ConflictLog(db.Model):
+    __tablename__ = 'conflict_log'
+    id = db.Column(db.Integer, primary_key=True)
+    entity_type = db.Column(db.String(50), nullable=False)   # receipt, payment, tenant, room
+    entity_id = db.Column(db.Integer, nullable=False)
+    mobile_data_json = db.Column(db.Text, nullable=False)
+    server_data_json = db.Column(db.Text, nullable=False)
+    conflict_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(30), default='pending_review')  # pending_review, resolved_keep, resolved_override
+    resolved_at = db.Column(db.DateTime, nullable=True)
