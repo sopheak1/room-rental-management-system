@@ -74,3 +74,10 @@ def test_create_receipt_duplicate_returns_409(client, auth_headers, app):
         'room_price': 200000, 'total_amount': 200000
     })
     assert resp.status_code == 409
+
+def test_create_receipt_missing_room_id_returns_400(client, auth_headers, app):
+    resp = client.post('/api/v1/receipts', headers=auth_headers, json={
+        'billing_month': 7, 'billing_year': 2026,
+        'room_price': 150000, 'total_amount': 150000
+    })
+    assert resp.status_code == 400

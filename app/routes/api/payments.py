@@ -55,7 +55,7 @@ def delete_payment(receipt_id, log_id):
     if not receipt or not log or log.receipt_id != receipt_id:
         return jsonify({'error': 'Not found'}), 404
     if log.deleted_at:
-        return jsonify({'error': 'Payment already deleted'}), 400
+        return jsonify({'error': 'Payment already deleted'}), 409
     data = request.get_json(silent=True) or {}
     reason = data.get('reason', '')
     log.deleted_at = datetime.utcnow()

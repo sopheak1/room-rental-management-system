@@ -69,6 +69,8 @@ def create_receipt():
     room_id = data.get('room_id')
     month   = data.get('billing_month')
     year    = data.get('billing_year')
+    if not room_id or not month or not year:
+        return jsonify({'error': 'room_id, billing_month, and billing_year are required'}), 400
     # Check for duplicate
     existing = Receipt.query.filter_by(
         room_id=room_id, billing_month=month, billing_year=year

@@ -57,3 +57,36 @@ def test_soft_delete_payment(client, auth_headers, app):
     with app.app_context():
         log = PaymentLog.query.get(log_id)
         assert log.deleted_at is not None
+
+def test_soft_delete_payment_multi_payment_recalculates_correctly(client, auth_headers, app):
+    receipt_id = _seed(app)
+    # Record 3 payments: 80000, 50000, 30000 (total 160000)
+    client.post(f'/api/v1/receipts/{receipt_id}/payments', headers=auth_headers, json={
+        'amount': 80000, 'payment_method': 'cash', 'payment_date': '2026-06-17'
+    })
+    client.post(f'/api/v1/receipts/{receipt_id}/payments', headers=auth_headers, json={
+        'amount': 50000, 'payment_method': 'cash', 'payment_date': '2026-06-18'
+    })
+    client.post(f'/api/v1/receipts/{receipt_id}/payments', headers=auth_headers, json={
+        'amount': 30000, 'payment_method': 'cash', 'payment_date': '2026-06-19'
+    })
+    # Get the middle payment (50000)
+    with app.app_context():
+        logs = PaymentLog.query.filter_by(receipt_id=receipt_id, deleted_at=None).order_by(PaymentLog.created_at).all()
+        assert len(logs) == 3
+        middle_log_id = logs[1].id  # 50000
+    # Delete middle payment
+    resp = client.delete(f'/api/v1/receipts/{receipt_id}/payments/{middle_log_id}',
+        headers=auth_headers, json={'reason': 'correction'})
+    assert resp.status_code == 200
+    # Verify receipt paid_amount is recomputed (80000 + 30000 = 110000, not 160000 - 50000 via stale cache)
+    data = resp.get_json()
+    receipt_data = data['receipt']
+    assert receipt_data['paid_amount'] == 110000
+    assert receipt_data['remaining_balance'] == 90000  # 200000 - 110000
+    # Verify logs: exactly 2 non-deleted with correct amounts
+    with app.app_context():
+        active_logs = PaymentLog.query.filter_by(receipt_id=receipt_id, deleted_at=None).all()
+        assert len(active_logs) == 2
+        amounts = sorted([l.amount for l in active_logs])
+        assert amounts == [30000, 80000]
