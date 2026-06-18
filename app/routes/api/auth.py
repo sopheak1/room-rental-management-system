@@ -37,9 +37,3 @@ def logout():
     jti = get_jwt()['jti']
     _blocklist.add(jti)
     return jsonify({'msg': 'Logged out'}), 200
-
-@api_bp.route('/rooms', methods=['GET'])
-@jwt_required()
-def get_rooms():
-    """Placeholder endpoint for testing JWT protection. Real implementation in later task."""
-    return jsonify({'rooms': []}), 200

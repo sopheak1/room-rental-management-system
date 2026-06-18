@@ -35,5 +35,5 @@ def test_logout(client, auth_headers):
     assert resp.status_code == 200
 
 def test_protected_route_without_token(client):
-    resp = client.get('/api/v1/rooms')
+    resp = client.post('/api/v1/auth/refresh')
     assert resp.status_code == 401
