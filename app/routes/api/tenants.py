@@ -80,6 +80,8 @@ def checkout_tenant(tenant_id):
     tenant = Tenant.query.get(tenant_id)
     if not tenant:
         return jsonify({'error': 'Tenant not found'}), 404
+    if not tenant.is_active:
+        return jsonify({'error': 'Tenant already checked out'}), 400
     data = request.get_json(silent=True) or {}
     move_out = data.get('move_out_date')
     history = TenantHistory(

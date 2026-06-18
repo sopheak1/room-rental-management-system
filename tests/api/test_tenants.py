@@ -66,3 +66,23 @@ def test_checkout_tenant(client, auth_headers, app):
             'move_out_reason': 'End of contract'
         })
     assert resp.status_code == 200
+
+def test_checkout_tenant_double_checkout(client, auth_headers, app):
+    room_id, tenant_id = _seed(app)
+    # First checkout should succeed
+    resp = client.post(f'/api/v1/tenants/{tenant_id}/checkout',
+        headers=auth_headers, json={
+            'move_out_date': '2026-06-30',
+            'deposit_refunded': 150000,
+            'move_out_reason': 'End of contract'
+        })
+    assert resp.status_code == 200
+    # Second checkout should fail with 400
+    resp = client.post(f'/api/v1/tenants/{tenant_id}/checkout',
+        headers=auth_headers, json={
+            'move_out_date': '2026-07-01',
+            'deposit_refunded': 150000,
+            'move_out_reason': 'Already checked out'
+        })
+    assert resp.status_code == 400
+    assert 'already checked out' in resp.get_json()['error'].lower()
