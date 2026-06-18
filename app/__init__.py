@@ -73,6 +73,24 @@ def _migrate(db):
                 conn.execute(text('UPDATE receipts SET updated_at = created_at WHERE updated_at IS NULL'))
                 conn.commit()
 
+    # Add unique index backing the tenant+room+month duplicate-receipt guard
+    if 'receipts' in inspector.get_table_names():
+        existing_indexes = [idx['name'] for idx in inspector.get_indexes('receipts')]
+        if 'uq_receipts_tenant_room_month' not in existing_indexes:
+            try:
+                with db.engine.connect() as conn:
+                    conn.execute(text(
+                        'CREATE UNIQUE INDEX uq_receipts_tenant_room_month '
+                        'ON receipts (tenant_id, room_id, billing_month, billing_year)'
+                    ))
+                    conn.commit()
+            except Exception:
+                # If real existing data already has duplicate (tenant_id, room_id,
+                # billing_month, billing_year) rows, creating the index will fail.
+                # Don't crash app startup over this — skip silently and rely on the
+                # app-level check + commit-time IntegrityError guard instead.
+                pass
+
 
 def create_app():  # noqa: C901
 

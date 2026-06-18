@@ -127,6 +127,10 @@ class UtilityUsage(db.Model):
 
 class Receipt(db.Model):
     __tablename__ = 'receipts'
+    __table_args__ = (
+        db.UniqueConstraint('tenant_id', 'room_id', 'billing_month', 'billing_year',
+                             name='uq_receipts_tenant_room_month'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     receipt_number = db.Column(db.String(20), unique=True, nullable=False)
     room_id = db.Column(db.Integer, db.ForeignKey('rooms.id'), nullable=False)

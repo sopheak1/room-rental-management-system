@@ -75,6 +75,25 @@ def test_create_receipt_duplicate_returns_409(client, auth_headers, app):
     })
     assert resp.status_code == 409
 
+def test_create_receipt_same_room_different_tenant_returns_201(client, auth_headers, app):
+    """A tenant can check out and a new tenant can check into the SAME room within
+    the SAME billing month — that's two legitimate receipts for the same room+month,
+    one per tenant. The duplicate-check key must include tenant_id, not just
+    room_id + billing_month + billing_year."""
+    room_id, tenant_a_id, _ = _seed(app)
+    with app.app_context():
+        tenant_b = Tenant(room_id=room_id, name='Sokha', is_active=True, move_in_date=date(2026, 6, 15))
+        db.session.add(tenant_b)
+        db.session.commit()
+        tenant_b_id = tenant_b.id
+    resp = client.post('/api/v1/receipts', headers=auth_headers, json={
+        'room_id': room_id, 'tenant_id': tenant_b_id,
+        'billing_month': 6, 'billing_year': 2026,
+        'room_price': 200000, 'total_amount': 200000
+    })
+    assert resp.status_code == 201
+    assert resp.get_json()['tenant_id'] == tenant_b_id
+
 def test_create_receipt_missing_room_id_returns_400(client, auth_headers, app):
     resp = client.post('/api/v1/receipts', headers=auth_headers, json={
         'billing_month': 7, 'billing_year': 2026,

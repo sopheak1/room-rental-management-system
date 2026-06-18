@@ -71,13 +71,14 @@ def create_receipt():
     year    = data.get('billing_year')
     if not room_id or not month or not year:
         return jsonify({'error': 'room_id, billing_month, and billing_year are required'}), 400
+    tenant_id = data.get('tenant_id')
     # Check for duplicate
     existing = Receipt.query.filter_by(
-        room_id=room_id, billing_month=month, billing_year=year
+        tenant_id=tenant_id, room_id=room_id, billing_month=month, billing_year=year
     ).first()
     if existing:
         return jsonify({
-            'error': 'Receipt already exists for this room and month',
+            'error': 'Receipt already exists for this tenant, room, and month',
             'existing_id': existing.id,
             'server_data': _receipt_dict(existing, include_logs=True)
         }), 409
@@ -89,7 +90,7 @@ def create_receipt():
              data.get('late_fee', 0) - data.get('discount', 0))
     receipt = Receipt(
         receipt_number=receipt_number,
-        room_id=room_id, tenant_id=data.get('tenant_id'),
+        room_id=room_id, tenant_id=tenant_id,
         billing_month=month, billing_year=year,
         room_price=data.get('room_price', 0),
         electricity_from=data.get('electricity_from'),
@@ -112,6 +113,11 @@ def create_receipt():
         payment_status='unpaid',
         notes=data.get('notes', ''),
     )
-    db.session.add(receipt)
-    db.session.commit()
+    from sqlalchemy.exc import IntegrityError
+    try:
+        db.session.add(receipt)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'error': 'A receipt for this tenant, room, and month already exists (concurrent request conflict)'}), 409
     return jsonify(_receipt_dict(receipt, include_logs=True)), 201
