@@ -1,5 +1,5 @@
 import click
-from flask import Flask, session, redirect, request, url_for
+from flask import Flask, session, redirect, request, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
@@ -101,6 +101,9 @@ def create_app():  # noqa: C901
     from app.routes.receipts import receipts_bp
     from app.routes.reports import reports_bp
     from app.routes.settings import settings_bp
+    from flask_jwt_extended import JWTManager
+    from app.routes.api import api_bp
+    from app.routes.api.auth import is_token_revoked
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -112,6 +115,26 @@ def create_app():  # noqa: C901
     app.register_blueprint(receipts_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(settings_bp)
+
+    jwt = JWTManager(app)
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        return is_token_revoked(jwt_payload)
+
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return jsonify({'error': 'Token has expired'}), 401
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error):
+        return jsonify({'error': 'Invalid token'}), 401
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(error):
+        return jsonify({'error': 'Authorization token required'}), 401
+
+    app.register_blueprint(api_bp)
 
     # Load Google Drive folder ID from config file if present
     import os as _os, json as _json
