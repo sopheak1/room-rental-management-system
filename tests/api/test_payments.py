@@ -70,23 +70,73 @@ def test_soft_delete_payment_multi_payment_recalculates_correctly(client, auth_h
     client.post(f'/api/v1/receipts/{receipt_id}/payments', headers=auth_headers, json={
         'amount': 30000, 'payment_method': 'cash', 'payment_date': '2026-06-19'
     })
-    # Get the middle payment (50000)
     with app.app_context():
         logs = PaymentLog.query.filter_by(receipt_id=receipt_id, deleted_at=None).order_by(PaymentLog.created_at).all()
         assert len(logs) == 3
-        middle_log_id = logs[1].id  # 50000
-    # Delete middle payment
-    resp = client.delete(f'/api/v1/receipts/{receipt_id}/payments/{middle_log_id}',
+        last_log_id = logs[2].id  # 30000 — only this one can be deleted
+    # Delete the most recent payment
+    resp = client.delete(f'/api/v1/receipts/{receipt_id}/payments/{last_log_id}',
         headers=auth_headers, json={'reason': 'correction'})
     assert resp.status_code == 200
-    # Verify receipt paid_amount is recomputed (80000 + 30000 = 110000, not 160000 - 50000 via stale cache)
+    # Verify receipt paid_amount is recomputed (80000 + 50000 = 130000, not 160000 - 30000 via stale cache)
     data = resp.get_json()
     receipt_data = data['receipt']
-    assert receipt_data['paid_amount'] == 110000
-    assert receipt_data['remaining_balance'] == 90000  # 200000 - 110000
+    assert receipt_data['paid_amount'] == 130000
+    assert receipt_data['remaining_balance'] == 70000  # 200000 - 130000
     # Verify logs: exactly 2 non-deleted with correct amounts
     with app.app_context():
         active_logs = PaymentLog.query.filter_by(receipt_id=receipt_id, deleted_at=None).all()
         assert len(active_logs) == 2
         amounts = sorted([l.amount for l in active_logs])
-        assert amounts == [30000, 80000]
+        assert amounts == [50000, 80000]
+
+def test_delete_payment_blocks_non_last_log(client, auth_headers, app):
+    """Only the most recent payment log may be deleted — deleting an earlier
+    one would desync the receipt's running balance, exactly like web."""
+    receipt_id = _seed(app)
+    client.post(f'/api/v1/receipts/{receipt_id}/payments', headers=auth_headers, json={
+        'amount': 80000, 'payment_method': 'cash', 'payment_date': '2026-06-17'
+    })
+    client.post(f'/api/v1/receipts/{receipt_id}/payments', headers=auth_headers, json={
+        'amount': 50000, 'payment_method': 'cash', 'payment_date': '2026-06-18'
+    })
+    with app.app_context():
+        logs = PaymentLog.query.filter_by(receipt_id=receipt_id, deleted_at=None).order_by(PaymentLog.created_at).all()
+        first_log_id = logs[0].id
+    resp = client.delete(f'/api/v1/receipts/{receipt_id}/payments/{first_log_id}',
+        headers=auth_headers, json={'reason': 'oops'})
+    assert resp.status_code == 400
+    assert 'last payment' in resp.get_json()['error'].lower()
+
+def test_delete_payment_requires_reason(client, auth_headers, app):
+    receipt_id = _seed(app)
+    client.post(f'/api/v1/receipts/{receipt_id}/payments', headers=auth_headers, json={
+        'amount': 50000, 'payment_method': 'cash', 'payment_date': '2026-06-18'
+    })
+    with app.app_context():
+        log_id = PaymentLog.query.filter_by(receipt_id=receipt_id).first().id
+    resp = client.delete(f'/api/v1/receipts/{receipt_id}/payments/{log_id}',
+        headers=auth_headers, json={'reason': '  '})
+    assert resp.status_code == 400
+    assert 'reason' in resp.get_json()['error'].lower()
+
+def test_delete_payment_blocked_when_next_receipt_exists(client, auth_headers, app):
+    receipt_id = _seed(app)
+    client.post(f'/api/v1/receipts/{receipt_id}/payments', headers=auth_headers, json={
+        'amount': 50000, 'payment_method': 'cash', 'payment_date': '2026-06-18'
+    })
+    with app.app_context():
+        receipt = Receipt.query.get(receipt_id)
+        next_receipt = Receipt(
+            receipt_number='RCP-202607-0001', room_id=receipt.room_id, tenant_id=receipt.tenant_id,
+            billing_month=7, billing_year=2026, room_price=200000,
+            total_amount=200000, paid_amount=0, remaining_balance=200000,
+            payment_status='unpaid'
+        )
+        db.session.add(next_receipt)
+        db.session.commit()
+        log_id = PaymentLog.query.filter_by(receipt_id=receipt_id).first().id
+    resp = client.delete(f'/api/v1/receipts/{receipt_id}/payments/{log_id}',
+        headers=auth_headers, json={'reason': 'correction'})
+    assert resp.status_code == 400
+    assert 'next month' in resp.get_json()['error'].lower()

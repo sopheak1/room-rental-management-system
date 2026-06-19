@@ -4,7 +4,9 @@ from flask_jwt_extended import jwt_required
 from app.routes.api import api_bp
 from app.routes.api.receipts import _receipt_dict
 from app.models import Receipt, PaymentLog
+from app.routes.receipts import _has_next_receipt
 from app.utils.verification import generate_payment_hash
+from app.utils.google_drive import backup_to_drive
 from app import db
 
 @api_bp.route('/receipts/<int:receipt_id>/payments', methods=['POST'])
@@ -45,6 +47,7 @@ def record_payment(receipt_id):
     receipt.updated_at = datetime.utcnow()
     db.session.add(log)
     db.session.commit()
+    backup_to_drive()
     return jsonify(_receipt_dict(receipt, include_logs=True)), 200
 
 @api_bp.route('/receipts/<int:receipt_id>/payments/<int:log_id>', methods=['DELETE'])
@@ -56,16 +59,31 @@ def delete_payment(receipt_id, log_id):
         return jsonify({'error': 'Not found'}), 404
     if log.deleted_at:
         return jsonify({'error': 'Payment already deleted'}), 409
+    if _has_next_receipt(receipt):
+        return jsonify({'error': 'Cannot delete — a receipt for the next month already exists'}), 400
+    last_log = PaymentLog.query.filter_by(receipt_id=receipt_id, deleted_at=None) \
+                                .order_by(PaymentLog.created_at.desc()).first()
+    if not last_log or last_log.id != log_id:
+        return jsonify({'error': 'Only the last payment can be deleted'}), 400
     data = request.get_json(silent=True) or {}
-    reason = data.get('reason', '')
+    reason = (data.get('reason') or '').strip()
+    if not reason:
+        return jsonify({'error': 'A delete reason is required'}), 400
     log.deleted_at = datetime.utcnow()
     log.delete_reason = reason
     # Recalculate receipt paid_amount from non-deleted logs
     active_logs = PaymentLog.query.filter_by(
         receipt_id=receipt_id, deleted_at=None).all()
-    receipt.paid_amount = sum(l.amount for l in active_logs)
-    receipt.remaining_balance = receipt.total_amount - receipt.paid_amount
-    receipt.payment_status = 'unpaid' if receipt.paid_amount == 0 else 'partial'
+    receipt.paid_amount = round(sum(l.amount for l in active_logs), 2)
+    receipt.remaining_balance = round(receipt.total_amount - receipt.paid_amount, 2)
+    if receipt.paid_amount <= 0:
+        receipt.payment_status = 'unpaid'
+    elif receipt.paid_amount < receipt.total_amount:
+        receipt.payment_status = 'partial'
+    else:
+        receipt.payment_status = 'paid'
+        receipt.remaining_balance = 0.0
     receipt.updated_at = datetime.utcnow()
     db.session.commit()
+    backup_to_drive()
     return jsonify({'msg': 'Payment deleted', 'receipt': _receipt_dict(receipt, include_logs=True)}), 200

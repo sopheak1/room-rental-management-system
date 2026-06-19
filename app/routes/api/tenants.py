@@ -2,7 +2,8 @@ from datetime import datetime, date
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required
 from app.routes.api import api_bp
-from app.models import Tenant, Room, TenantHistory
+from app.models import Tenant, Room, TenantHistory, Receipt
+from app.utils.google_drive import backup_to_drive
 from app import db
 
 def _tenant_dict(t):
@@ -82,6 +83,15 @@ def checkout_tenant(tenant_id):
         return jsonify({'error': 'Tenant not found'}), 404
     if not tenant.is_active:
         return jsonify({'error': 'Tenant already checked out'}), 400
+    outstanding_count = Receipt.query.filter_by(room_id=tenant.room_id).filter(
+        Receipt.remaining_balance > 0,
+        Receipt.payment_status.in_(['unpaid', 'partial'])
+    ).count()
+    if outstanding_count > 0:
+        return jsonify({
+            'error': 'Cannot check out — there are still outstanding balances. Pay or write off first.',
+            'outstanding_count': outstanding_count
+        }), 400
     data = request.get_json(silent=True) or {}
     move_out = data.get('move_out_date')
     history = TenantHistory(
@@ -102,4 +112,24 @@ def checkout_tenant(tenant_id):
         room.updated_at = datetime.utcnow()
     db.session.add(history)
     db.session.commit()
+    backup_to_drive()
     return jsonify({'msg': 'Checked out successfully'}), 200
+
+
+@api_bp.route('/tenants/<int:tenant_id>/write-off', methods=['POST'])
+@jwt_required()
+def write_off_tenant(tenant_id):
+    tenant = Tenant.query.get(tenant_id)
+    if not tenant:
+        return jsonify({'error': 'Tenant not found'}), 404
+    outstanding = Receipt.query.filter_by(room_id=tenant.room_id).filter(
+        Receipt.remaining_balance > 0,
+        Receipt.payment_status.in_(['unpaid', 'partial'])
+    ).all()
+    for receipt in outstanding:
+        receipt.notes = ((receipt.notes or '') + ' [Written off at checkout]').strip()
+        receipt.remaining_balance = 0.0
+        receipt.payment_status = 'paid'
+    db.session.commit()
+    backup_to_drive()
+    return jsonify({'msg': f'{len(outstanding)} receipt(s) written off', 'count': len(outstanding)}), 200

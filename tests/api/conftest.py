@@ -1,4 +1,13 @@
+import os
 import pytest
+
+# Must be set before create_app() runs — create_app() itself calls db.create_all()
+# against whatever SQLALCHEMY_DATABASE_URI is in config.py at that point, and
+# Flask-SQLAlchemy caches the engine on first use. Overriding the URI *after*
+# create_app() returns is too late and silently falls through to the real
+# instance/rental.db file (this previously wiped the live database).
+os.environ['RENTAL_TESTING'] = '1'
+
 from app import create_app, db as _db
 from app.models import User
 
@@ -8,10 +17,11 @@ def app():
     app = create_app()
     app.config.update({
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'JWT_SECRET_KEY': 'test-secret-key',
         'WTF_CSRF_ENABLED': False,
     })
+    assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///:memory:', \
+        'Refusing to run tests against a non-in-memory database'
     with app.app_context():
         # Explicitly remove and drop any existing session/tables
         _db.session.remove()

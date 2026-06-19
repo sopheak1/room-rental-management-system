@@ -1,6 +1,6 @@
 from datetime import date
 from app import db
-from app.models import Building, Room, Tenant
+from app.models import Building, Room, Tenant, Receipt
 
 def _seed(app):
     with app.app_context():
@@ -86,3 +86,50 @@ def test_checkout_tenant_double_checkout(client, auth_headers, app):
         })
     assert resp.status_code == 400
     assert 'already checked out' in resp.get_json()['error'].lower()
+
+def test_checkout_blocked_when_outstanding_balance(client, auth_headers, app):
+    """Checkout must hard-block on outstanding balances, matching web —
+    no bypass/force flag is honored."""
+    room_id, tenant_id = _seed(app)
+    with app.app_context():
+        receipt = Receipt(
+            receipt_number='RCP-202606-0001', room_id=room_id, tenant_id=tenant_id,
+            billing_month=6, billing_year=2026, room_price=150000,
+            total_amount=150000, paid_amount=0, remaining_balance=150000,
+            payment_status='unpaid'
+        )
+        db.session.add(receipt)
+        db.session.commit()
+    resp = client.post(f'/api/v1/tenants/{tenant_id}/checkout',
+        headers=auth_headers, json={
+            'move_out_date': '2026-06-30',
+            'deposit_refunded': 150000,
+            'move_out_reason': 'End of contract',
+            'force_checkout': True
+        })
+    assert resp.status_code == 400
+    assert 'outstanding' in resp.get_json()['error'].lower()
+    with app.app_context():
+        assert Tenant.query.get(tenant_id).is_active is True
+
+def test_checkout_allowed_after_write_off(client, auth_headers, app):
+    room_id, tenant_id = _seed(app)
+    with app.app_context():
+        receipt = Receipt(
+            receipt_number='RCP-202606-0001', room_id=room_id, tenant_id=tenant_id,
+            billing_month=6, billing_year=2026, room_price=150000,
+            total_amount=150000, paid_amount=0, remaining_balance=150000,
+            payment_status='unpaid'
+        )
+        db.session.add(receipt)
+        db.session.commit()
+    resp = client.post(f'/api/v1/tenants/{tenant_id}/write-off', headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.get_json()['count'] == 1
+    resp = client.post(f'/api/v1/tenants/{tenant_id}/checkout',
+        headers=auth_headers, json={
+            'move_out_date': '2026-06-30',
+            'deposit_refunded': 150000,
+            'move_out_reason': 'End of contract'
+        })
+    assert resp.status_code == 200

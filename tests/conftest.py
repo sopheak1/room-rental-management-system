@@ -1,4 +1,9 @@
+import os
 import pytest
+
+# Must be set before create_app() runs — see tests/api/conftest.py for why.
+os.environ['RENTAL_TESTING'] = '1'
+
 from app import create_app, db as _db
 from app.models import User
 
@@ -8,11 +13,12 @@ def app():
     app = create_app()
     app.config.update({
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'WTF_CSRF_ENABLED': False,
         'LOGIN_DISABLED': False,
         'SECRET_KEY': 'test-secret',
     })
+    assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///:memory:', \
+        'Refusing to run tests against a non-in-memory database'
     with app.app_context():
         _db.create_all()
         # Create a test user

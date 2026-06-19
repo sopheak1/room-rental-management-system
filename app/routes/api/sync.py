@@ -35,7 +35,9 @@ def sync():
         'buildings': [{'id': b.id, 'name': b.name, 'address': b.address,
                        'created_at': _fmt(b.created_at), 'updated_at': _fmt(b.updated_at)}
                       for b in buildings],
-        'rooms': [{'id': r.id, 'building_id': r.building_id, 'room_number': r.room_number,
+        'rooms': [{'id': r.id, 'building_id': r.building_id,
+                   'building_name': r.building.name if r.building else None,
+                   'room_number': r.room_number,
                    'floor': r.floor, 'room_type': r.room_type, 'price': r.price,
                    'deposit_amount': r.deposit_amount, 'status': r.status,
                    'created_at': _fmt(r.created_at), 'updated_at': _fmt(r.updated_at)}

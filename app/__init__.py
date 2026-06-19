@@ -1,3 +1,4 @@
+import os
 import click
 from flask import Flask, session, redirect, request, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -96,6 +97,8 @@ def create_app():  # noqa: C901
 
     app = Flask(__name__, template_folder='templates', static_folder='static')
     app.config.from_object('config.Config')
+    if os.environ.get('RENTAL_TESTING'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
     db.init_app(app)
     login_manager.init_app(app)

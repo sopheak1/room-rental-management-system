@@ -3,6 +3,8 @@ from flask import request, jsonify
 from flask_jwt_extended import jwt_required
 from app.routes.api import api_bp
 from app.models import Receipt, PaymentLog
+from app.routes.receipts import _generate_receipt_number, _has_next_receipt
+from app.utils.google_drive import backup_to_drive
 from app import db
 
 def _receipt_dict(r, include_logs=False):
@@ -82,12 +84,23 @@ def create_receipt():
             'existing_id': existing.id,
             'server_data': _receipt_dict(existing, include_logs=True)
         }), 409
-    # Generate receipt number
-    count = Receipt.query.filter_by(billing_year=year).count() + 1
-    receipt_number = f"RCP-{year}{month:02d}-{count:04d}"
-    total = (data.get('room_price', 0) + data.get('electricity_total', 0) +
-             data.get('water_total', 0) + data.get('previous_balance', 0) +
-             data.get('late_fee', 0) - data.get('discount', 0))
+    receipt_number = _generate_receipt_number(year, month)
+    total = round(data.get('room_price', 0) + data.get('electricity_total', 0) +
+                  data.get('water_total', 0) + data.get('previous_balance', 0) +
+                  data.get('fee', 0) + data.get('late_fee', 0) - data.get('discount', 0), 2)
+    total_amount = data.get('total_amount', total)
+
+    payment_status = data.get('payment_status', 'unpaid')
+    paid_amount = float(data.get('paid_amount', 0) or 0)
+    if payment_status == 'paid':
+        paid_amount = total_amount
+        remaining_balance = 0.0
+    elif payment_status == 'partial':
+        remaining_balance = round(max(total_amount - paid_amount, 0), 2)
+    else:
+        paid_amount = 0.0
+        remaining_balance = total_amount
+
     receipt = Receipt(
         receipt_number=receipt_number,
         room_id=room_id, tenant_id=tenant_id,
@@ -107,10 +120,10 @@ def create_receipt():
         fee=data.get('fee', 0),
         late_fee=data.get('late_fee', 0),
         discount=data.get('discount', 0),
-        total_amount=data.get('total_amount', total),
-        paid_amount=0,
-        remaining_balance=data.get('total_amount', total),
-        payment_status='unpaid',
+        total_amount=total_amount,
+        paid_amount=paid_amount,
+        remaining_balance=remaining_balance,
+        payment_status=payment_status,
         notes=data.get('notes', ''),
     )
     from sqlalchemy.exc import IntegrityError
@@ -120,4 +133,108 @@ def create_receipt():
     except IntegrityError:
         db.session.rollback()
         return jsonify({'error': 'A receipt for this tenant, room, and month already exists (concurrent request conflict)'}), 409
+    backup_to_drive()
     return jsonify(_receipt_dict(receipt, include_logs=True)), 201
+
+@api_bp.route('/receipts/<int:receipt_id>', methods=['PUT'])
+@jwt_required()
+def edit_receipt(receipt_id):
+    receipt = Receipt.query.get(receipt_id)
+    if not receipt:
+        return jsonify({'error': 'Receipt not found'}), 404
+    if _has_next_receipt(receipt):
+        return jsonify({'error': 'Cannot edit — a receipt for the next month already exists and carries this balance'}), 400
+
+    data = request.get_json(silent=True) or {}
+    elec_override = receipt.electricity_units is None
+    water_override = receipt.water_units is None
+
+    if elec_override:
+        electricity_total = float(data.get('electricity_total', 0) or 0)
+        elec_from = elec_to = elec_units = elec_ppu = None
+    else:
+        elec_from = float(data.get('electricity_from', 0) or 0)
+        elec_to = float(data.get('electricity_to', 0) or 0)
+        elec_units = max(elec_to - elec_from, 0)
+        elec_ppu = float(data.get('electricity_price_per_unit', 0) or 0)
+        electricity_total = round(elec_units * elec_ppu, 2)
+
+    if water_override:
+        water_total = float(data.get('water_total', 0) or 0)
+        w_from = w_to = w_units = w_ppu = None
+    else:
+        w_from = float(data.get('water_from', 0) or 0)
+        w_to = float(data.get('water_to', 0) or 0)
+        w_units = max(w_to - w_from, 0)
+        w_ppu = float(data.get('water_price_per_unit', 0) or 0)
+        water_total = round(w_units * w_ppu, 2)
+
+    room_price = float(data.get('room_price', 0) or 0)
+    previous_balance = float(data.get('previous_balance', 0) or 0)
+    fee = float(data.get('fee', 0) or 0)
+    late_fee = float(data.get('late_fee', 0) or 0)
+    discount = float(data.get('discount', 0) or 0)
+    notes = (data.get('notes') or '').strip() or None
+
+    new_total = round(room_price + electricity_total + water_total + previous_balance +
+                       fee + late_fee - discount, 2)
+
+    if new_total < receipt.paid_amount:
+        return jsonify({
+            'error': f'Cannot reduce total below paid amount ({receipt.paid_amount:,.0f})',
+            'paid_amount': receipt.paid_amount
+        }), 400
+
+    receipt.room_price = room_price
+    receipt.electricity_total = electricity_total
+    receipt.electricity_from = elec_from
+    receipt.electricity_to = elec_to
+    receipt.electricity_units = elec_units
+    receipt.electricity_price_per_unit = elec_ppu
+    receipt.water_total = water_total
+    receipt.water_from = w_from
+    receipt.water_to = w_to
+    receipt.water_units = w_units
+    receipt.water_price_per_unit = w_ppu
+    receipt.previous_balance = previous_balance
+    receipt.fee = fee
+    receipt.late_fee = late_fee
+    receipt.discount = discount
+    receipt.notes = notes
+    receipt.total_amount = new_total
+    receipt.remaining_balance = round(max(new_total - receipt.paid_amount, 0), 2)
+
+    if receipt.paid_amount >= new_total:
+        receipt.payment_status = 'paid'
+        receipt.remaining_balance = 0.0
+    elif receipt.paid_amount > 0:
+        receipt.payment_status = 'partial'
+    else:
+        receipt.payment_status = 'unpaid'
+
+    receipt.updated_at = datetime.utcnow()
+    db.session.commit()
+    backup_to_drive()
+    return jsonify(_receipt_dict(receipt, include_logs=True)), 200
+
+@api_bp.route('/receipts/<int:receipt_id>/defer', methods=['POST'])
+@jwt_required()
+def defer_receipt(receipt_id):
+    receipt = Receipt.query.get(receipt_id)
+    if not receipt:
+        return jsonify({'error': 'Receipt not found'}), 404
+    receipt.payment_status = 'deferred'
+    receipt.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify(_receipt_dict(receipt, include_logs=True)), 200
+
+@api_bp.route('/receipts/<int:receipt_id>/undefer', methods=['POST'])
+@jwt_required()
+def undefer_receipt(receipt_id):
+    receipt = Receipt.query.get(receipt_id)
+    if not receipt:
+        return jsonify({'error': 'Receipt not found'}), 404
+    receipt.payment_status = 'partial' if receipt.paid_amount > 0 else 'unpaid'
+    receipt.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify(_receipt_dict(receipt, include_logs=True)), 200
