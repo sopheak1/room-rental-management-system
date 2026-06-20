@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 from flask_jwt_extended import (
     create_access_token, create_refresh_token,
     jwt_required, get_jwt_identity, get_jwt
@@ -22,14 +22,25 @@ def login():
         return jsonify({'error': 'Invalid credentials'}), 401
     access_token  = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
-    return jsonify({'access_token': access_token, 'refresh_token': refresh_token}), 200
+    return jsonify({
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+        # Lets the app compute payment verification hashes offline (see
+        # app/utils/verification.py) without shipping the secret in the APK.
+        'verification_secret': current_app.config['MOBILE_VERIFICATION_SECRET'],
+    }), 200
 
 @api_bp.route('/auth/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
-    return jsonify({'access_token': access_token}), 200
+    # Re-sent on every refresh (not just login) so a rotated secret reaches
+    # an already-logged-in device without forcing a full re-login.
+    return jsonify({
+        'access_token': access_token,
+        'verification_secret': current_app.config['MOBILE_VERIFICATION_SECRET'],
+    }), 200
 
 @api_bp.route('/auth/logout', methods=['POST'])
 @jwt_required()

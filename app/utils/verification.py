@@ -9,7 +9,11 @@ def generate_payment_hash(receipt_number, remaining_balance, amount, payment_dat
     Recomputed on every payment, so each payment in a receipt's history keeps
     its own permanent code."""
     msg = f"{receipt_number}|{remaining_balance}|{amount}|{payment_date.isoformat()}|{payment_method or ''}"
-    secret = current_app.config['SECRET_KEY']
+    # Deliberately a separate secret from SECRET_KEY (config.py) — this value
+    # is shipped to the mobile app (via /auth/login, /auth/refresh) so it can
+    # compute this same hash offline. A leaked MOBILE_VERIFICATION_SECRET can
+    # only forge verification codes, not sessions/CSRF tokens.
+    secret = current_app.config['MOBILE_VERIFICATION_SECRET']
     digest = hmac.new(secret.encode(), msg.encode(), hashlib.sha256).hexdigest()
     code = digest[:8].upper()
     return f"{code[:4]}-{code[4:]}"

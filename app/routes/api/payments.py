@@ -33,7 +33,15 @@ def record_payment(receipt_id):
         new_remaining = 0
     elif status not in ('partial', 'deferred'):
         status = 'partial'
-    verification_hash = generate_payment_hash(
+    # Mobile computes this offline (with MOBILE_VERIFICATION_SECRET, synced at
+    # login) and prints it on the receipt immediately — if we recomputed our
+    # own hash here instead of trusting the submitted one, it would silently
+    # diverge from what's already on the printed paper the moment this sync
+    # request lands, permanently breaking that receipt's /receipts/verify
+    # lookup. Only fall back to server-side computation for payments that
+    # never went through mobile (i.e. the web form, which never sends this).
+    client_hash = (data.get('verification_hash') or '').strip()
+    verification_hash = client_hash or generate_payment_hash(
         receipt.receipt_number, new_remaining, amount, pay_date, data.get('payment_method', '')
     )
     log = PaymentLog(

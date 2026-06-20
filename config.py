@@ -5,6 +5,13 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'rental-secret-key-change-in-prod'
+    # Dedicated to payment verification hashes (app/utils/verification.py) only,
+    # deliberately separate from SECRET_KEY. Delivered to the mobile app via
+    # /auth/login and /auth/refresh so it never ships baked into the APK — a
+    # leak from a compromised device should only let someone forge
+    # verification codes, not session/CSRF tokens signed with SECRET_KEY.
+    MOBILE_VERIFICATION_SECRET = os.environ.get('MOBILE_VERIFICATION_SECRET') \
+        or 'rental-mobile-verify-key-change-in-prod'
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'rental.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     EXCHANGE_RATE = 4000  # 1 USD = 4,000 ៛
