@@ -46,6 +46,47 @@ Step 5 — Access from phone (same WiFi):
 
 
 --------------------------------------------------------------------------------
+  DATABASE SEEDING (TEST DATA)
+--------------------------------------------------------------------------------
+
+  The project includes seed_data.py to populate the database with comprehensive
+  test data for development and QA testing.
+
+  Run seed script (populate with test data):
+
+    cd room-rental-management-system
+    source venv/bin/activate
+    python seed_data.py
+
+  Reset & reseed database (clears all existing data):
+
+    python seed_data.py --clear
+
+  Seeded test data includes:
+
+    • 3 buildings (Downtown Heights, Riverside Apartments, Tech Park Residences)
+    • 15 rooms (mix of single/double/studio, various statuses)
+    • 4 active tenants (Samnang, Chhorvy, Sokhem, Phary)
+    • 2 historical tenants (for testing tenant checkout workflow)
+    • Utility prices (electricity: 1,850 ៛/kWh, water: 3,200 ៛/m³)
+    • 8 utility usage records (current month meter readings)
+    • 12 receipts (3 months of billing history)
+    • 10 payment logs (paid/partial/unpaid payment records)
+
+  Test login still works after seeding:
+
+    Username : admin
+    Password : admin123
+
+  Use this data to:
+    • Test receipt generation & duplicate-detection (tenant_id + room_id constraint)
+    • Verify payment workflows (unpaid → partial → paid)
+    • Test billing calculations (rent + utilities)
+    • QA reporting features (overdue, occupancy, revenue)
+    • Validate payment history & carry-over logic
+
+
+--------------------------------------------------------------------------------
   QUICK START
 --------------------------------------------------------------------------------
 

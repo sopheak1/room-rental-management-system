@@ -1,0 +1,986 @@
+{
+  "info": {
+    "name": "Room Rental Mobile API",
+    "description": "REST API for mobile applications (Android/iOS). JSON request/response format. Requires JWT authentication token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login with username and password. Returns JWT access token for subsequent API calls."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"username\": \"admin\", \"password\": \"password\"}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/auth/login",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "body": "{\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"admin\",\n    \"full_name\": \"Admin User\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout current user (token becomes invalid)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard"
+              ]
+            },
+            "description": "Get dashboard summary with statistics (occupancy, collection rate, overdue count)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Buildings",
+      "item": [
+        {
+          "name": "List All Buildings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/buildings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "buildings"
+              ]
+            },
+            "description": "Get list of all buildings"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Building Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/buildings/{{building_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "buildings",
+                "{{building_id}}"
+              ]
+            },
+            "description": "Get building with all rooms and their status"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Building",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Building A\",\n  \"address\": \"123 Main Street\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/buildings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "buildings"
+              ]
+            },
+            "description": "Create a new building"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Building",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Building A - Updated\",\n  \"address\": \"456 New Street\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/buildings/{{building_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "buildings",
+                "{{building_id}}"
+              ]
+            },
+            "description": "Update building details"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Building",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/buildings/{{building_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "buildings",
+                "{{building_id}}"
+              ]
+            },
+            "description": "Delete a building (must have no rooms)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Rooms",
+      "item": [
+        {
+          "name": "List Rooms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms?building_id=1&status=occupied",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms"
+              ],
+              "query": [
+                {
+                  "key": "building_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "occupied",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List rooms with optional filters. Status: available, occupied, maintenance"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Room Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms/{{room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "{{room_id}}"
+              ]
+            },
+            "description": "Get room detail with active tenant, history, and recent receipts"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"building_id\": 1,\n  \"room_number\": \"101\",\n  \"floor\": 1,\n  \"room_type\": \"single\",\n  \"price\": 500000,\n  \"deposit_amount\": 1000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms"
+              ]
+            },
+            "description": "Create a new room in a building"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Room",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"building_id\": 1,\n  \"room_number\": \"101\",\n  \"floor\": 1,\n  \"room_type\": \"single\",\n  \"price\": 550000,\n  \"deposit_amount\": 1000000,\n  \"status\": \"available\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms/{{room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "{{room_id}}"
+              ]
+            },
+            "description": "Update room details"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Room",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms/{{room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "{{room_id}}"
+              ]
+            },
+            "description": "Delete a room (must have no active tenant)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "Add Tenant to Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"gender\": \"M\",\n  \"nid\": \"123456789\",\n  \"tel\": \"0123456789\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_tel\": \"0987654321\",\n  \"num_roommates\": 1,\n  \"contract_duration\": \"monthly\",\n  \"move_in_date\": \"2024-06-01\",\n  \"deposit_paid\": 1000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms/{{room_id}}/tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "{{room_id}}",
+                "tenants"
+              ]
+            },
+            "description": "Add a new tenant to a room"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}"
+              ]
+            },
+            "description": "Get tenant details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"gender\": \"M\",\n  \"nid\": \"123456789\",\n  \"tel\": \"0123456789\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_tel\": \"0987654321\",\n  \"num_roommates\": 2,\n  \"deposit_paid\": 1000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}"
+              ]
+            },
+            "description": "Update tenant information"
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"move_out_date\": \"2024-12-31\",\n  \"move_out_reason\": \"Relocation\",\n  \"deposit_refunded\": 1000000,\n  \"force_checkout\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}",
+                "checkout"
+              ]
+            },
+            "description": "Check out a tenant. Set force_checkout=true to ignore outstanding balances."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Receipts",
+      "item": [
+        {
+          "name": "List Receipts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/receipts?month=6&year=2024&status=unpaid",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "receipts"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6",
+                  "disabled": true
+                },
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "unpaid",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List receipts for a month. Filter by status: paid, unpaid, partial, deferred"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Receipt Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/receipts/{{receipt_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "receipts",
+                "{{receipt_id}}"
+              ]
+            },
+            "description": "Get receipt detail with all payment logs"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": 1,\n  \"billing_month\": 6,\n  \"billing_year\": 2024,\n  \"electricity_total\": 40000,\n  \"water_total\": 70000,\n  \"previous_balance\": 0,\n  \"fee\": 0,\n  \"late_fee\": 0,\n  \"discount\": 0,\n  \"notes\": \"June billing\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/receipts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "receipts"
+              ]
+            },
+            "description": "Create a new receipt for a room"
+          },
+          "response": []
+        },
+        {
+          "name": "Record Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paid_amount\": 500000,\n  \"payment_method\": \"cash\",\n  \"payment_date\": \"2024-06-15\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/receipts/{{receipt_id}}/pay",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "receipts",
+                "{{receipt_id}}",
+                "pay"
+              ]
+            },
+            "description": "Record a payment for a receipt"
+          },
+          "response": []
+        },
+        {
+          "name": "Defer Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/receipts/{{receipt_id}}/defer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "receipts",
+                "{{receipt_id}}",
+                "defer"
+              ]
+            },
+            "description": "Defer receipt balance to next month"
+          },
+          "response": []
+        },
+        {
+          "name": "Undefer Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/receipts/{{receipt_id}}/undefer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "receipts",
+                "{{receipt_id}}",
+                "undefer"
+              ]
+            },
+            "description": "Restore deferred receipt to active status"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "item": [
+        {
+          "name": "Get Current Utility Prices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/utilities/prices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "utilities",
+                "prices"
+              ]
+            },
+            "description": "Get current water, electricity, and fee prices"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Utility Price",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"utility_type\": \"water\",\n  \"price_per_unit\": 3500,\n  \"effective_date\": \"2024-06-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/utilities/prices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "utilities",
+                "prices"
+              ]
+            },
+            "description": "Update utility price (water, electricity, or fee)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Monthly Summary Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reports/summary?month=6&year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6"
+                },
+                {
+                  "key": "year",
+                  "value": "2024"
+                }
+              ]
+            },
+            "description": "Get monthly payment summary with collection rate and status breakdown"
+          },
+          "response": []
+        },
+        {
+          "name": "Overdue Payments Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reports/overdue",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "overdue"
+              ]
+            },
+            "description": "Get list of overdue unpaid/partial receipts"
+          },
+          "response": []
+        },
+        {
+          "name": "Occupancy Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reports/occupancy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "occupancy"
+              ]
+            },
+            "description": "Get occupancy rate by building"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token obtained from /api/v1/auth/login"
+    },
+    {
+      "key": "building_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "room_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "receipt_id",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

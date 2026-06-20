@@ -1,0 +1,2128 @@
+{
+  "info": {
+    "name": "Room Rental Management System API",
+    "description": "Complete REST API collection for room-rental-management-system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "password",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "description": "Login with username and password. Returns redirect to dashboard on success."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
+            "description": "Logout current user. Returns redirect to login page."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Get main dashboard with summary statistics and current month payment status"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Buildings",
+      "item": [
+        {
+          "name": "List Buildings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/buildings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buildings"
+              ]
+            },
+            "description": "Get list of all buildings"
+          },
+          "response": []
+        },
+        {
+          "name": "New Building Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/buildings/new",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buildings",
+                "new"
+              ]
+            },
+            "description": "Get form to create new building"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Building",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Building A",
+                  "type": "text"
+                },
+                {
+                  "key": "address",
+                  "value": "123 Main Street",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/buildings/new",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buildings",
+                "new"
+              ]
+            },
+            "description": "Create a new building"
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Building Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/buildings/{{building_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buildings",
+                "{{building_id}}",
+                "edit"
+              ]
+            },
+            "description": "Get form to edit building"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Building",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Building A Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "address",
+                  "value": "456 New Street",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/buildings/{{building_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buildings",
+                "{{building_id}}",
+                "edit"
+              ]
+            },
+            "description": "Update an existing building"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Building",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/buildings/{{building_id}}/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "buildings",
+                "{{building_id}}",
+                "delete"
+              ]
+            },
+            "description": "Delete a building (must have no rooms)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Rooms",
+      "item": [
+        {
+          "name": "List Rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rooms?building_id=&status=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms"
+              ],
+              "query": [
+                {
+                  "key": "building_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all rooms. Optional filters: building_id, status (available, occupied, maintenance)"
+          },
+          "response": []
+        },
+        {
+          "name": "New Room Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rooms/new",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "new"
+              ]
+            },
+            "description": "Get form to create new room"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "building_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "room_number",
+                  "value": "101",
+                  "type": "text"
+                },
+                {
+                  "key": "floor",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "room_type",
+                  "value": "single",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "500000",
+                  "type": "text"
+                },
+                {
+                  "key": "deposit_amount",
+                  "value": "1000000",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/rooms/new",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "new"
+              ]
+            },
+            "description": "Create a new room"
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Room Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rooms/{{room_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "{{room_id}}",
+                "edit"
+              ]
+            },
+            "description": "Get form to edit room"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "building_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "room_number",
+                  "value": "101",
+                  "type": "text"
+                },
+                {
+                  "key": "floor",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "room_type",
+                  "value": "single",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "550000",
+                  "type": "text"
+                },
+                {
+                  "key": "deposit_amount",
+                  "value": "1000000",
+                  "type": "text"
+                },
+                {
+                  "key": "status",
+                  "value": "available",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/rooms/{{room_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "{{room_id}}",
+                "edit"
+              ]
+            },
+            "description": "Update an existing room"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Room Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rooms/{{room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "{{room_id}}"
+              ]
+            },
+            "description": "Get detailed view of a room including tenant history and receipts"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/rooms/{{room_id}}/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "{{room_id}}",
+                "delete"
+              ]
+            },
+            "description": "Delete a room (must have no active tenant)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "Add Tenant Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rooms/{{room_id}}/tenant/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "{{room_id}}",
+                "tenant",
+                "add"
+              ]
+            },
+            "description": "Get form to add tenant to a room"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "John Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "gender",
+                  "value": "M",
+                  "type": "text"
+                },
+                {
+                  "key": "nid",
+                  "value": "123456789",
+                  "type": "text"
+                },
+                {
+                  "key": "tel",
+                  "value": "0123456789",
+                  "type": "text"
+                },
+                {
+                  "key": "emergency_contact_name",
+                  "value": "Jane Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "emergency_contact_tel",
+                  "value": "0987654321",
+                  "type": "text"
+                },
+                {
+                  "key": "num_roommates",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "contract_duration",
+                  "value": "monthly",
+                  "type": "text"
+                },
+                {
+                  "key": "move_in_date",
+                  "value": "2024-01-01",
+                  "type": "text"
+                },
+                {
+                  "key": "deposit_paid",
+                  "value": "1000000",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/rooms/{{room_id}}/tenant/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "{{room_id}}",
+                "tenant",
+                "add"
+              ]
+            },
+            "description": "Add a new tenant to a room"
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Tenant Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants/{{tenant_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "{{tenant_id}}",
+                "edit"
+              ]
+            },
+            "description": "Get form to edit tenant"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "John Doe Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "gender",
+                  "value": "M",
+                  "type": "text"
+                },
+                {
+                  "key": "nid",
+                  "value": "123456789",
+                  "type": "text"
+                },
+                {
+                  "key": "tel",
+                  "value": "0123456789",
+                  "type": "text"
+                },
+                {
+                  "key": "emergency_contact_name",
+                  "value": "Jane Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "emergency_contact_tel",
+                  "value": "0987654321",
+                  "type": "text"
+                },
+                {
+                  "key": "num_roommates",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "contract_duration",
+                  "value": "monthly",
+                  "type": "text"
+                },
+                {
+                  "key": "move_in_date",
+                  "value": "2024-01-01",
+                  "type": "text"
+                },
+                {
+                  "key": "deposit_paid",
+                  "value": "1000000",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/{{tenant_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "{{tenant_id}}",
+                "edit"
+              ]
+            },
+            "description": "Update tenant information"
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout Review",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants/{{tenant_id}}/checkout-review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "{{tenant_id}}",
+                "checkout-review"
+              ]
+            },
+            "description": "View outstanding balances and checkout options before tenant checkout"
+          },
+          "response": []
+        },
+        {
+          "name": "Write Off Outstanding Balances",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/{{tenant_id}}/write-off",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "{{tenant_id}}",
+                "write-off"
+              ]
+            },
+            "description": "Write off all outstanding balances for tenant before checkout"
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "move_out_date",
+                  "value": "2024-06-30",
+                  "type": "text"
+                },
+                {
+                  "key": "move_out_reason",
+                  "value": "Relocation",
+                  "type": "text"
+                },
+                {
+                  "key": "deposit_refunded",
+                  "value": "1000000",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/{{tenant_id}}/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "{{tenant_id}}",
+                "checkout"
+              ]
+            },
+            "description": "Check out a tenant from a room (move to history)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "item": [
+        {
+          "name": "List Utility Prices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utilities",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utilities"
+              ]
+            },
+            "description": "Get list of water, electricity, and fee prices with history"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Utility Price",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "utility_type",
+                  "value": "water",
+                  "type": "text"
+                },
+                {
+                  "key": "price_per_unit",
+                  "value": "3500",
+                  "type": "text"
+                },
+                {
+                  "key": "effective_date",
+                  "value": "2024-06-01",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/utilities/update",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utilities",
+                "update"
+              ]
+            },
+            "description": "Update utility price (water, electricity, or fee)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Prices (API)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utilities/current-prices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utilities",
+                "current-prices"
+              ]
+            },
+            "description": "Get current water and electricity prices as JSON"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Utility Usage",
+      "item": [
+        {
+          "name": "Setup Utility Billing Period",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utility-usage?month=6&year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utility-usage"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6",
+                  "disabled": true
+                },
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Step 1: Choose billing period and which rooms to record"
+          },
+          "response": []
+        },
+        {
+          "name": "Batch Input Readings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utility-usage/input?month=6&year=2024&utility=both&room_ids=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utility-usage",
+                "input"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6"
+                },
+                {
+                  "key": "year",
+                  "value": "2024"
+                },
+                {
+                  "key": "utility",
+                  "value": "both"
+                },
+                {
+                  "key": "room_ids",
+                  "value": "all"
+                }
+              ]
+            },
+            "description": "Step 2: Mobile-friendly form to enter meter readings for selected rooms"
+          },
+          "response": []
+        },
+        {
+          "name": "Save Utility Readings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "month",
+                  "value": "6",
+                  "type": "text"
+                },
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "type": "text"
+                },
+                {
+                  "key": "utility",
+                  "value": "both",
+                  "type": "text"
+                },
+                {
+                  "key": "room_ids",
+                  "value": "all",
+                  "type": "text"
+                },
+                {
+                  "key": "room_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_mode_1",
+                  "value": "meter",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_from_1",
+                  "value": "1000",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_to_1",
+                  "value": "1050",
+                  "type": "text"
+                },
+                {
+                  "key": "water_mode_1",
+                  "value": "meter",
+                  "type": "text"
+                },
+                {
+                  "key": "water_from_1",
+                  "value": "500",
+                  "type": "text"
+                },
+                {
+                  "key": "water_to_1",
+                  "value": "520",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/utility-usage/save",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utility-usage",
+                "save"
+              ]
+            },
+            "description": "Save meter readings for billing period"
+          },
+          "response": []
+        },
+        {
+          "name": "Lookup Utility Usage (API)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utility-usage/api/lookup?room_id=1&month=6&year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utility-usage",
+                "api",
+                "lookup"
+              ],
+              "query": [
+                {
+                  "key": "room_id",
+                  "value": "1"
+                },
+                {
+                  "key": "month",
+                  "value": "6"
+                },
+                {
+                  "key": "year",
+                  "value": "2024"
+                }
+              ]
+            },
+            "description": "Get staged utility readings for a room (used by receipt generation form)"
+          },
+          "response": []
+        },
+        {
+          "name": "Print Utility Sheet",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utility-usage/print?month=6&year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utility-usage",
+                "print"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6"
+                },
+                {
+                  "key": "year",
+                  "value": "2024"
+                }
+              ]
+            },
+            "description": "Get printable sheet for thermal 58mm printer"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate ESC/POS Printer Output",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utility-usage/escpos?month=6&year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utility-usage",
+                "escpos"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6"
+                },
+                {
+                  "key": "year",
+                  "value": "2024"
+                }
+              ]
+            },
+            "description": "Generate ESC/POS bitmap for Android Print Bridge (PT-210)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Receipts",
+      "item": [
+        {
+          "name": "List Receipts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/receipts?month=6&year=2024&status=&building_id=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6",
+                  "disabled": true
+                },
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "building_id",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List receipts for a billing month. Optional filters: status (paid, unpaid, partial, deferred), building_id"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/receipts/verify?code=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "verify"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Verify a payment using verification code (8 hex characters)"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Receipt Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/receipts/generate?room_id=1&billing_month=6&billing_year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "generate"
+              ],
+              "query": [
+                {
+                  "key": "room_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "billing_month",
+                  "value": "6",
+                  "disabled": true
+                },
+                {
+                  "key": "billing_year",
+                  "value": "2024",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get form to generate new receipt"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "room_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "billing_month",
+                  "value": "6",
+                  "type": "text"
+                },
+                {
+                  "key": "billing_year",
+                  "value": "2024",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_override",
+                  "value": "off",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_from",
+                  "value": "1000",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_to",
+                  "value": "1050",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_price_per_unit",
+                  "value": "800",
+                  "type": "text"
+                },
+                {
+                  "key": "water_override",
+                  "value": "off",
+                  "type": "text"
+                },
+                {
+                  "key": "water_from",
+                  "value": "500",
+                  "type": "text"
+                },
+                {
+                  "key": "water_to",
+                  "value": "520",
+                  "type": "text"
+                },
+                {
+                  "key": "water_price_per_unit",
+                  "value": "3500",
+                  "type": "text"
+                },
+                {
+                  "key": "previous_balance",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "fee",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "late_fee",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "discount",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "payment_status",
+                  "value": "unpaid",
+                  "type": "text"
+                },
+                {
+                  "key": "paid_amount",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "payment_method",
+                  "value": "cash",
+                  "type": "text"
+                },
+                {
+                  "key": "notes",
+                  "value": "",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/receipts/generate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "generate"
+              ]
+            },
+            "description": "Create a new receipt for a room"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Receipt Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}"
+              ]
+            },
+            "description": "Get detailed view of a receipt including payment logs"
+          },
+          "response": []
+        },
+        {
+          "name": "Record Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "paid_amount",
+                  "value": "500000",
+                  "type": "text"
+                },
+                {
+                  "key": "payment_method",
+                  "value": "cash",
+                  "type": "text"
+                },
+                {
+                  "key": "payment_date",
+                  "value": "2024-06-15",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}/pay",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}",
+                "pay"
+              ]
+            },
+            "description": "Record a payment for a receipt"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Payment Log Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "delete_reason_code",
+                  "value": "entry_error",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}/payment-log/{{log_id}}/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}",
+                "payment-log",
+                "{{log_id}}",
+                "delete"
+              ]
+            },
+            "description": "Delete the last payment log entry (with reason)"
+          },
+          "response": []
+        },
+        {
+          "name": "Defer Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}/defer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}",
+                "defer"
+              ]
+            },
+            "description": "Defer receipt balance to next month"
+          },
+          "response": []
+        },
+        {
+          "name": "Undefer Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}/undefer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}",
+                "undefer"
+              ]
+            },
+            "description": "Restore deferred receipt to active status"
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Receipt Form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}",
+                "edit"
+              ]
+            },
+            "description": "Get form to edit receipt details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "electricity_from",
+                  "value": "1000",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_to",
+                  "value": "1055",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity_price_per_unit",
+                  "value": "800",
+                  "type": "text"
+                },
+                {
+                  "key": "water_from",
+                  "value": "500",
+                  "type": "text"
+                },
+                {
+                  "key": "water_to",
+                  "value": "520",
+                  "type": "text"
+                },
+                {
+                  "key": "water_price_per_unit",
+                  "value": "3500",
+                  "type": "text"
+                },
+                {
+                  "key": "room_price",
+                  "value": "500000",
+                  "type": "text"
+                },
+                {
+                  "key": "fee",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "late_fee",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "discount",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "notes",
+                  "value": "",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}",
+                "edit"
+              ]
+            },
+            "description": "Update receipt details"
+          },
+          "response": []
+        },
+        {
+          "name": "Print Receipt Table",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}/print_table",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}",
+                "print_table"
+              ]
+            },
+            "description": "Get receipt in Khmer table format for 58mm thermal printer"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate ESC/POS Receipt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/receipts/{{receipt_id}}/escpos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "receipts",
+                "{{receipt_id}}",
+                "escpos"
+              ]
+            },
+            "description": "Generate ESC/POS bitmap for Android Print Bridge (PT-210)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Reports Index",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports"
+              ]
+            },
+            "description": "Get reports main page"
+          },
+          "response": []
+        },
+        {
+          "name": "Revenue Breakdown",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/breakdown?month=6&year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "breakdown"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6",
+                  "disabled": true
+                },
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get detailed revenue breakdown (room fees, utilities, service fees)"
+          },
+          "response": []
+        },
+        {
+          "name": "Monthly Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/summary?month=6&year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "6",
+                  "disabled": true
+                },
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get monthly payment summary with collection rate"
+          },
+          "response": []
+        },
+        {
+          "name": "Annual Revenue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/revenue?year=2024",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "revenue"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get annual revenue by month (expected vs collected)"
+          },
+          "response": []
+        },
+        {
+          "name": "Overdue Payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/overdue",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "overdue"
+              ]
+            },
+            "description": "Get overdue payments and upcoming due dates"
+          },
+          "response": []
+        },
+        {
+          "name": "Occupancy Rate",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/occupancy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "occupancy"
+              ]
+            },
+            "description": "Get occupancy rate by building"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Settings Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "Get settings page (Google Drive backup, database management)"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload OAuth Client",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "client_file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/upload-client",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "upload-client"
+              ]
+            },
+            "description": "Upload Google OAuth client JSON file"
+          },
+          "response": []
+        },
+        {
+          "name": "Save Google Drive Folder ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "folder_id",
+                  "value": "1XXXXXXXXXX_folder_id_here_XXXXXXXXX",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/save-folder",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "save-folder"
+              ]
+            },
+            "description": "Save Google Drive folder ID for backups"
+          },
+          "response": []
+        },
+        {
+          "name": "Authorize Google Drive",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/auth/google",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "auth",
+                "google"
+              ]
+            },
+            "description": "Initiate Google OAuth flow to authorize Drive access"
+          },
+          "response": []
+        },
+        {
+          "name": "Google Auth Callback",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/auth/google/callback?code=&state=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "auth",
+                "google",
+                "callback"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": ""
+                },
+                {
+                  "key": "state",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "OAuth callback endpoint (handled automatically)"
+          },
+          "response": []
+        },
+        {
+          "name": "Backup Database Now",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/backup-now",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "backup-now"
+              ]
+            },
+            "description": "Trigger immediate backup to Google Drive"
+          },
+          "response": []
+        },
+        {
+          "name": "Test Google Drive Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "test"
+              ]
+            },
+            "description": "Test Google Drive connection by uploading and deleting a test file"
+          },
+          "response": []
+        },
+        {
+          "name": "Download Database",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/download-db",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "download-db"
+              ]
+            },
+            "description": "Download current database as .db file"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Database",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "db_file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/upload-db",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "upload-db"
+              ]
+            },
+            "description": "Restore database from uploaded .db file"
+          },
+          "response": []
+        },
+        {
+          "name": "Disconnect Google Drive",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/disconnect",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "disconnect"
+              ]
+            },
+            "description": "Disconnect from Google Drive and remove authorization"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "building_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "room_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "receipt_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "log_id",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

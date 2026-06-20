@@ -3,7 +3,7 @@
 **Project:** room-rental-management-system  
 **GitHub:** https://github.com/sopheak1/room-rental-management-system  
 **Created:** 2026-05-28  
-**Last Updated:** 2026-06-12  
+**Last Updated:** 2026-06-20  
 **Owner:** Sopheak  
 **Stack:** Python 3.9 · Flask · SQLite · Bootstrap 5 · SQLAlchemy · Flask-Login
 
@@ -230,16 +230,25 @@ Android App (WebView + Bluetooth)
 - **Protocol**: Bluetooth Classic SPP (UUID: 00001101-...)
 - **Language**: Khmer via image mode (not text mode)
 
-### 11. Settings (`/settings`)
+### 11. Request Logging & Error Tracking
 
-#### 11.1 Database Backup & Restore
+- Every request (web pages + `/api/v1/*` mobile API) is logged with a short request ID, method, path, client IP, and JSON body
+- Every response is logged with status code and duration in ms; 4xx/5xx responses also log the error body
+- Unhandled exceptions are logged with full traceback via `teardown_request`
+- Sensitive fields (`password`, `token`, `access_token`, `refresh_token`, `authorization`, `jwt`) are masked as `***` before logging
+- Output: rotating file `logs/app.log` (2MB × 5 backups, gitignored) + console
+- Implementation: `app/utils/request_logging.py`, wired in `create_app()`
+
+### 12. Settings (`/settings`)
+
+#### 12.1 Database Backup & Restore
 - **Download**: streams a SQLite-API backup copy of `instance/rental.db` as `rental_backup_<timestamp>.db`
 - **Restore**: upload a `.db` file → validated as a real SQLite DB (`SELECT name FROM sqlite_master`) → current DB saved as `rental.db.prev` → uploaded file replaces `instance/rental.db`
 - Confirmation dialog before restore (data-loss warning, KM/EN)
 - Invalid (non-SQLite) uploads are rejected with an error flash; current DB is left untouched
 - After replacing the file, the SQLAlchemy connection pool is disposed (`db.engine.dispose()`) so subsequent requests open fresh connections against the restored file instead of stale fds pointing at the renamed-away old database
 
-#### 11.2 Google Drive Backup
+#### 12.2 Google Drive Backup
 - 3-step setup: (1) upload OAuth Client JSON, (2) enter target Drive Folder ID, (3) connect Google account (OAuth flow)
 - Once connected: shows status badge, masked Folder ID, and "Backup Now" / "Test Connection" / "Disconnect" actions
 - **Automatic backup** triggered after key data-changing actions — receipt generation/payment/edit (`receipts.py`) and tenant create/checkout (`tenants.py`)
@@ -321,6 +330,7 @@ utility_usage
 | 25 | Custom `.u-meter-row` class instead of Bootstrap `d-flex` for the utility input meter row | Bootstrap's `.d-flex` is `display:flex !important`, which silently overrode the inline `display:none` toggle, so the From/To fields never actually hid in Direct mode |
 | 26 | `db.engine.dispose()` after DB restore | SQLAlchemy's `QueuePool` keeps open file descriptors to the old (renamed-away) SQLite file after `shutil.move`; without disposing the pool, the app kept reading/writing the orphaned old database and the restore appeared to do nothing |
 | 27 | Receipt back button skips Generate/Edit forms via a stashed `receipt_flow_origin` | After a Generate→redirect, `document.referrer` on Receipt Detail points at the Generate form (not the page before it), so the old smart-back sent users back into the form instead of to Dashboard/Receipts/etc. Generate now stashes its own referrer before submit; Receipt Detail consumes it when arriving via Generate, and ignores Edit's referrer entirely so the stored origin survives an edit round-trip |
+| 28 | App-wide `before_request`/`after_request`/`teardown_request` logging (not just `/api/v1`) | A single admin troubleshooting both the web UI and the mobile API needed one place to see all request/response/error activity, not two separate logging paths |
 
 ---
 

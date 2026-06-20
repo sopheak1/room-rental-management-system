@@ -100,6 +100,9 @@ def create_app():  # noqa: C901
     if os.environ.get('RENTAL_TESTING'):
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
+    from app.utils.request_logging import init_request_logging
+    init_request_logging(app)
+
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
