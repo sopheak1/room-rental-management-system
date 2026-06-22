@@ -658,6 +658,7 @@ select {
 .dash-badge-upcoming { background: var(--app-info-bg); color: var(--app-info); }
 .dash-badge-paid     { background: var(--app-success-bg); color: var(--app-success); }
 .dash-badge-generate { background: #f5f5f4; color: var(--app-text-2); }
+.dash-badge-promised { background: #fef3c7; color: #b45309; margin-left: 4px; }
 .dash-room-arrow { color: var(--app-border); font-size: 0.85rem; flex-shrink: 0; }
 
 /* ─── Shared filter dropdowns ─────────────────────────────── */

@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import date, datetime
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required
 from app.routes.api import api_bp
-from app.models import Receipt, PaymentLog
+from app.models import Receipt, PaymentLog, PromisedPaymentLog
 from app.routes.receipts import _generate_receipt_number, _has_next_receipt
 from app.utils.google_drive import backup_to_drive
+from app.utils.timezone import today as _today
 from app import db
 
 def _receipt_dict(r, include_logs=False):
@@ -26,6 +27,7 @@ def _receipt_dict(r, include_logs=False):
         'total_amount': r.total_amount, 'paid_amount': r.paid_amount,
         'remaining_balance': r.remaining_balance,
         'payment_status': r.payment_status, 'notes': r.notes,
+        'promised_payment_date': r.current_promised_date.isoformat() if r.current_promised_date else None,
         'created_at': r.created_at.isoformat() if r.created_at else None,
         'updated_at': r.updated_at.isoformat() if r.updated_at else None,
     }
@@ -226,6 +228,40 @@ def defer_receipt(receipt_id):
     receipt.payment_status = 'deferred'
     receipt.updated_at = datetime.utcnow()
     db.session.commit()
+    return jsonify(_receipt_dict(receipt, include_logs=True)), 200
+
+@api_bp.route('/receipts/<int:receipt_id>/promise', methods=['POST'])
+@jwt_required()
+def add_promise(receipt_id):
+    receipt = Receipt.query.get(receipt_id)
+    if not receipt:
+        return jsonify({'error': 'Receipt not found'}), 404
+    if _has_next_receipt(receipt):
+        return jsonify({'error': 'Cannot set a promise — a receipt for the next month already exists'}), 400
+
+    data = request.get_json(silent=True) or {}
+    promised_date_str = data.get('promised_date')
+    if not promised_date_str:
+        return jsonify({'error': 'promised_date is required'}), 400
+
+    try:
+        promised_date = date.fromisoformat(promised_date_str)
+    except ValueError:
+        return jsonify({'error': 'Invalid promised_date format. Use YYYY-MM-DD'}), 400
+    if promised_date < _today():
+        return jsonify({'error': 'Promised date cannot be in the past'}), 400
+
+    log = PromisedPaymentLog(
+        receipt_id=receipt_id,
+        promised_date=promised_date,
+        notes=(data.get('notes') or '').strip() or None
+    )
+    db.session.add(log)
+    # Same reasoning as the web route — promised_payment_logs is a separate
+    # table, so the receipts row's onupdate trigger won't fire on its own.
+    receipt.updated_at = datetime.utcnow()
+    db.session.commit()
+    backup_to_drive()
     return jsonify(_receipt_dict(receipt, include_logs=True)), 200
 
 @api_bp.route('/receipts/<int:receipt_id>/undefer', methods=['POST'])

@@ -216,6 +216,22 @@
       <span class="m-dv text-danger fw-bold">{{ receipt.remaining_balance|khr }}</span>
     </div>
     {% endif %}
+    {% if receipt.current_promised_date %}
+    <div class="m-detail-row">
+      <span class="m-dl"><span class="km">សន្យាបង់</span><span class="en">Promised Date</span></span>
+      <span class="m-dv">
+        <span class="badge bg-warning text-dark">
+          <i class="bi bi-calendar-event"></i> {{ receipt.current_promised_date.strftime('%d/%m/%Y') }}
+        </span>
+      </span>
+    </div>
+    {% endif %}
+    {% if not locked %}
+    <button type="button" class="btn btn-outline-warning w-100 mt-2" data-bs-toggle="modal" data-bs-target="#setPromiseModal">
+      <i class="bi bi-calendar-plus me-1"></i>
+      <span class="km">កំណត់ថ្ងៃសន្យាបង់</span><span class="en">Set Promise Date</span>
+    </button>
+    {% endif %}
 
     <hr class="my-3">
     <form method="POST" action="{{ url_for('receipts.pay', id=receipt.id) }}" hx-boost="true" data-full-overlay="true">
@@ -256,9 +272,69 @@
         <span class="km">ពន្យារខែក្រោយ</span><span class="en">Defer to Next Month</span>
       </button>
     </form>
+
+    <!-- Set Promise Modal -->
+    <div class="modal fade" id="setPromiseModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+          <form method="POST" action="{{ url_for('receipts.add_promise', id=receipt.id) }}" hx-boost="true" data-full-overlay="true">
+            <div class="modal-header border-0 pb-0">
+              <h5 class="modal-title fw-bold">
+                <span class="km">កំណត់ថ្ងៃសន្យាបង់</span><span class="en">Set Promise Date</span>
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <label class="m-label"><span class="km">ថ្ងៃសន្យា</span><span class="en">Promised Date</span> *</label>
+              <input type="date" name="promised_date" class="m-input mb-3" required
+                     min="{{ today.strftime('%Y-%m-%d') }}" value="{{ today.strftime('%Y-%m-%d') }}">
+              <label class="m-label"><span class="km">កំណត់ចំណាំ</span><span class="en">Notes</span></label>
+              <textarea name="notes" class="m-input" rows="2" style="font-weight:400;resize:none;"
+                        placeholder="{{ 'ជាជម្រើស...' if lang == 'km' else 'Optional...' }}"></textarea>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <span class="km">បោះបង់</span><span class="en">Cancel</span>
+              </button>
+              <button type="submit" class="btn btn-warning fw-bold"
+                      data-loading-text="{% if lang=='km' %}កំពុងរក្សាទុក...{% else %}Saving...{% endif %}">
+                <i class="bi bi-calendar-check me-1"></i>
+                <span class="km">រក្សាទុក</span><span class="en">Save Promise</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
     {% endif %}
   </div>
 </div>
+
+<!-- Promise history -->
+{% if receipt.promised_payment_logs %}
+<div class="m-section">
+  <div class="m-section-header collapsed" onclick="toggleMSection(this)">
+    <span><i class="bi bi-calendar-event text-warning me-2"></i>
+      <span class="km">ប្រវត្តិសន្យាបង់</span><span class="en">Promise History</span>
+      <span class="badge bg-secondary ms-1">{{ receipt.promised_payment_logs|length }}</span>
+    </span>
+    <i class="bi bi-chevron-down chevron"></i>
+  </div>
+  <div class="m-section-body collapsed">
+    {% for log in receipt.promised_payment_logs %}
+    <div class="m-detail-row">
+      <span class="m-dl">
+        {{ log.promised_date.strftime('%d/%m/%Y') }}
+        <div class="small text-muted" style="font-weight:400;">
+          <span class="km">បានកត់ត្រានៅ</span><span class="en">Logged</span> {{ log.created_at.strftime('%d/%m/%Y') }}
+          {% if log.notes %}· {{ log.notes }}{% endif %}
+        </div>
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 <!-- Payment log -->
 {% if receipt.payment_logs %}

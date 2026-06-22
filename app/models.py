@@ -164,6 +164,12 @@ class Receipt(db.Model):
 
     payment_logs = db.relationship('PaymentLog', backref='receipt', lazy=True,
                                    order_by='PaymentLog.created_at')
+    promised_payment_logs = db.relationship('PromisedPaymentLog', backref='receipt', lazy=True,
+                                            order_by='PromisedPaymentLog.created_at')
+
+    @property
+    def current_promised_date(self):
+        return self.promised_payment_logs[-1].promised_date if self.promised_payment_logs else None
 
     @property
     def billing_label(self):
@@ -182,6 +188,15 @@ class PaymentLog(db.Model):
     deleted_at = db.Column(db.DateTime, nullable=True)
     delete_reason = db.Column(db.Text, nullable=True)
     verification_hash = db.Column(db.String(20), nullable=True)
+
+
+class PromisedPaymentLog(db.Model):
+    __tablename__ = 'promised_payment_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    receipt_id = db.Column(db.Integer, db.ForeignKey('receipts.id'), nullable=False)
+    promised_date = db.Column(db.Date, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class ConflictLog(db.Model):

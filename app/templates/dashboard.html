@@ -110,10 +110,18 @@
     <div class="dash-room-right">
       {% if e.receipt %}
       <div class="dash-room-amount red">{{ e.receipt.remaining_balance|khr }}</div>
+      {% if e.receipt.current_promised_date %}
+      <div class="dash-room-badge dash-badge-promised">
+        <i class="bi bi-calendar-event"></i>
+        <span class="km">សន្យា {{ e.receipt.current_promised_date.strftime('%d/%m') }}</span>
+        <span class="en">Promised {{ e.receipt.current_promised_date.strftime('%d %b') }}</span>
+      </div>
+      {% else %}
       <div class="dash-room-badge dash-badge-overdue">
         <span class="km">ថ្ងៃ {{ e.start_day }} · ហួស</span>
         <span class="en">Day {{ e.start_day }} · Overdue</span>
       </div>
+      {% endif %}
       {% else %}
       <div class="dash-room-amount" style="color:var(--app-text-3);">{{ e.room.price|khr }}</div>
       <div class="dash-room-badge dash-badge-generate">

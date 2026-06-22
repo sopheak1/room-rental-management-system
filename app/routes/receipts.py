@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, Response, session, current_app
 from flask_login import login_required
-from app.models import Receipt, Room, Tenant, UtilityPrice, Building, PaymentLog, UtilityUsage
+from app.models import Receipt, Room, Tenant, UtilityPrice, Building, PaymentLog, UtilityUsage, PromisedPaymentLog
 from app import db
 from app.utils.timezone import now as _now, today as _today
 from datetime import date, datetime
@@ -379,6 +379,42 @@ def delete_payment_log(id, log_id):
     db.session.commit()
     backup_to_drive()
     _flash_lang('Payment deleted and balance updated.', 'ការទូទាត់ត្រូវបានលុប។', 'success')
+    return redirect(url_for('receipts.detail', id=id))
+
+
+@receipts_bp.route('/receipts/<int:id>/promise', methods=['POST'])
+@login_required
+def add_promise(id):
+    receipt = Receipt.query.get_or_404(id)
+
+    if _has_next_receipt(receipt):
+        _flash_lang('Cannot set a promise — a receipt for the next month already exists.',
+                    'មិនអាចកំណត់ — វិក័យប័ត្រខែក្រោយបានបង្កើតហើយ។', 'danger')
+        return redirect(url_for('receipts.detail', id=id))
+
+    promised_date_str = request.form.get('promised_date')
+    if not promised_date_str:
+        _flash_lang('Promised date is required.', 'សូមបញ្ចូលកាលបរិច្ឆេទសន្យា។', 'danger')
+        return redirect(url_for('receipts.detail', id=id))
+
+    promised_date = date.fromisoformat(promised_date_str)
+    if promised_date < _today():
+        _flash_lang('Promised date cannot be in the past.', 'កាលបរិច្ឆេទសន្យាមិនអាចជាថ្ងៃកន្លងហើយបានទេ។', 'danger')
+        return redirect(url_for('receipts.detail', id=id))
+
+    log = PromisedPaymentLog(
+        receipt_id=id,
+        promised_date=promised_date,
+        notes=request.form.get('notes', '').strip() or None
+    )
+    db.session.add(log)
+    # A promise lives in promised_payment_logs, not on the receipts row itself,
+    # so the column's onupdate=datetime.utcnow never fires on its own — bump it
+    # explicitly so mobile's delta sync (filtered by Receipt.updated_at) notices.
+    receipt.updated_at = datetime.utcnow()
+    db.session.commit()
+    backup_to_drive()
+    _flash_lang('Promised date recorded.', 'កាលបរិច្ឆេទសន្យាត្រូវបានកត់ត្រា។', 'success')
     return redirect(url_for('receipts.detail', id=id))
 
 

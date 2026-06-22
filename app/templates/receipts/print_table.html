@@ -220,6 +220,12 @@ if (new URLSearchParams(window.location.search).get('bridge') === '1') {
     <span>{{ receipt.remaining_balance|khr }}</span>
   </div>
   {% endif %}
+  {% if receipt.current_promised_date %}
+  <div class="total-row">
+    <span>សន្យាបង់</span>
+    <span>{{ receipt.current_promised_date.strftime('%d/%m/%Y') }}</span>
+  </div>
+  {% endif %}
 </div>
 
 {% set active_logs = receipt.payment_logs | rejectattr('deleted_at') | list %}

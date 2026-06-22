@@ -73,6 +73,7 @@ def sync():
                       'total_amount': r.total_amount, 'paid_amount': r.paid_amount,
                       'remaining_balance': r.remaining_balance,
                       'payment_status': r.payment_status, 'notes': r.notes,
+                      'promised_payment_date': _fmt(r.current_promised_date),
                       'created_at': _fmt(r.created_at), 'updated_at': _fmt(r.updated_at)}
                      for r in receipts],
         'payment_logs': [{'id': p.id, 'receipt_id': p.receipt_id, 'amount': p.amount,
